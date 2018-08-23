@@ -5,7 +5,17 @@ import zmq
 import struct
 import cv2,os
 import numpy as np
-import config
+import scipy
+import scipy.signal
+
+###############params
+save=0
+cvshow=1
+#save='/tmp/tst1'
+load = '../data/tst1'
+
+if not load:
+    import config
 from subprocess import Popen,PIPE
 
 doplot=1
@@ -13,28 +23,38 @@ if doplot:
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
 
-save=0
-save='/tmp/tst1'
+
 
 if save:
     ret=os.mkdir(save)
     print(ret)
 
-context = zmq.Context()
-zmq_sub = context.socket(zmq.SUB)
-addr="tcp://%s:%d" % (config.zmq_pub_unreal_proxy)
-zmq_sub.connect(addr)
-#topicm=config.topic_unreal_drone_rgb_camera%0
-topicl=config.topic_unreal_drone_rgb_camera%0+b'l'
-topicr=config.topic_unreal_drone_rgb_camera%0+b'r'
-#zmq_sub.setsockopt(zmq.SUBSCRIBE,topicm)
-zmq_sub.setsockopt(zmq.SUBSCRIBE,topicl)
-zmq_sub.setsockopt(zmq.SUBSCRIBE,topicr)
-#zmq_sub.setsockopt(zmq.SUBSCRIBE,topic+b'down') 
-#zmq_sub.setsockopt(zmq.SUBSCRIBE,topic+b'depth') 
-cvshow=1
-#cvshow=False
 
+if not load:
+    context = zmq.Context()
+    zmq_sub = context.socket(zmq.SUB)
+    addr="tcp://%s:%d" % (config.zmq_pub_unreal_proxy)
+    zmq_sub.connect(addr)
+    #topicm=config.topic_unreal_drone_rgb_camera%0
+    topicl=config.topic_unreal_drone_rgb_camera%0+b'l'
+    topicr=config.topic_unreal_drone_rgb_camera%0+b'r'
+    #zmq_sub.setsockopt(zmq.SUBSCRIBE,topicm)
+    zmq_sub.setsockopt(zmq.SUBSCRIBE,topicl)
+    zmq_sub.setsockopt(zmq.SUBSCRIBE,topicr)
+
+if load:
+    def imggetter():
+        import glob,re
+        lefts=glob.glob(load+'/l*.png')
+        lefts.sort()
+        rights=glob.glob(load+'/r*.png')
+        rights.sort()
+        for l,r in zip(lefts,rights):
+            fnum = int(re.findall('0[0-9]+',l)[0])
+            yield fnum,cv2.imread(l),cv2.imread(r)
+
+
+    imgget=imggetter()
 print('start...')
 start=time.time()
 
@@ -63,6 +83,28 @@ def avg_disp_win(disp,centx,centy,wx,wy,tresh,min_dis=50):
         return winf.mean(),winf.max(),winf.min(),len(winf)
     return -1,-1,-1,-1
 
+def correlator(img1,img2,wx,wy,sx,sy):
+    cx=img1.shape[1]//2
+    cy=img1.shape[0]//2
+    patern=img1[cy-wy//2:cy+wy//2,cx-wx//2:cx+wx//2].astype('float')
+    patern-=patern.mean()
+    #search=img2[cy-sy//2:cy+sy//2,cx-sx//2:cx+sx//2].copy()
+    search=img2[cy-sy//2:cy+sy//2,cx-sx//2:cx+sx//2].astype('float')
+    search-=search.mean()
+    #corr=scipy.signal.correlate2d(patern, search, mode='valid', boundary='fill', fillvalue=0)
+    corr=scipy.signal.correlate2d(search, patern, mode='valid', boundary='fill', fillvalue=0)
+    y, x = np.unravel_index(np.argmax(corr), corr.shape) 
+    if 0:
+        plt.figure('plots')
+        plt.subplot(3,1,1)
+        plt.imshow(patern)
+        plt.subplot(3,1,2)
+        plt.imshow(search)
+        plt.subplot(3,1,3)
+        plt.imshow(corr,cmap='gray')
+        plt.show()
+        import pdb;pdb.set_trace()
+    return x,y
 
 def preisterproc(img):
     h=img.shape[0]
@@ -120,10 +162,10 @@ def ploter():
         ax1.set_xlim(ts.min(),ts.max())        
         #if cnt<100:        
         fig.canvas.draw()
-        w=plt.waitforbuttonpress(timeout=0.001)
-        if w==True: #returns None if no press
-            disp('Button click')
-            break
+        #w=plt.waitforbuttonpress(timeout=0.001)
+        #if w==True: #returns None if no press
+        #    disp('Button click')
+        #    break
  
 
 
@@ -135,21 +177,31 @@ def listener():
         plot.__next__()
     keep_running=True
     while keep_running:
-        while len(zmq.select([zmq_sub],[],[],0.001)[0])>0:
-            topic, info, data = zmq_sub.recv_multipart()
-            #topic=topic.decode()
-            info=struct.unpack('llll',info)
-            shape=info[:3]
-            img=np.fromstring(data,'uint8').reshape(shape)
-            if topic==topicl:
-                fmt_cnt_l=info[3]
-                imgl=img
-            if topic==topicr:
-                fmt_cnt_r=info[3] 
-                imgr=img
+        if load:
+            frame_ready=True
+        else:
+            frame_ready= len(zmq.select([zmq_sub],[],[],0.001)[0])>0
+        while frame_ready:
+            if load:
+                fmt_cnt_l,imgl,imgr=imgget.__next__()
+                fmt_cnt_r=fmt_cnt_l
+                img=imgl
+                topic = b'load'
+            else:
+                topic, info, data = zmq_sub.recv_multipart()
+                #topic=topic.decode()
+                info=struct.unpack('llll',info)
+                shape=info[:3]
+                img=np.fromstring(data,'uint8').reshape(shape)
+                if topic==topicl:
+                    fmt_cnt_l=info[3]
+                    imgl=img
+                if topic==topicr:
+                    fmt_cnt_r=info[3] 
+                    imgr=img
 
-            if save:
-                cv2.imwrite(save+'/{}{:08d}.png'.format('l' if topic==topicl else 'r',info[3]),img)
+                if save:
+                    cv2.imwrite(save+'/{}{:08d}.png'.format('l' if topic==topicl else 'r',info[3]),img)
 
             if cvshow:
                 #if 'depth' in topic:
@@ -175,6 +227,7 @@ def listener():
                     cv2.imshow('disparity',disparityu8)
                     avg_disp,min_d,max_d,cnt_d=avg_disp_win(disparity,centx,centy,wx,wy,tresh=10)
                     print('D {:05.2f}, {:05.2f} ,{:05.2f} ,{:05d} R {:5.2f}'.format(avg_disp,min_d,max_d,cnt_d,disp2range(avg_disp)))
+                    print('===>',correlator(imgl[:,:,1],imgr[:,:,1],wx,wy,500,110))
                     if doplot:
                         plot.send({'tstemp':time.time()-start,'disp':avg_disp})
                 centx_full = img.shape[1]//2
@@ -183,7 +236,7 @@ def listener():
                 cv2.imshow(topic.decode(),img)
 
                     #import pdb;pdb.set_trace()
-                k=cv2.waitKey(1)
+                k=cv2.waitKey(0 if load else 1)
                 if k==ord('q'):
                     keep_running = False
                     plot.send('stop')

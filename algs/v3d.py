@@ -9,16 +9,24 @@ import scipy
 import scipy.signal
 
 ###############params
-save=0
-cvshow=1
-#save='/tmp/tst1'
-load = '../data/tst1'
+if not __name__=='__main__':
+    save=0
+    cvshow=0
+    load=0
+    doplot=0
+else:
+    save=0
+    cvshow=1
+    #save='/tmp/tst1'
+    #load = '../data/tst1'
+    #load = '/tmp/tst1'
+    load = 0
+    doplot=0
 
 if not load:
     import config
 from subprocess import Popen,PIPE
 
-doplot=1
 if doplot:
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
@@ -64,7 +72,7 @@ stereo = cv2.StereoSGBM_create(numDisparities=64*2, blockSize=9)
 #camera info estimate
 fov=90.0
 pixelwidth = 640 #after shrink
-baseline = 0.2 # ~20cm
+baseline = 0.14 # (240-100)*.1scale in cm from unreal engine
 focal_length=pixelwidth/( np.tan(np.deg2rad(fov/2)) *2 )
 #disparity=x-x'=baseline*focal_length/Z
 #=>> Z = baseline*focal_length/disparity 
@@ -83,28 +91,61 @@ def avg_disp_win(disp,centx,centy,wx,wy,tresh,min_dis=50):
         return winf.mean(),winf.max(),winf.min(),len(winf)
     return -1,-1,-1,-1
 
-def correlator(img1,img2,wx,wy,sx,sy):
+debug=False
+#correlator input img1 img2,search x left,search x right,search y up search y down
+def correlator(img1,img2,wx,wy,sxl,sxr,syu,syd):
+    global debug
     cx=img1.shape[1]//2
     cy=img1.shape[0]//2
-    patern=img1[cy-wy//2:cy+wy//2,cx-wx//2:cx+wx//2].astype('float')
+    l1,r1=cx-wx//2,cx+wx//2
+    u1,d1=cy-wy//2,cy+wy//2
+    patern=np.log(img1[u1:d1,l1:r1].astype('float')+1)
     patern-=patern.mean()
+    patern/=patern.max()
+    #patern=np.log(patern)
     #search=img2[cy-sy//2:cy+sy//2,cx-sx//2:cx+sx//2].copy()
-    search=img2[cy-sy//2:cy+sy//2,cx-sx//2:cx+sx//2].astype('float')
+    l2,r2=cx-wx//2-sxl//2,cx+wx//2+sxr//2
+    u2,d2=cy-wy//2-syu//2,cy+wy//2+syd//2
+    search=np.log(img2[u2:d2,l2:r2].astype('float')+1)
     search-=search.mean()
+    search/=search.max()
+    #search=np.log(search)
     #corr=scipy.signal.correlate2d(patern, search, mode='valid', boundary='fill', fillvalue=0)
     corr=scipy.signal.correlate2d(search, patern, mode='valid', boundary='fill', fillvalue=0)
+    corr = scipy.signal.convolve2d(corr,np.ones((3,3)),'same')
     y, x = np.unravel_index(np.argmax(corr), corr.shape) 
-    if 0:
-        plt.figure('plots')
-        plt.subplot(3,1,1)
-        plt.imshow(patern)
-        plt.subplot(3,1,2)
-        plt.imshow(search)
-        plt.subplot(3,1,3)
-        plt.imshow(corr,cmap='gray')
-        plt.show()
-        import pdb;pdb.set_trace()
-    return x,y
+    #avg_corr=corr[y-1:y+1,x-1:x+1].mean()
+    #corr[y-1:y+1,x-1:x+1]=-9999999
+    #max_rest=np.ma.masked_array(corr,corr==-9999999).max()
+    
+    offx = x
+    offy = y
+    snr = 10*np.log10((corr.max()/np.median(corr))**2) 
+    #print('===',corr[y,x])
+    if debug:
+        if 1:
+            import matplotlib.pyplot as plt
+            plt.figure('plots')
+            plt.subplot(3,1,1)
+            plt.imshow(patern)
+            plt.subplot(3,1,2)
+            plt.imshow(search)
+            plt.subplot(3,1,3)
+            plt.imshow(corr,cmap='gray')
+            plt.figure('img1/2 %.2f'%snr)
+            ax1=plt.subplot(1,2,1)
+            plt.imshow(img1)
+            plt.plot([l1,r1,r1,l1,l1],[u1,u1,d1,d1,u1],'r')
+            plt.subplot(1,2,2,sharex=ax1,sharey=ax1)
+            plt.imshow(img2)
+            plt.plot([l2,r2,r2,l2,l2],[u2,u2,d2,d2,u2],'b')
+            xx=np.array([l2,l2+wx,l2+wx,l2,l2])+offx
+            yy=np.array([u2,u2,u2+wy,u2+wy,u2])+offy
+            plt.plot(xx,yy,'r')
+            plt.show()
+            import ipdb;ipdb.set_trace()
+        debug=False
+    return x,y,snr
 
 def preisterproc(img):
     h=img.shape[0]
@@ -120,11 +161,11 @@ def ploter():
     fig = plt.figure(figsize=(8,6))
     ax1 = fig.add_subplot(4, 1, 1)
     ax1.set_title('disp')
-    ax2 = fig.add_subplot(4, 1, 2)
-    ax2.set_title('-')
-    ax3 = fig.add_subplot(4, 1, 3)
-    ax3.set_title('-')
-    ax4 = fig.add_subplot(4, 1, 4)
+    ax2 = fig.add_subplot(4, 1, 2,sharex=ax1)
+    ax2.set_title('corrx')
+    ax3 = fig.add_subplot(4, 1, 3,sharex=ax1)
+    ax3.set_title('snr corr')
+    ax4 = fig.add_subplot(4, 1, 4,sharex=ax1)
     ax4.set_title('-')
     ax4.set_ylim(-1,1)
     fig.canvas.draw()   # note that the first draw comes before setting data 
@@ -156,20 +197,25 @@ def ploter():
         hdl_list=[]
         
         disp=np.array(lmap(lambda x:x['disp'],history))
+        corrx=np.array(lmap(lambda x:x['corrx'],history))
+        snr_corr=np.array(lmap(lambda x:x['snr_corr'],history))
         ts=np.array(lmap(lambda x:x['tstemp'],history))
 
         hdl_list.append(ax1.plot(ts,disp,'-b',alpha=0.5)) 
+        hdl_list.append(ax2.plot(ts,corrx,'-b',alpha=0.5)) 
+        hdl_list.append(ax3.plot(ts,snr_corr,'-b',alpha=0.5)) 
         ax1.set_xlim(ts.min(),ts.max())        
         #if cnt<100:        
         fig.canvas.draw()
-        #w=plt.waitforbuttonpress(timeout=0.001)
-        #if w==True: #returns None if no press
-        #    disp('Button click')
-        #    break
+        w=plt.waitforbuttonpress(timeout=0.001)
+        if w==True: #returns None if no press
+            disp('Button click')
+            break
  
 
 
 def listener():
+    global debug
     fmt_cnt_l=-1
     fmt_cnt_r=-2
     if doplot:
@@ -214,6 +260,8 @@ def listener():
                 centy=None
                 wx=100
                 wy=100
+                sxl,sxr=50,300
+                syu,syd=2,2
 
                 if fmt_cnt_r == fmt_cnt_l:
                     disparity = stereo.compute(preisterproc(imgl),preisterproc(imgr))
@@ -223,16 +271,17 @@ def listener():
                     centy=disparityu8.shape[0]//2
                     #print('--->',disparity.max(),disparity.min(),type(disparity),imgr.shape)
                     #disparityu8[centy-wy//2:centy+wy//2,centx-wx//2:centx+wx//2]=255
-                    cv2.rectangle(disparityu8, (centx-wx//2,centy-wy//2) , (centx+wx//2,centy+wy//2) , 255)
                     cv2.imshow('disparity',disparityu8)
                     avg_disp,min_d,max_d,cnt_d=avg_disp_win(disparity,centx,centy,wx,wy,tresh=10)
-                    print('D {:05.2f}, {:05.2f} ,{:05.2f} ,{:05d} R {:5.2f}'.format(avg_disp,min_d,max_d,cnt_d,disp2range(avg_disp)))
-                    print('===>',correlator(imgl[:,:,1],imgr[:,:,1],wx,wy,500,110))
+                    cret = correlator(imgl[:,:,1],imgr[:,:,1],wx,wy,sxl,sxr,syu,syd)
+                    print('D {:6.2f}, {:6.2f} ,{:6.2f} ,{:05d} R {:6.2f} C {:6.1f},{:6.1f} ,SC {:3.1f} R2 {:5.2f}'.\
+                            format(avg_disp,min_d,max_d,cnt_d,disp2range(avg_disp),cret[0],cret[1],cret[2],disp2range(cret[0])))
                     if doplot:
-                        plot.send({'tstemp':time.time()-start,'disp':avg_disp})
+                        plot.send({'tstemp':time.time()-start,'disp':avg_disp,'corrx':cret[0],'snr_corr':cret[2]})
+                    cv2.rectangle(disparityu8, (centx-wx//2,centy-wy//2) , (centx+wx//2,centy+wy//2) , 255)
+                    cv2.rectangle(img, (centx_full-wx//2,centy_full-wy//2) , (centx_full+wx//2,centy_full+wy//2) , (0,0,255))
                 centx_full = img.shape[1]//2
                 centy_full = img.shape[0]//2
-                cv2.rectangle(img, (centx_full-wx//2,centy_full-wy//2) , (centx_full+wx//2,centy_full+wy//2) , (0,0,255))
                 cv2.imshow(topic.decode(),img)
 
                     #import pdb;pdb.set_trace()
@@ -241,6 +290,8 @@ def listener():
                     keep_running = False
                     plot.send('stop')
                     break
+                if k==ord('d'):
+                    debug=True
 
             ### test
         time.sleep(0.010)

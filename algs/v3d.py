@@ -70,7 +70,7 @@ start=time.time()
 stereo = cv2.StereoSGBM_create(numDisparities=64*2, blockSize=9)
 
 #camera info estimate
-fov=90.0
+fov=60.97
 pixelwidth = 640 #after shrink
 baseline = 0.14 # (240-100)*.1scale in cm from unreal engine
 focal_length=pixelwidth/( np.tan(np.deg2rad(fov/2)) *2 )
@@ -99,14 +99,19 @@ def correlator(img1,img2,wx,wy,sxl,sxr,syu,syd):
     cy=img1.shape[0]//2
     l1,r1=cx-wx//2,cx+wx//2
     u1,d1=cy-wy//2,cy+wy//2
-    patern=np.log(img1[u1:d1,l1:r1].astype('float')+1)
+    patern=img1[u1:d1,l1:r1]
+    z=4
+    #patern_zoom=scipy.ndimage.zoom(patern, 4, order=3)
+    patern=np.log(patern.astype('float')+1)
     patern-=patern.mean()
     patern/=patern.max()
     #patern=np.log(patern)
     #search=img2[cy-sy//2:cy+sy//2,cx-sx//2:cx+sx//2].copy()
     l2,r2=cx-wx//2-sxl//2,cx+wx//2+sxr//2
     u2,d2=cy-wy//2-syu//2,cy+wy//2+syd//2
-    search=np.log(img2[u2:d2,l2:r2].astype('float')+1)
+    search=img2[u2:d2,l2:r2]
+    #search_zoom=scipy.ndimage.zoom(search, 4, order=3)
+    search=np.log(search.astype('float')+1)
     search-=search.mean()
     search/=search.max()
     #search=np.log(search)
@@ -131,7 +136,13 @@ def correlator(img1,img2,wx,wy,sxl,sxr,syu,syd):
             plt.subplot(3,1,2)
             plt.imshow(search)
             plt.subplot(3,1,3)
-            plt.imshow(corr,cmap='gray')
+            if syu+syd>2:
+                plt.imshow(corr,cmap='gray')
+            else:
+                l=len(corr[0,:])
+                plt.plot(np.linspace(0,l,l),corr[0,:])
+                c2=scipy.signal.resample(corr[0,:],l*4)
+                plt.plot(np.linspace(0,l,len(c2)),c2)
             plt.figure('img1/2 %.2f'%snr)
             ax1=plt.subplot(1,2,1)
             plt.imshow(img1)
@@ -146,6 +157,109 @@ def correlator(img1,img2,wx,wy,sxl,sxr,syu,syd):
             import ipdb;ipdb.set_trace()
         debug=False
     return x,y,snr
+
+def preprep_corr(img):
+    ret=np.log(img.astype('float')+1)
+    ret-=ret.mean()
+    ret/=ret.max()
+    return ret
+
+def line_correlator(img1,img2,wx,wy,sxl,sxr):
+    global debug
+    cx=img1.shape[1]//2
+    cy=img1.shape[0]//2
+    l1,r1=cx-wx//2,cx+wx//2
+    u1,d1=cy-wy//2,cy+wy//2
+    patern=img1[u1:d1,l1:r1]
+    corr_pat=preprep_corr(patern)
+
+    #patern=np.log(patern)
+    #search=img2[cy-sy//2:cy+sy//2,cx-sx//2:cx+sx//2].copy()
+    l2,r2=cx-wx//2-sxl//2,cx+wx//2+sxr//2
+    u2,d2=cy-wy//2,cy+wy//2
+    search=img2[u2:d2,l2:r2]
+    corr_search=preprep_corr(search)
+    #search_zoom=scipy.ndimage.zoom(search, 4, order=3)
+    #search=np.log(search)
+    #corr=scipy.signal.correlate2d(patern, search, mode='valid', boundary='fill', fillvalue=0)
+    corr=scipy.signal.correlate2d(corr_search, corr_pat, mode='valid', boundary='fill', fillvalue=0)
+    corr = scipy.signal.convolve2d(corr,np.ones((3,3)),'same')
+    y, x = np.unravel_index(np.argmax(corr), corr.shape) 
+    
+    #################zoom
+    z=4
+    sz=3 #zoom search
+    lz1,rz1=wx//2-(wx//2)//z,wx//2+(wx//2)//z
+    uz,dz=wx//2-(wx//2)//z,wx//2+(wx//2)//z
+    patern_zoom=corr_pat[uz:dz,lz1:rz1]
+    patern_zoom=scipy.ndimage.zoom(patern_zoom, z, order=3)
+
+    nx=x
+    if x>sz:
+        lz2,rz2=x+wx//2-(wx//2)//z-sz,x+wx//2+(wx//2)//z+sz
+        search_zoom=corr_search[uz:dz,lz2:rz2]
+        search_zoom=scipy.ndimage.zoom(search_zoom, z, order=3)
+        corrz=scipy.signal.correlate2d(search_zoom, patern_zoom, mode='valid', boundary='fill', fillvalue=0)
+        zy, zx = np.unravel_index(np.argmax(corrz), corrz.shape) 
+        
+        nx=x-sz+zx/z
+
+    ##########################
+    
+    #avg_corr=corr[y-1:y+1,x-1:x+1].mean()
+    #corr[y-1:y+1,x-1:x+1]=-9999999
+    #max_rest=np.ma.masked_array(corr,corr==-9999999).max()
+    
+    offx = x
+    offy = y
+    snr = 10*np.log10((corr.max()/np.median(corr))**2) 
+    #print('===',corr[y,x])
+    if debug:
+        if 1:
+            import matplotlib.pyplot as plt
+            plt.figure('search')
+            plt.subplot(3,1,1)
+            plt.imshow(patern)
+            plt.subplot(3,1,2)
+            plt.imshow(search)
+            plt.subplot(3,1,3)
+            l=len(corr[0,:])
+            plt.plot(np.linspace(0,l,l),corr[0,:])
+            c2=scipy.signal.resample(corr[0,:],l*4)
+            plt.plot(np.linspace(0,l,len(c2)),c2)
+
+            plt.figure('search_zoom')
+            plt.subplot(3,1,1)
+            plt.imshow(patern_zoom)
+            plt.subplot(3,1,2)
+            plt.imshow(search_zoom)
+            plt.subplot(3,1,3)
+            l=len(corr[0,:])
+            plt.plot(corrz[0,:])
+            #c2=scipy.signal.resample(corrz[0,:],l*4)
+            #plt.plot(np.linspace(0,l,len(c2)),c2)
+
+            
+            plt.figure('img1/2 %.2f'%snr)
+            ax1=plt.subplot(1,2,1)
+            plt.imshow(img1)
+            plt.plot([l1,r1,r1,l1,l1],[u1,u1,d1,d1,u1],'r')
+            plt.subplot(1,2,2,sharex=ax1,sharey=ax1)
+            plt.imshow(img2)
+            plt.plot([l2,r2,r2,l2,l2],[u2,u2,d2,d2,u2],'b')
+            xx=np.array([l2,l2+wx,l2+wx,l2,l2])+offx
+            yy=np.array([u2,u2,u2+wy,u2+wy,u2])+offy
+            plt.plot(xx,yy,'r')
+            plt.show()
+            import ipdb;ipdb.set_trace()
+        debug=False
+    #print('--->',x,nx,zx)
+    return nx,snr
+
+
+
+
+
 
 def preisterproc(img):
     h=img.shape[0]
@@ -260,8 +374,8 @@ def listener():
                 centy=None
                 wx=100
                 wy=100
-                sxl,sxr=50,300
-                syu,syd=2,2
+                sxl,sxr=20,500
+                syu,syd=1,1
 
                 if fmt_cnt_r == fmt_cnt_l:
                     disparity = stereo.compute(preisterproc(imgl),preisterproc(imgr))
@@ -273,16 +387,22 @@ def listener():
                     #disparityu8[centy-wy//2:centy+wy//2,centx-wx//2:centx+wx//2]=255
                     cv2.imshow('disparity',disparityu8)
                     avg_disp,min_d,max_d,cnt_d=avg_disp_win(disparity,centx,centy,wx,wy,tresh=10)
-                    cret = correlator(imgl[:,:,1],imgr[:,:,1],wx,wy,sxl,sxr,syu,syd)
-                    print('D {:6.2f}, {:6.2f} ,{:6.2f} ,{:05d} R {:6.2f} C {:6.1f},{:6.1f} ,SC {:3.1f} R2 {:5.2f}'.\
-                            format(avg_disp,min_d,max_d,cnt_d,disp2range(avg_disp),cret[0],cret[1],cret[2],disp2range(cret[0])))
+                    if 1:
+                        cret = line_correlator(imgl[:,:,1],imgr[:,:,1],wx,wy,sxl,sxr)
+                        print('D {:6.2f}, {:6.2f} ,{:6.2f} ,{:05d} R {:6.2f} C {:6.1f},SC {:3.1f} R2 {:5.2f}'.\
+                                format(avg_disp,min_d,max_d,cnt_d,disp2range(avg_disp),cret[0],cret[1],disp2range(cret[0])))
+                    else:
+                        cret = correlator(imgl[:,:,1],imgr[:,:,1],wx,wy,sxl,sxr,syu,syd)
+                        print('D {:6.2f}, {:6.2f} ,{:6.2f} ,{:05d} R {:6.2f} C {:6.1f},{:6.1f} ,SC {:3.1f} R2 {:5.2f}'.\
+                                format(avg_disp,min_d,max_d,cnt_d,disp2range(avg_disp),cret[0],cret[1],cret[2],disp2range(cret[0])))
                     if doplot:
                         plot.send({'tstemp':time.time()-start,'disp':avg_disp,'corrx':cret[0],'snr_corr':cret[2]})
                     cv2.rectangle(disparityu8, (centx-wx//2,centy-wy//2) , (centx+wx//2,centy+wy//2) , 255)
-                    cv2.rectangle(img, (centx_full-wx//2,centy_full-wy//2) , (centx_full+wx//2,centy_full+wy//2) , (0,0,255))
                 centx_full = img.shape[1]//2
                 centy_full = img.shape[0]//2
-                cv2.imshow(topic.decode(),img)
+                img_toshow=img.copy()
+                cv2.rectangle(img_toshow, (centx_full-wx//2,centy_full-wy//2) , (centx_full+wx//2,centy_full+wy//2) , (0,0,255))
+                cv2.imshow(topic.decode(),img_toshow)
 
                     #import pdb;pdb.set_trace()
                 k=cv2.waitKey(0 if load else 1)

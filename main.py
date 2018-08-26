@@ -13,4 +13,14 @@ socket_sub.connect('tcp://%s:%d'%config.zmq_pub_unreal_proxy)
 socket_sub.setsockopt(zmq.SUBSCRIBE,config.topic_unreal_state)
 
 
+## subscribe to v3d range 
+## subscribe to v3d translate
+## listen to joystick from gcontrol
+## 
+
+
+if __name__=='__main__':
+    while True:
+    #    if 
+        pass
 

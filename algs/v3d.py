@@ -174,6 +174,37 @@ def preprep_corr(img):
     ret/=ret.max()
     return ret
 
+
+def track_correlator(img,wx,wy,sx,sy,tx=None,ty=None):
+    if tx is None:
+        tx=sx//2
+    if ty is None:
+        ty=sy//2
+
+    while True: 
+        cx=img.shape[1]//2
+        cy=img.shape[0]//2
+        l1,r1=cx-wx//2,cx+wx//2
+        u1,d1=cy-wy//2,cy+wy//2
+        patern=img[u1:d1,l1:r1]
+        corr_pat=preprep_corr(patern)
+
+        img2=img
+        while True:
+            l2,r2=cx-wx//2-sx,cx+wx//2+sx
+            u2,d2=cy-wy//2-sy,cy+wy//2+sy
+            search=img2[u2:d2,l2:r2]
+            corr_search=preprep_corr(search)
+            corr=scipy.signal.correlate2d(corr_search, corr_pat, mode='valid', boundary='fill', fillvalue=0)
+            corr = scipy.signal.convolve2d(corr,np.ones((3,3)),'same')
+            y, x = np.unravel_index(np.argmax(corr), corr.shape)
+            ox,oy = x-sx,y-sy
+            if abs(ox)>tx or abs(oy)>ty : #new reference if translate to much
+                img=yield ox,oy
+                break
+            img2=yield ox,oy
+
+
 def line_correlator(img1,img2,wx,wy,sxl,sxr):
     global debug
     cx=img1.shape[1]//2
@@ -210,8 +241,7 @@ def line_correlator(img1,img2,wx,wy,sxl,sxr):
         search_zoom=corr_search[uz:dz,lz2:rz2]
         search_zoom=scipy.ndimage.zoom(search_zoom, z, order=3)
         corrz=scipy.signal.correlate2d(search_zoom, patern_zoom, mode='valid', boundary='fill', fillvalue=0)
-        zy, zx = np.unravel_index(np.argmax(corrz), corrz.shape) 
-        
+        zy, zx = np.unravel_index(np.argmax(corrz), corrz.shape)         
         nx=x-sz+zx/z
 
     ##########################
@@ -346,6 +376,7 @@ def listener():
         plot=ploter()
         plot.__next__()
     keep_running=True
+    tc=None
     while keep_running:
         if load:
             frame_ready=True
@@ -373,6 +404,14 @@ def listener():
                 if save:
                     cv2.imwrite(save+'/{}{:08d}.png'.format('l' if topic==topicl else 'r',info[3]),img)
 
+            if tc is None:
+                tc=track_correlator(imgl[:,:,1],20,20,10,10)
+                tc.__next__()
+            else:
+                ox,oy=tc.send(imgl[:,:,1])
+                print('TC {:02d}, {:02d}'.format(ox,oy))
+ 
+
             if args.cvshow:
                 #if 'depth' in topic:
                 #    cv2.imshow(topic,img)
@@ -397,14 +436,12 @@ def listener():
                     #disparityu8[centy-wy//2:centy+wy//2,centx-wx//2:centx+wx//2]=255
                     cv2.imshow('disparity',disparityu8)
                     avg_disp,min_d,max_d,cnt_d=avg_disp_win(disparity,centx,centy,wx,wy,tresh=10)
-                    if 1:
-                        cret = line_correlator(imgl[:,:,1],imgr[:,:,1],wx,wy,sxl,sxr)
-                        print('D {:6.2f}, {:6.2f} ,{:6.2f} ,{:05d} R {:6.2f} C {:6.1f},SC {:3.1f} R2 {:5.2f}'.\
-                                format(avg_disp,min_d,max_d,cnt_d,disp2range(avg_disp),cret[0],cret[1],disp2range(cret[0])))
-                    else:
-                        cret = correlator(imgl[:,:,1],imgr[:,:,1],wx,wy,sxl,sxr,syu,syd)
-                        print('D {:6.2f}, {:6.2f} ,{:6.2f} ,{:05d} R {:6.2f} C {:6.1f},{:6.1f} ,SC {:3.1f} R2 {:5.2f}'.\
-                                format(avg_disp,min_d,max_d,cnt_d,disp2range(avg_disp),cret[0],cret[1],cret[2],disp2range(cret[0])))
+                    cret = line_correlator(imgl[:,:,1],imgr[:,:,1],wx,wy,sxl,sxr)
+                    print('C {:6.1f},SC {:3.1f} R2 {:5.2f}'.\
+                            format(cret[0],cret[1],disp2range(cret[0])))
+                    #    cret = correlator(imgl[:,:,1],imgr[:,:,1],wx,wy,sxl,sxr,syu,syd)
+                    #    print('D {:6.2f}, {:6.2f} ,{:6.2f} ,{:05d} R {:6.2f} C {:6.1f},{:6.1f} ,SC {:3.1f} R2 {:5.2f}'.\
+                    #            format(avg_disp,min_d,max_d,cnt_d,disp2range(avg_disp),cret[0],cret[1],cret[2],disp2range(cret[0])))
                     if doplot:
                         plot.send({'tstemp':time.time()-start,'disp':avg_disp,'corrx':cret[0],'snr_corr':cret[2]})
                     cv2.rectangle(disparityu8, (centx-wx//2,centy-wy//2) , (centx+wx//2,centy+wy//2) , 255)

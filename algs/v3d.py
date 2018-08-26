@@ -1,5 +1,5 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-import sys,os,time
+import argparse,sys,os,time
 sys.path.append('../../DroneSimLab/demos/bluerov/unreal_proxy')
 import zmq
 import struct
@@ -8,34 +8,44 @@ import numpy as np
 import scipy
 import scipy.signal
 
-###############params
-if not __name__=='__main__':
-    save=0
-    cvshow=0
-    load=0
-    doplot=0
-else:
-    save=0
-    cvshow=1
-    #save='/tmp/tst1'
-    #load = '../data/tst1'
-    #load = '/tmp/tst1'
-    load = 0
-    doplot=0
+parser = argparse.ArgumentParser()
+#parser.add_argument("-f","--dump_file_prefix", help="dump_file prefix name will create two file one for video and one for data")
+parser.add_argument("-o","--overide", help="allow overide of dump file", action='store_true')
+#parser.add_argument("-s","--show",help="open opencv video",action='store_true')
+#parser.add_argument("-c","--cvstream",help="stream video to local port 9345", action='store_true')
+#parser.add_argument("-d","--dronesimlab",help="simulation mode", action='store_true')
+parser.add_argument("--cvshow",help="show opencv mode", action='store_true')
+parser.add_argument("--data_path", help="path for data")
+parser.add_argument("--save",help="save data", action='store_true')
+parser.add_argument("--doplot",help="plot data", action='store_true')
+args = parser.parse_args()
 
-if not load:
-    import config
+###############params configs
+
 from subprocess import Popen,PIPE
 
+doplot=args.doplot
 if doplot:
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
 
 
+save=0
+if args.save:
+    if os.isdir(args.data_path) and not args.overide:
+        print('Error data path exist use -o to override')
+        sys.exit(-1)
+    ret=os.mkdir(args.data_path)
+    save=args.data_path
+    #print(ret)
 
-if save:
-    ret=os.mkdir(save)
-    print(ret)
+if not save and 'data_path' in args:
+    load=args.data_path
+else:
+    load=0
+    import config
+
+##############################
 
 
 if not load:
@@ -363,7 +373,7 @@ def listener():
                 if save:
                     cv2.imwrite(save+'/{}{:08d}.png'.format('l' if topic==topicl else 'r',info[3]),img)
 
-            if cvshow:
+            if args.cvshow:
                 #if 'depth' in topic:
                 #    cv2.imshow(topic,img)
                 #else:

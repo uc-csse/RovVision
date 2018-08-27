@@ -90,6 +90,8 @@ baseline = 0.14 # (240-100)*.1scale in cm from unreal engine
 focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 #disparity=x-x'=baseline*focal_length/Z
 #=>> Z = baseline*focal_length/disparity 
+track_params = (30,30,20,20) 
+stereo_corr_params = {'ws':(100,100),'sxl':0,'sxr':500}
 
 def disp2range(x):
     return baseline*focal_length/x
@@ -108,8 +110,8 @@ def avg_disp_win(disp,centx,centy,wx,wy,tresh,min_dis=50):
 debug=False
 
 def preprep_corr(img):
-    #ret=np.log(img.astype('float')+1)
-    ret=img.astype('float')
+    ret=np.log(img.astype('float')+1)
+    #ret=img.astype('float')
     ret-=ret.mean()
     ret/=ret.max()
     return ret
@@ -308,8 +310,6 @@ def ploter():
  
 
 
-track_params = (50,50,50,50) 
-stereo_corr_params = {'ws':(100,100),'sxl':0,'sxr':500}
 
 def run_Trackers():
     print('-------------------- init trackers -------------')
@@ -338,6 +338,10 @@ def run_Trackers():
             dy = res['range_avg'] * oy/focal_length
             res['dx']=dx
             res['dy']=dy
+        else:
+            tc=track_correlator(imgl[:,:,1],*track_params)
+            tc.__next__()
+            
 
         imgl,imgr,cmd = yield res 
         if cmd=='lock':

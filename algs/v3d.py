@@ -106,74 +106,10 @@ def avg_disp_win(disp,centx,centy,wx,wy,tresh,min_dis=50):
     return -1,-1,-1,-1
 
 debug=False
-#correlator input img1 img2,search x left,search x right,search y up search y down
-def correlator(img1,img2,wx,wy,sxl,sxr,syu,syd):
-    global debug
-    cx=img1.shape[1]//2
-    cy=img1.shape[0]//2
-    l1,r1=cx-wx//2,cx+wx//2
-    u1,d1=cy-wy//2,cy+wy//2
-    patern=img1[u1:d1,l1:r1]
-    z=4
-    #patern_zoom=scipy.ndimage.zoom(patern, 4, order=3)
-    patern=np.log(patern.astype('float')+1)
-    patern-=patern.mean()
-    patern/=patern.max()
-    #patern=np.log(patern)
-    #search=img2[cy-sy//2:cy+sy//2,cx-sx//2:cx+sx//2].copy()
-    l2,r2=cx-wx//2-sxl//2,cx+wx//2+sxr//2
-    u2,d2=cy-wy//2-syu//2,cy+wy//2+syd//2
-    search=img2[u2:d2,l2:r2]
-    #search_zoom=scipy.ndimage.zoom(search, 4, order=3)
-    search=np.log(search.astype('float')+1)
-    search-=search.mean()
-    search/=search.max()
-    #search=np.log(search)
-    #corr=scipy.signal.correlate2d(patern, search, mode='valid', boundary='fill', fillvalue=0)
-    corr=scipy.signal.correlate2d(search, patern, mode='valid', boundary='fill', fillvalue=0)
-    corr = scipy.signal.convolve2d(corr,np.ones((3,3)),'same')
-    y, x = np.unravel_index(np.argmax(corr), corr.shape) 
-    #avg_corr=corr[y-1:y+1,x-1:x+1].mean()
-    #corr[y-1:y+1,x-1:x+1]=-9999999
-    #max_rest=np.ma.masked_array(corr,corr==-9999999).max()
-    
-    offx = x
-    offy = y
-    snr = 10*np.log10((corr.max()/np.median(corr))**2) 
-    #print('===',corr[y,x])
-    if debug:
-        if 1:
-            import matplotlib.pyplot as plt
-            plt.figure('plots')
-            plt.subplot(3,1,1)
-            plt.imshow(patern)
-            plt.subplot(3,1,2)
-            plt.imshow(search)
-            plt.subplot(3,1,3)
-            if syu+syd>2:
-                plt.imshow(corr,cmap='gray')
-            else:
-                l=len(corr[0,:])
-                plt.plot(np.linspace(0,l,l),corr[0,:])
-                c2=scipy.signal.resample(corr[0,:],l*4)
-                plt.plot(np.linspace(0,l,len(c2)),c2)
-            plt.figure('img1/2 %.2f'%snr)
-            ax1=plt.subplot(1,2,1)
-            plt.imshow(img1)
-            plt.plot([l1,r1,r1,l1,l1],[u1,u1,d1,d1,u1],'r')
-            plt.subplot(1,2,2,sharex=ax1,sharey=ax1)
-            plt.imshow(img2)
-            plt.plot([l2,r2,r2,l2,l2],[u2,u2,d2,d2,u2],'b')
-            xx=np.array([l2,l2+wx,l2+wx,l2,l2])+offx
-            yy=np.array([u2,u2,u2+wy,u2+wy,u2])+offy
-            plt.plot(xx,yy,'r')
-            plt.show()
-            import ipdb;ipdb.set_trace()
-        debug=False
-    return x,y,snr
 
 def preprep_corr(img):
-    ret=np.log(img.astype('float')+1)
+    #ret=np.log(img.astype('float')+1)
+    ret=img.astype('float')
     ret-=ret.mean()
     ret/=ret.max()
     return ret
@@ -372,13 +308,14 @@ def ploter():
  
 
 
-track_params = {}
+track_params = (50,50,50,50) 
 stereo_corr_params = {'ws':(100,100),'sxl':0,'sxr':500}
 
 def run_Trackers():
+    print('-------------------- init trackers -------------')
     tc = None
     imgl,imgr,cmd = yield
-    tc=track_correlator(imgl[:,:,1],20,20,50,50)
+    tc=track_correlator(imgl[:,:,1],*track_params)
     tc.__next__()
     sp = stereo_corr_params
     range_win=[]
@@ -395,7 +332,7 @@ def run_Trackers():
         range_win.append(res['range'])
         if len(range_win) > 10:
             range_win=range_win[1:]
-        if np.std(range_win)<0.10: #<5cm means reliable range
+        if np.std(range_win)<0.20: #<5cm means reliable range
             res['range_avg']=np.mean(range_win)
             dx = res['range_avg'] * ox/focal_length
             dy = res['range_avg'] * oy/focal_length
@@ -403,6 +340,10 @@ def run_Trackers():
             res['dy']=dy
 
         imgl,imgr,cmd = yield res 
+        if cmd=='lock':
+            tc=track_correlator(imgl[:,:,1],*track_params)
+            tc.__next__()
+
 
 def listener():
     global debug
@@ -465,9 +406,8 @@ def listener():
 
                 centx=None
                 centy=None
-                wx,wy=stereo_corr_params['ws']
-                #sxl,sxr=20,500
-                #syu,syd=1,1
+
+            wx,wy=stereo_corr_params['ws']
 
             if fmt_cnt_r == fmt_cnt_l:
                 if args.calc_disparity:
@@ -494,10 +434,12 @@ def listener():
                     centx_full = img.shape[1]//2
                     centy_full = img.shape[0]//2
                     #img_toshow=img.copy()
-                    cv2.rectangle(imgr, (centx_full-wx//2,centy_full-wy//2) , (centx_full+wx//2,centy_full+wy//2) , (0,0,255))
-                    cv2.imshow('imgr',imgr)
-                    cv2.rectangle(imgl, (centx_full-wx//2,centy_full-wy//2) , (centx_full+wx//2,centy_full+wy//2) , (0,0,255))
-                    cv2.imshow('imgl',imgl)
+                    show_imager=imgr.copy()
+                    show_imagel=imgl.copy()
+                    cv2.rectangle(show_imager, (centx_full-wx//2,centy_full-wy//2) , (centx_full+wx//2,centy_full+wy//2) , (0,0,255))
+                    cv2.imshow('imgr',show_imager)
+                    cv2.rectangle(show_imagel, (centx_full-wx//2,centy_full-wy//2) , (centx_full+wx//2,centy_full+wy//2) , (0,0,255))
+                    cv2.imshow('imgl',show_imagel)
 
                         #import pdb;pdb.set_trace()
                     k=cv2.waitKey(0 if load else 1)
@@ -508,6 +450,9 @@ def listener():
                     if k==ord('d'):
                         debug=True
 
+                    if k==ord('l'): #lock
+                        track=None
+                        
             ### test
         time.sleep(0.010)
 

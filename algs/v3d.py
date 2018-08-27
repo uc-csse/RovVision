@@ -1,6 +1,6 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import argparse,sys,os,time
-sys.path.append('../../DroneSimLab/demos/bluerov/unreal_proxy')
+sys.path.append('../')
 import zmq
 import struct
 import cv2,os
@@ -18,7 +18,10 @@ parser.add_argument("--cvshow",help="show opencv mode", action='store_true')
 parser.add_argument("--data_path", help="path for data")
 parser.add_argument("--save",help="save data", action='store_true')
 parser.add_argument("--doplot",help="plot data", action='store_true')
+parser.add_argument("--calc_disparity",help="calc disparity", action='store_true')
 args = parser.parse_args()
+
+import config
 
 ###############params configs
 
@@ -368,6 +371,27 @@ def ploter():
  
 
 
+track_params = {}
+stereo_corr_params = {'ws':(100,100),'sxl':0,'sxr':500}
+
+def run_Trackers():
+    tc = None
+    imgl,imgr,cmd = yield
+    tc=track_correlator(imgl[:,:,1],20,20,50,50)
+    tc.__next__()
+    sp = stereo_corr_params
+    while True:
+        res={}
+        cret = line_correlator(imgl[:,:,1],imgr[:,:,1],sp['ws'][0],sp['ws'][1],sp['sxl'],sp['sxr'])
+        ox,oy = tc.send(imgl[:,:,1])
+        res['offx']=ox
+        res['offy']=oy
+        res['snr_corr']=cret[1]
+        res['disp']=cret[0]
+        res['range']=disp2range(cret[0])
+
+        imgl,imgr,cmd = yield res 
+
 def listener():
     global debug
     fmt_cnt_l=-1
@@ -376,7 +400,7 @@ def listener():
         plot=ploter()
         plot.__next__()
     keep_running=True
-    tc=None
+    track=None
     while keep_running:
         if load:
             frame_ready=True
@@ -404,15 +428,20 @@ def listener():
                 if save:
                     cv2.imwrite(save+'/{}{:08d}.png'.format('l' if topic==topicl else 'r',info[3]),img)
 
-            if tc is None:
-                tc=track_correlator(imgl[:,:,1],20,20,10,10)
-                tc.__next__()
+            if track is None:
+                track = run_Trackers()
+                track.__next__()
+                #ox,oy=0,0
             else:
-                ox,oy=tc.send(imgl[:,:,1])
-                print('TC {:02d}, {:02d}'.format(ox,oy))
+                tic=time.time()
+                ret=track.send((imgl,imgr,None))
+                toc=time.time()
+                print('SNR{:5.2f} RG{:5.2f} OF {:03d},{:03d},     ftime {:3.3f}ms'.\
+                            format(ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000))
+
+                #print('TC {:02d}, {:02d}'.format(ox,oy))
  
 
-            if args.cvshow:
                 #if 'depth' in topic:
                 #    cv2.imshow(topic,img)
                 #else:
@@ -421,44 +450,48 @@ def listener():
 
                 centx=None
                 centy=None
-                wx=100
-                wy=100
-                sxl,sxr=20,500
-                syu,syd=1,1
+                wx,wy=stereo_corr_params['ws']
+                #sxl,sxr=20,500
+                #syu,syd=1,1
 
-                if fmt_cnt_r == fmt_cnt_l:
+            if fmt_cnt_r == fmt_cnt_l:
+                if args.calc_disparity:
                     disparity = stereo.compute(preisterproc(imgl),preisterproc(imgr))
                     disparityu8 = np.clip(disparity,0,255).astype('uint8')
 
                     centx=disparityu8.shape[1]//2
                     centy=disparityu8.shape[0]//2
-                    #print('--->',disparity.max(),disparity.min(),type(disparity),imgr.shape)
-                    #disparityu8[centy-wy//2:centy+wy//2,centx-wx//2:centx+wx//2]=255
-                    cv2.imshow('disparity',disparityu8)
-                    avg_disp,min_d,max_d,cnt_d=avg_disp_win(disparity,centx,centy,wx,wy,tresh=10)
-                    cret = line_correlator(imgl[:,:,1],imgr[:,:,1],wx,wy,sxl,sxr)
-                    print('C {:6.1f},SC {:3.1f} R2 {:5.2f}'.\
-                            format(cret[0],cret[1],disp2range(cret[0])))
-                    #    cret = correlator(imgl[:,:,1],imgr[:,:,1],wx,wy,sxl,sxr,syu,syd)
-                    #    print('D {:6.2f}, {:6.2f} ,{:6.2f} ,{:05d} R {:6.2f} C {:6.1f},{:6.1f} ,SC {:3.1f} R2 {:5.2f}'.\
-                    #            format(avg_disp,min_d,max_d,cnt_d,disp2range(avg_disp),cret[0],cret[1],cret[2],disp2range(cret[0])))
-                    if doplot:
-                        plot.send({'tstemp':time.time()-start,'disp':avg_disp,'corrx':cret[0],'snr_corr':cret[2]})
-                    cv2.rectangle(disparityu8, (centx-wx//2,centy-wy//2) , (centx+wx//2,centy+wy//2) , 255)
-                centx_full = img.shape[1]//2
-                centy_full = img.shape[0]//2
-                img_toshow=img.copy()
-                cv2.rectangle(img_toshow, (centx_full-wx//2,centy_full-wy//2) , (centx_full+wx//2,centy_full+wy//2) , (0,0,255))
-                cv2.imshow(topic.decode(),img_toshow)
+                #print('--->',disparity.max(),disparity.min(),type(disparity),imgr.shape)
+                #disparityu8[centy-wy//2:centy+wy//2,centx-wx//2:centx+wx//2]=255
+                #avg_disp,min_d,max_d,cnt_d=avg_disp_win(disparity,centx,centy,wx,wy,tresh=10)
 
-                    #import pdb;pdb.set_trace()
-                k=cv2.waitKey(0 if load else 1)
-                if k==ord('q'):
-                    keep_running = False
-                    plot.send('stop')
-                    break
-                if k==ord('d'):
-                    debug=True
+
+
+                #    cret = correlator(imgl[:,:,1],imgr[:,:,1],wx,wy,sxl,sxr,syu,syd)
+                #    print('D {:6.2f}, {:6.2f} ,{:6.2f} ,{:05d} R {:6.2f} C {:6.1f},{:6.1f} ,SC {:3.1f} R2 {:5.2f}'.\
+                #            format(avg_disp,min_d,max_d,cnt_d,disp2range(avg_disp),cret[0],cret[1],cret[2],disp2range(cret[0])))
+                if doplot:
+                    plot.send({'tstemp':time.time()-start,'disp':avg_disp,'corrx':cret[0],'snr_corr':cret[2]})
+                if args.cvshow:
+                    if args.calc_disparity:
+                        cv2.imshow('disparity',disparityu8)
+                        cv2.rectangle(disparityu8, (centx-wx//2,centy-wy//2) , (centx+wx//2,centy+wy//2) , 255)
+                    centx_full = img.shape[1]//2
+                    centy_full = img.shape[0]//2
+                    #img_toshow=img.copy()
+                    cv2.rectangle(imgr, (centx_full-wx//2,centy_full-wy//2) , (centx_full+wx//2,centy_full+wy//2) , (0,0,255))
+                    cv2.imshow('imgr',imgr)
+                    cv2.rectangle(imgl, (centx_full-wx//2,centy_full-wy//2) , (centx_full+wx//2,centy_full+wy//2) , (0,0,255))
+                    cv2.imshow('imgl',imgl)
+
+                        #import pdb;pdb.set_trace()
+                    k=cv2.waitKey(0 if load else 1)
+                    if k==ord('q'):
+                        keep_running = False
+                        plot.send('stop')
+                        break
+                    if k==ord('d'):
+                        debug=True
 
             ### test
         time.sleep(0.010)

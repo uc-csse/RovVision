@@ -84,9 +84,10 @@ stereo = cv2.StereoSGBM_create(numDisparities=64*2, blockSize=9)
 
 #camera info estimate
 fov=60.97
-pixelwidth = 640 #after shrink
+pixelwidthx = 640 #after shrink
+pixelwidthy = 512 #after shrink
 baseline = 0.14 # (240-100)*.1scale in cm from unreal engine
-focal_length=pixelwidth/( np.tan(np.deg2rad(fov/2)) *2 )
+focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 #disparity=x-x'=baseline*focal_length/Z
 #=>> Z = baseline*focal_length/disparity 
 
@@ -380,6 +381,8 @@ def run_Trackers():
     tc=track_correlator(imgl[:,:,1],20,20,50,50)
     tc.__next__()
     sp = stereo_corr_params
+    range_win=[]
+
     while True:
         res={}
         cret = line_correlator(imgl[:,:,1],imgr[:,:,1],sp['ws'][0],sp['ws'][1],sp['sxl'],sp['sxr'])
@@ -389,6 +392,15 @@ def run_Trackers():
         res['snr_corr']=cret[1]
         res['disp']=cret[0]
         res['range']=disp2range(cret[0])
+        range_win.append(res['range'])
+        if len(range_win) > 10:
+            range_win=range_win[1:]
+        if np.std(range_win)<0.10: #<5cm means reliable range
+            res['range_avg']=np.mean(range_win)
+            dx = res['range_avg'] * ox/focal_length
+            dy = res['range_avg'] * oy/focal_length
+            res['dx']=dx
+            res['dy']=dy
 
         imgl,imgr,cmd = yield res 
 
@@ -436,8 +448,11 @@ def listener():
                 tic=time.time()
                 ret=track.send((imgl,imgr,None))
                 toc=time.time()
-                print('SNR{:5.2f} RG{:5.2f} OF {:03d},{:03d},     ftime {:3.3f}ms'.\
-                            format(ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000))
+                pline = 'SNR{:5.2f} RG{:5.2f} OF {:03d},{:03d},     ftime {:3.3f}ms'.\
+                        format(ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000)
+                if 'dx' in ret:
+                    pline+=' DX{:5.3f} DY{:5.3f}'.format(ret['dx'],ret['dy'])
+                print(pline)
 
                 #print('TC {:02d}, {:02d}'.format(ox,oy))
  

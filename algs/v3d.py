@@ -7,6 +7,7 @@ import cv2,os
 import numpy as np
 import scipy
 import scipy.signal
+import pickle
 
 parser = argparse.ArgumentParser()
 #parser.add_argument("-f","--dump_file_prefix", help="dump_file prefix name will create two file one for video and one for data")
@@ -50,9 +51,10 @@ else:
 
 ##############################
 
+context = zmq.Context()
 
 if not load:
-    context = zmq.Context()
+    print('subscribing')
     zmq_sub = context.socket(zmq.SUB)
     addr="tcp://%s:%d" % (config.zmq_pub_unreal_proxy)
     zmq_sub.connect(addr)
@@ -62,6 +64,14 @@ if not load:
     #zmq_sub.setsockopt(zmq.SUBSCRIBE,topicm)
     zmq_sub.setsockopt(zmq.SUBSCRIBE,topicl)
     zmq_sub.setsockopt(zmq.SUBSCRIBE,topicr)
+
+    zmq_sub_joy = context.socket(zmq.SUB)
+    zmq_sub_joy.connect("tcp://127.0.0.1:%d" % config.zmq_pub_joy)
+    zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_button)
+
+
+socket_pub = context.socket(zmq.PUB)
+socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis )
 
 if load:
     def imggetter():
@@ -414,18 +424,31 @@ def listener():
     keep_running=True
     track=None
     while keep_running:
+
+        if zmq_sub_joy.poll(0):
+        #if len(zmq.select([zmq_sub_joy],[],[],0.001)[0])>0 :
+            ret  = zmq_sub_joy.recv_multipart()
+            if ret[0]==config.topic_button:
+                data=pickle.loads(ret[1])
+                if data[5]==1:
+                    print('init tracker')
+                    track = run_Trackers()
+                    track.__next__()
+
         if load:
             frame_ready=True
+            time.sleep(0.01)
         else:
             frame_ready= len(zmq.select([zmq_sub],[],[],0.001)[0])>0
-        while frame_ready:
+        if frame_ready:
             if load:
                 fmt_cnt_l,imgl,imgr=imgget.__next__()
                 fmt_cnt_r=fmt_cnt_l
                 img=imgl
                 topic = b'load'
             else:
-                topic, info, data = zmq_sub.recv_multipart()
+                ret  = zmq_sub.recv_multipart()
+                topic, info, data = ret
                 #topic=topic.decode()
                 info=struct.unpack('llll',info)
                 shape=info[:3]
@@ -436,7 +459,7 @@ def listener():
                 if topic==topicr:
                     fmt_cnt_r=info[3] 
                     imgr=img
-
+                    
                 if save:
                     cv2.imwrite(save+'/{}{:08d}.png'.format('l' if topic==topicl else 'r',info[3]),img)
 
@@ -448,6 +471,9 @@ def listener():
                 tic=time.time()
                 ret=track.send((imgl,imgr,None))
                 toc=time.time()
+                ret['ts']=toc 
+                socket_pub.send_multipart([config.topic_comp_vis,pickle.dumps(ret,-1)])
+                
                 pline = 'SNR{:5.2f} RG{:5.2f} OF {:03d},{:03d},     ftime {:3.3f}ms'.\
                         format(ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000)
                 if 'dx' in ret:
@@ -509,7 +535,6 @@ def listener():
                         debug=True
 
             ### test
-        time.sleep(0.010)
 
 
        

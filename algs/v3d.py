@@ -405,7 +405,7 @@ def run_Trackers():
         range_win.append(res['range'])
         if len(range_win) > 10:
             range_win=range_win[1:]
-        if np.std(range_win)<0.10: #<5cm means reliable range
+        if np.std(range_win)/np.mean(range_win)<0.10: #<5cm means reliable range
             res['range_avg']=np.mean(range_win)
             dx = res['range_avg'] * ox/focal_length
             dy = res['range_avg'] * oy/focal_length

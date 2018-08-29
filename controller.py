@@ -13,16 +13,23 @@ mav1 = None
 event = None
 __pos = None
 
+#chan 3 up/down (right fwd/bck)
+#chan 4 yaw (right right/left)
+#chan 5 fwd/back  (left fwd,back)
+#chan 6 lef/right (left left,right)
+
+
+
 def get_pos():
     return __pos
 
-def set_rcs(rc1, rc2, rc3, rc4):
+def set_rcs(ud, yaw, fb, lr):
     global mav1
     values = [ 1500 ] * 8
-    values[0] = rc1
-    values[1] = rc2
-    values[2] = rc3
-    values[3] = rc4
+    values[2] = ud
+    values[3] = yaw
+    values[4] = fb
+    values[5] = lr
     mav1.mav.rc_channels_override_send(mav1.target_system, mav1.target_component, *values)
 
 
@@ -58,7 +65,7 @@ async def run():
     while True:
         mav1.recv_msg()
         __pos=get_position_struct(mav1)
-        if event.trigger():
+        if event is not None and event.trigger():
             #print(mav1.messages['VFR_HUD'].alt)
             #print(mav1.messages.keys())
             #print(mav1.messages['HOME'])

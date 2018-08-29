@@ -19,11 +19,11 @@ parser.add_argument("--cvshow",help="show opencv mode", action='store_true')
 parser.add_argument("--data_path", help="path for data")
 parser.add_argument("--save",help="save data", action='store_true')
 parser.add_argument("--doplot",help="plot data", action='store_true')
+parser.add_argument("--gst",help="stream with gst", action='store_true')
 parser.add_argument("--calc_disparity",help="calc disparity", action='store_true')
 args = parser.parse_args()
 
 import config
-
 ###############params configs
 
 from subprocess import Popen,PIPE
@@ -49,7 +49,29 @@ else:
     load=0
     import config
 
-##############################
+############# gst ########
+#to watch
+#gst-launch-1.0 -e -v udpsrc port=5700 ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! autovideosink
+#gst-launch-1.0 -e -v udpsrc port=5701 ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! autovideosink
+gst_pipes=None
+def init_gst(sx,sy,npipes):
+    global gst_pipes
+    cmd="gst-launch-1.0 {}! x264enc tune=zerolatency  bitrate=2500 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
+    gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
+
+    gst_pipes=[]
+    for i in range(npipes):
+        gcmd = cmd.format(gstsrc,5700+i)
+        p = Popen(gcmd, shell=True, bufsize=1024*10,stdin=PIPE, stdout=sys.stdout, close_fds=False)
+        gst_pipes.append(p)
+
+def send_gst(imgs):
+    global gst_pipes
+    for i,im in enumerate(imgs):
+        gst_pipes[i].stdin.write(im.tostring())
+    
+#############################
+
 
 context = zmq.Context()
 
@@ -360,7 +382,7 @@ def run_Trackers():
 
 
 def listener():
-    global debug
+    global debug,gst_pipes
     fmt_cnt_l=-1
     fmt_cnt_r=-2
     if doplot:
@@ -404,7 +426,6 @@ def listener():
                 if topic==topicr:
                     fmt_cnt_r=info[3] 
                     imgr=img
-                    
                 if save:
                     cv2.imwrite(save+'/{}{:08d}.png'.format('l' if topic==topicl else 'r',info[3]),img)
 
@@ -440,6 +461,11 @@ def listener():
             wx,wy=stereo_corr_params['ws']
 
             if fmt_cnt_r == fmt_cnt_l:
+                if args.gst:
+                    if gst_pipes is None:
+                        init_gst(img.shape[1],img.shape[0],2)
+                    send_gst([imgl,imgr])
+
                 if args.calc_disparity:
                     disparity = stereo.compute(preisterproc(imgl),preisterproc(imgr))
                     disparityu8 = np.clip(disparity,0,255).astype('uint8')

@@ -3,3 +3,4 @@ __pycache__
 ground_control/QGroundControl.AppImage
 out.txt
 *.log
+.nfs*

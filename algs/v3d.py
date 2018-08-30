@@ -408,7 +408,7 @@ def listener():
     track=None
     while keep_running:
 
-        if zmq_sub_joy.poll(0):
+        if not load and zmq_sub_joy.poll(0):
         #if len(zmq.select([zmq_sub_joy],[],[],0.001)[0])>0 :
             ret  = zmq_sub_joy.recv_multipart()
             if ret[0]==config.topic_button:

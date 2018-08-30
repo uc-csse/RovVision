@@ -4,6 +4,7 @@ import controller
 import zmq
 import asyncio
 import pickle
+import time
 from algs import pid
 
 topic_postition=config.topic_sitl_position_report
@@ -17,6 +18,9 @@ zmq_sub_v3d = context.socket(zmq.SUB)
 zmq_sub_v3d.connect("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis)
 zmq_sub_v3d.setsockopt(zmq.SUBSCRIBE,config.topic_comp_vis)
 
+
+socket_pub = context.socket(zmq.PUB)
+socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_main )
 
 
 
@@ -49,11 +53,12 @@ async def get_zmq_events():
                 #print('-------------topic',track_info)
         await asyncio.sleep(0) 
 
+start = time.time()
 async def control():
     global lock_state,track_info
 
     ### y
-    ud_params=(0.2,0.001,0.2,0.2)
+    ud_params=(0.2,0.002,0.2,0.3)
     ud_pid=pid.PID(*ud_params)
     
     ### x
@@ -65,6 +70,9 @@ async def control():
     fb_pid=pid.PID(*fb_params)
 
     ud_cmd,lr_cmd,fb_cmd = 1500,1500,1500
+
+
+    telem={}
     while 1:
         if track_info is not None and lock_state:
             if 'dy' in track_info: 
@@ -90,9 +98,12 @@ async def control():
             else:
                 fb_pid=pid.PID(*fb_params)
             print('-----------',ud_cmd,lr_cmd,fb_cmd,lock_range)
-
+            telem.update({'ud_cmd':ud_cmd,'lr_cmd':lr_cmd,'fb_cmd':fb_cmd,'lock_range':lock_range})
             track_info = None
             controller.set_rcs(ud_cmd,1500,fb_cmd,lr_cmd)
+        
+        telem.update({'ts':time.time()-start, 'lock':lock_state}) 
+        socket_pub.send_multipart([config.topic_main_telem,pickle.dumps(telem,-1)]) 
 
         await asyncio.sleep(0.1)#~10hz control 
 

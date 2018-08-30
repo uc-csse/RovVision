@@ -56,7 +56,12 @@ else:
 gst_pipes=None
 def init_gst(sx,sy,npipes):
     global gst_pipes
-    cmd="gst-launch-1.0 {}! x264enc tune=zerolatency  bitrate=2500 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
+    #cmd="gst-launch-1.0 {}! x264enc tune=zerolatency  bitrate=500 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
+    if 0: #h264 stream
+        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
+        gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
+    
+    cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=30 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
     gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
 
     gst_pipes=[]
@@ -68,6 +73,7 @@ def init_gst(sx,sy,npipes):
 def send_gst(imgs):
     global gst_pipes
     for i,im in enumerate(imgs):
+        time.sleep(0.001)
         gst_pipes[i].stdin.write(im.tostring())
     
 #############################
@@ -94,6 +100,10 @@ if not load:
 
 socket_pub = context.socket(zmq.PUB)
 socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis )
+
+#socket_pub_imgs = context.socket(zmq.PUB)
+#socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis_imgs )
+
 
 if load:
     def imggetter():
@@ -354,6 +364,8 @@ def run_Trackers():
 
     while True:
         res={}
+        res['img_shp']=imgl.shape
+        res['line_corr_parr']=stereo_corr_params
         cret = line_correlator(imgl[:,:,1],imgr[:,:,1],sp['ws'][0],sp['ws'][1],sp['sxl'],sp['sxr'])
         ox,oy = tc.send(imgl[:,:,1])
         res['offx']=ox
@@ -429,38 +441,48 @@ def listener():
                 if save:
                     cv2.imwrite(save+'/{}{:08d}.png'.format('l' if topic==topicl else 'r',info[3]),img)
 
-            if track is None:
-                track = run_Trackers()
-                track.__next__()
-                #ox,oy=0,0
-            else:
-                tic=time.time()
-                ret=track.send((imgl,imgr,None))
-                toc=time.time()
-                ret['ts']=toc 
-                socket_pub.send_multipart([config.topic_comp_vis,pickle.dumps(ret,-1)])
-                
-                pline = 'SNR{:5.2f} RG{:5.2f} OF {:03d},{:03d},     ftime {:3.3f}ms'.\
-                        format(ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000)
-                if 'dx' in ret:
-                    pline+=' DX{:5.3f} DY{:5.3f}'.format(ret['dx'],ret['dy'])
-                print(pline)
-
-                #print('TC {:02d}, {:02d}'.format(ox,oy))
- 
-
-                #if 'depth' in topic:
-                #    cv2.imshow(topic,img)
-                #else:
-                #cv2.imshow(topic,cv2.resize(cv2.resize(img,(1920/2,1080/2)),(512,512)))
-                img_shrk = img[::2,::2]
-
-                centx=None
-                centy=None
-
             wx,wy=stereo_corr_params['ws']
-
             if fmt_cnt_r == fmt_cnt_l:
+                cx = img.shape[1]//2
+                cy = img.shape[0]//2
+                draw_rectsr=[((cx-wx//2,cy-wy//2) , (cx+wx//2,cy+wy//2) , (0,255,255))]
+                draw_rectsl=[((cx-wx//2,cy-wy//2) , (cx+wx//2,cy+wy//2) , (0,0,255))]
+
+                if track is None:
+                    track = run_Trackers()
+                    track.__next__()
+                    #ox,oy=0,0
+                else:
+                    tic=time.time()
+                    ret=track.send((imgl,imgr,None))
+                    toc=time.time()
+                    ret['ts']=toc 
+                    ret['draw_rectsl']=draw_rectsl
+                    ret['draw_rectsr']=draw_rectsr
+                    
+                    ox=int(ret['disp'])                    
+                    draw_rectsr.append(((cx-wx//2+ox,cy-wy//2) , (cx+wx//2+ox,cy+wy//2) , (0,0,255)))
+                    ox,oy=ret['offx'],ret['offy']
+                    draw_rectsl.append(((cx-wx//2+ox,cy-wy//2+oy) , (cx+wx//2+ox,cy+wy//2+oy) , (255,0,255)))
+
+                    socket_pub.send_multipart([config.topic_comp_vis,pickle.dumps(ret,-1)])
+                    pline = 'SNR{:5.2f} RG{:5.2f} OF {:03d},{:03d},     ftime {:3.3f}ms'.\
+                            format(ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000)
+                    if 'dx' in ret:
+                        pline+=' DX{:5.3f} DY{:5.3f}'.format(ret['dx'],ret['dy'])
+                    print(pline)
+
+                    #print('TC {:02d}, {:02d}'.format(ox,oy))
+     
+
+                    #if 'depth' in topic:
+                    #    cv2.imshow(topic,img)
+                    #else:
+                    #cv2.imshow(topic,cv2.resize(cv2.resize(img,(1920/2,1080/2)),(512,512)))
+                    #img_shrk = img[::2,::2]
+
+
+
                 if args.gst:
                     if gst_pipes is None:
                         init_gst(img.shape[1],img.shape[0],2)
@@ -487,14 +509,14 @@ def listener():
                     if args.calc_disparity:
                         cv2.imshow('disparity',disparityu8)
                         cv2.rectangle(disparityu8, (centx-wx//2,centy-wy//2) , (centx+wx//2,centy+wy//2) , 255)
-                    centx_full = img.shape[1]//2
-                    centy_full = img.shape[0]//2
                     #img_toshow=img.copy()
                     show_imager=imgr.copy()
                     show_imagel=imgl.copy()
-                    cv2.rectangle(show_imager, (centx_full-wx//2,centy_full-wy//2) , (centx_full+wx//2,centy_full+wy//2) , (0,0,255))
+                    for rectp in draw_rectsr:
+                        cv2.rectangle(show_imager,*rectp)
                     cv2.imshow('imgr',show_imager)
-                    cv2.rectangle(show_imagel, (centx_full-wx//2,centy_full-wy//2) , (centx_full+wx//2,centy_full+wy//2) , (0,0,255))
+                    for rectp in draw_rectsl:
+                        cv2.rectangle(show_imagel,*rectp)
                     cv2.imshow('imgl',show_imagel)
 
                         #import pdb;pdb.set_trace()

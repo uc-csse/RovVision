@@ -11,6 +11,7 @@ topic_unreal_drone_rgb_camera=b'rgb_camera_%d'
 
 zmq_pub_comp_vis = 8877 #only port
 topic_comp_vis = b'comp_vis'
+zmq_pub_comp_vis_imgs = 8878
 
 n_drones = 1
 
@@ -19,4 +20,6 @@ zmq_pub_joy=9117
 topic_button = b'topic_button'
 topic_axes = b'topic_axes'
 
+zmq_pub_main=9921
+topic_main_telem=b'topic_main_telem'
 

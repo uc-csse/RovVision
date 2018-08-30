@@ -36,7 +36,7 @@ if doplot:
 
 save=0
 if args.save:
-    if os.isdir(args.data_path) and not args.overide:
+    if os.path.isdir(args.data_path) and not args.overide:
         print('Error data path exist use -o to override')
         sys.exit(-1)
     ret=os.mkdir(args.data_path)
@@ -104,13 +104,16 @@ socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis )
 #socket_pub_imgs = context.socket(zmq.PUB)
 #socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis_imgs )
 
+image_fmt='jpg'
 
 if load:
     def imggetter():
         import glob,re
-        lefts=glob.glob(load+'/l*.png')
+        #image_fmt='webp'
+        #lefts=glob.glob(load+'/l*.png')
+        lefts=glob.glob(load+'/l*.'+image_fmt)
         lefts.sort()
-        rights=glob.glob(load+'/r*.png')
+        rights=glob.glob(load+'/r*.'+image_fmt)
         rights.sort()
         for l,r in zip(lefts,rights):
             fnum = int(re.findall('0[0-9]+',l)[0])
@@ -395,6 +398,7 @@ def run_Trackers():
 
 def listener():
     global debug,gst_pipes
+    record_state=False
     fmt_cnt_l=-1
     fmt_cnt_r=-2
     if doplot:
@@ -413,6 +417,9 @@ def listener():
                     print('init tracker')
                     track = run_Trackers()
                     track.__next__()
+                if data[8]==1 and save:
+                    record_state = not record_state
+                    print('recording ',record_state)
 
         if load:
             frame_ready=True
@@ -438,8 +445,8 @@ def listener():
                 if topic==topicr:
                     fmt_cnt_r=info[3] 
                     imgr=img
-                if save:
-                    cv2.imwrite(save+'/{}{:08d}.png'.format('l' if topic==topicl else 'r',info[3]),img)
+                if save and record_state:
+                    cv2.imwrite(save+'/{}{:08d}.{}'.format('l' if topic==topicl else 'r',info[3],image_fmt),img)
 
             wx,wy=stereo_corr_params['ws']
             if fmt_cnt_r == fmt_cnt_l:
@@ -459,7 +466,8 @@ def listener():
                     ret['ts']=toc 
                     ret['draw_rectsl']=draw_rectsl
                     ret['draw_rectsr']=draw_rectsr
-                    
+                    ret['record_state']=record_state
+
                     ox=int(ret['disp'])                    
                     draw_rectsr.append(((cx-wx//2+ox,cy-wy//2) , (cx+wx//2+ox,cy+wy//2) , (0,0,255)))
                     ox,oy=ret['offx'],ret['offy']

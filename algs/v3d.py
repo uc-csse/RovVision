@@ -136,10 +136,11 @@ focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 #disparity=x-x'=baseline*focal_length/Z
 #=>> Z = baseline*focal_length/disparity 
 track_params = (30,30,20,20) 
-stereo_corr_params = {'ws':(100,100),'sxl':0,'sxr':500}
+stereo_corr_params = {'ws':(100,100),'sxl':500,'sxr':0}
 
+#disparity from left image to right image
 def disp2range(x):
-    return baseline*focal_length/x
+    return -baseline*focal_length/x
 
 def avg_disp_win(disp,centx,centy,wx,wy,tresh,min_dis=50):
     win=disp[centy-wy//2:centy+wy//2,centx-wx//2:centx+wx//2]

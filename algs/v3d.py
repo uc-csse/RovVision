@@ -136,7 +136,7 @@ focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 #disparity=x-x'=baseline*focal_length/Z
 #=>> Z = baseline*focal_length/disparity 
 track_params = (30,30,20,20) 
-stereo_corr_params = {'ws':(100,100),'sxl':500,'sxr':0}
+stereo_corr_params = {'ws':(100,100),'sxl':250,'sxr':0}
 
 #disparity from left image to right image
 def disp2range(x):
@@ -204,7 +204,7 @@ def line_correlator(img1,img2,wx,wy,sxl,sxr):
 
     #patern=np.log(patern)
     #search=img2[cy-sy//2:cy+sy//2,cx-sx//2:cx+sx//2].copy()
-    l2,r2=cx-wx//2-sxl//2,cx+wx//2+sxr//2
+    l2,r2=cx-wx//2-sxl,cx+wx//2+sxr
     u2,d2=cy-wy//2,cy+wy//2
     search=img2[u2:d2,l2:r2]
     corr_search=preprep_corr(search)
@@ -223,14 +223,14 @@ def line_correlator(img1,img2,wx,wy,sxl,sxr):
     patern_zoom=corr_pat[uz:dz,lz1:rz1]
     patern_zoom=scipy.ndimage.zoom(patern_zoom, z, order=3)
 
-    nx=x
+    nx=x-sxl
     if x>sz:
         lz2,rz2=x+wx//2-(wx//2)//z-sz,x+wx//2+(wx//2)//z+sz
         search_zoom=corr_search[uz:dz,lz2:rz2]
         search_zoom=scipy.ndimage.zoom(search_zoom, z, order=3)
         corrz=scipy.signal.correlate2d(search_zoom, patern_zoom, mode='valid', boundary='fill', fillvalue=0)
         zy, zx = np.unravel_index(np.argmax(corrz), corrz.shape)         
-        nx=x-sz+zx/z
+        nx=x-sxl-sz+zx/z
 
     ##########################
     

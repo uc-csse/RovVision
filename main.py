@@ -58,7 +58,7 @@ async def control():
     global lock_state,track_info
 
     ### y
-    ud_params=(0.2,0.002,0.2,0.3)
+    ud_params=(0.5,0.005,0.5,0.3)
     ud_pid=pid.PID(*ud_params)
     
     ### x
@@ -77,7 +77,7 @@ async def control():
         if track_info is not None and lock_state:
             if 'dy' in track_info: 
                 ud_cmd = ud_pid(track_info['dy'],0)
-                ud_cmd=int(ud_cmd*1000+1500)
+                ud_cmd=int(ud_cmd*2000+1500)
             else:
                 ud_pid=pid.PID(*ud_params)
                 #ud_cmd=1500

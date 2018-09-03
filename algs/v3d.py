@@ -440,6 +440,7 @@ def listener():
                 info=struct.unpack('llll',info)
                 shape=info[:3]
                 img=np.fromstring(data,'uint8').reshape(shape)
+                #print('got ',topic, info[3])
                 if topic==topicl:
                     fmt_cnt_l=info[3]
                     imgl=img
@@ -449,8 +450,16 @@ def listener():
                 if save and record_state:
                     cv2.imwrite(save+'/{}{:08d}.{}'.format('l' if topic==topicl else 'r',info[3],image_fmt),img)
 
+
+
             wx,wy=stereo_corr_params['ws']
             if fmt_cnt_r == fmt_cnt_l:
+                #### shrink images if needed  
+                if img.shape[1] > 640:
+                    img=imgl=imgl[::2,::2,:]
+                    imgr=imgr[::2,::2,:]
+                
+ 
                 cx = img.shape[1]//2
                 cy = img.shape[0]//2
                 draw_rectsr=[((cx-wx//2,cy-wy//2) , (cx+wx//2,cy+wy//2) , (0,255,255))]

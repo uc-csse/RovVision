@@ -10,7 +10,7 @@ import PySpin
 from time import sleep
 import numpy as np
 import cv2,struct
-
+import queue
 import config
 parser = argparse.ArgumentParser()
 parser.add_argument("--cvshow",help="show opencv mode", action='store_true')
@@ -66,6 +66,7 @@ class ImageEventHandler(PySpin.ImageEvent):
         # Initialize image counter to 0
         self._image_count = 0
         self.theimage = (-1,None)
+        self.q = queue.Queue()
         # Release reference to camera
         # NOTE: Unlike the C++ examples, we cannot rely on pointer objects being automatically
         # cleaned up when going out of scope.
@@ -105,7 +106,8 @@ class ImageEventHandler(PySpin.ImageEvent):
                 image_converted = image.Convert(PySpin.PixelFormat_RGB8, PySpin.HQ_LINEAR)
                     #import ipdb;ipdb.set_trace() 
                 self.theimage=(self._image_count,image_converted.GetData().reshape((height,width,3)))
-                
+                if not args.cvshow:
+                    self.q.put(self.theimage) 
                 self._image_count += 1
 
 
@@ -375,6 +377,8 @@ def run_single_camera(cams):
         if hdl_l._device_serial_number > hdl_r._device_serial_number:
             hdl_l,hdl_r=hdl_r,hdl_l 
         
+        ql,qr = hdl_l.q,hdl_r.q
+        
         while 1:
         #for i in range(1000*100): #10 sec
                 if args.cvshow:
@@ -391,16 +395,15 @@ def run_single_camera(cams):
                     if k!=-1:
                         print('k',k)
                 else:
-                    tim_l,tim_r = hdl_l.theimage,hdl_r.theimage  
                     #print(tim_l[0],cnt)
-                    if tim_l[0]==tim_r[0] and tim_l[0]>cnt:
+                    if ql.qsize()>0 and qr.qsize()>0:
                         #need to send same framenumber and not send yet
-                        for tim in [tim_l,tim_r]:
-                            frame_cnt,img = tim
-                            topic = config.topic_unreal_drone_rgb_camera%0+b'l' if tim is tim_l else b'r'
+                        for q in [ql,qr]:
+                            frame_cnt,img = q.get()
+                            topic = config.topic_unreal_drone_rgb_camera%0+(b'l' if q is ql else b'r')
                             print('sending --- ',frame_cnt)
                             socket_pub.send_multipart([topic,struct.pack('llll',*img.shape,frame_cnt),img.tostring()]) 
-                        cnt=tim_l[0]
+                        cnt=frame_cnt
                     else:
                         #print('---',tim_l[0],tim_r[0],cnt)
                         sleep(0.001)

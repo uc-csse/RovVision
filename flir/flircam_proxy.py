@@ -395,14 +395,14 @@ def run_single_camera(cams):
                     #print(tim_l[0],cnt)
                     if tim_l[0]==tim_r[0] and tim_l[0]>cnt:
                         #need to send same framenumber and not send yet
-                        for tim in [tim_l,tim_l]:
+                        for tim in [tim_l,tim_r]:
                             frame_cnt,img = tim
                             topic = config.topic_unreal_drone_rgb_camera%0+b'l' if tim is tim_l else b'r'
                             print('sending --- ',frame_cnt)
                             socket_pub.send_multipart([topic,struct.pack('llll',*img.shape,frame_cnt),img.tostring()]) 
                         cnt=tim_l[0]
                     else:
-                        print('---',tim_l[0],tim_r[0],cnt)
+                        #print('---',tim_l[0],tim_r[0],cnt)
                         sleep(0.001)
         for cam in cams:
             cam.EndAcquisition()

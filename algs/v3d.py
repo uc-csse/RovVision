@@ -58,19 +58,20 @@ def init_gst(sx,sy,npipes):
     global gst_pipes
     #cmd="gst-launch-1.0 {}! x264enc tune=zerolatency  bitrate=500 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
     if 0: #h264 stream
-        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
+        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=300 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
         gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
     
-    #cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=1000 key-int-max=30 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
-    #gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
     if 1:
+        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=15 ! rtph264pay ! udpsink host=192.168.2.1 port={}"
+        gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
+    if 0:
         gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
        
-        cmd="gst-launch-1.0 {} ! jpegenc ! rtpjpegpay ! udpsink host=127.0.0.1 port={}"
+        cmd="gst-launch-1.0 {} ! jpegenc quality=20 ! rtpjpegpay ! udpsink host=192.168.2.1 port={}"
 
     gst_pipes=[]
     for i in range(npipes):
-        gcmd = cmd.format(gstsrc,5700+i)
+        gcmd = cmd.format(gstsrc,5760+i)
         p = Popen(gcmd, shell=True, bufsize=1024*10,stdin=PIPE, stdout=sys.stdout, close_fds=False)
         gst_pipes.append(p)
 
@@ -98,12 +99,12 @@ if not load:
     zmq_sub.setsockopt(zmq.SUBSCRIBE,topicr)
 
     zmq_sub_joy = context.socket(zmq.SUB)
-    zmq_sub_joy.connect("tcp://127.0.0.1:%d" % config.zmq_pub_joy)
+    zmq_sub_joy.connect("tcp://%s:%d" % (os.environ['GCTRL_IP'],config.zmq_pub_joy))
     zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_button)
 
 
 socket_pub = context.socket(zmq.PUB)
-socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis )
+socket_pub.bind("tcp://%s:%d" % (os.environ['STEREO_IP'],config.zmq_pub_comp_vis) )
 
 #socket_pub_imgs = context.socket(zmq.PUB)
 #socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis_imgs )
@@ -160,8 +161,8 @@ def avg_disp_win(disp,centx,centy,wx,wy,tresh,min_dis=50):
 debug=False
 
 def preprep_corr(img):
-    ret=np.log(img.astype('float')+1)
-    #ret=img.astype('float')
+    #ret=np.log(img.astype('float')+1)
+    ret=img.astype('float')
     ret-=ret.mean()
     ret/=ret.max()
     return ret
@@ -412,7 +413,6 @@ def listener():
     keep_running=True
     track=None
     while keep_running:
-
         if not load and zmq_sub_joy.poll(0):
         #if len(zmq.select([zmq_sub_joy],[],[],0.001)[0])>0 :
             ret  = zmq_sub_joy.recv_multipart()
@@ -453,7 +453,6 @@ def listener():
                     imgr=img
                 if save and record_state:
                     cv2.imwrite(save+'/{}{:08d}.{}'.format('l' if topic==topicl else 'r',info[3],image_fmt),img)
-
 
 
             wx,wy=stereo_corr_params['ws']
@@ -505,7 +504,7 @@ def listener():
 
 
 
-                if args.gst:
+                if  args.gst:
                     if gst_pipes is None:
                         init_gst(img.shape[1],img.shape[0],2)
                     send_gst([imgl,imgr])

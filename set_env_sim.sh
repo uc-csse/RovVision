@@ -1,1 +1,3 @@
 export ST_RASP_MAV=udp:127.0.0.1:14551
+export GCTRL_IP=127.0.0.1
+export STEREO_IP=127.0.0.1

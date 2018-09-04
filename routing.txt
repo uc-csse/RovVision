@@ -1,0 +1,40 @@
+Tables:
+
+laptop:
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+default         _gateway        0.0.0.0         UG    600    0        0 wlp3s0
+10.192.0.0      0.0.0.0         255.255.0.0     U     600    0        0 wlp3s0
+link-local      0.0.0.0         255.255.0.0     U     1000   0        0 wlp3s0
+192.168.2.0     0.0.0.0         255.255.255.0   U     100    0        0 enp0s25
+192.168.3.0     192.168.2.2     255.255.255.0   UG    0      0        0 enp0s25
+
+rpi:
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+link-local      *               255.255.0.0     U     202    0        0 eth0
+192.168.2.0     *               255.255.255.0   U     0      0        0 eth0
+192.168.2.1     *               255.255.255.255 UH    0      0        0 eth0
+192.168.3.0     *               255.255.255.0   U     0      0        0 wlan0
+stereo-UP-APL01 *               255.255.255.255 UH    0      0        0 wlan0
+
+
+up-board
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+default         132.181.15.254  0.0.0.0         UG    100    0        0 enp3s0
+default         192.168.3.1     0.0.0.0         UG    600    0        0 wlx00e02da71cdc
+132.181.8.0     *               255.255.248.0   U     100    0        0 enp3s0
+ucdhcp2-d.cante 132.181.15.254  255.255.255.255 UGH   100    0        0 enp3s0
+link-local      *               255.255.0.0     U     1000   0        0 enp3s0
+192.168.2.0     *               255.255.255.0   U     0      0        0 wlx00e02da71cdc
+192.168.2.1     192.168.3.1     255.255.255.255 UGH   0      0        0 wlx00e02da71cdc
+192.168.3.0     *               255.255.255.0   U     600    0        0 wlx00e02da71cdc
+
+
+onlaptop:
+sudo ip route add 192.168.3.0/24 via 192.168.2.2
+
+on up board:
+sudo ip route add 192.168.2.1 via 192.168.3.1
+
+on rpi:
+sudo ip route add 192.168.3.17 dev wlan0
+

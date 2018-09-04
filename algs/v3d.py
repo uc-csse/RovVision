@@ -61,8 +61,12 @@ def init_gst(sx,sy,npipes):
         cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
         gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
     
-    cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=30 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
-    gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
+    #cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=1000 key-int-max=30 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
+    #gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
+    if 1:
+        gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
+       
+        cmd="gst-launch-1.0 {} ! jpegenc ! rtpjpegpay ! udpsink host=127.0.0.1 port={}"
 
     gst_pipes=[]
     for i in range(npipes):
@@ -136,7 +140,7 @@ focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 #disparity=x-x'=baseline*focal_length/Z
 #=>> Z = baseline*focal_length/disparity 
 track_params = (30,30,20,20) 
-stereo_corr_params = {'ws':(100,100),'sxl':250,'sxr':0}
+stereo_corr_params = {'ws':(50,50),'sxl':200,'sxr':0}
 
 #disparity from left image to right image
 def disp2range(x):
@@ -453,7 +457,7 @@ def listener():
 
 
             wx,wy=stereo_corr_params['ws']
-            if fmt_cnt_r == fmt_cnt_l:
+            if 1 and fmt_cnt_r == fmt_cnt_l:
                 #### shrink images if needed  
                 if img.shape[1] > 640:
                     img=imgl=imgl[::2,::2,:]
@@ -484,8 +488,8 @@ def listener():
                     draw_rectsl.append(((cx-wx//2+ox,cy-wy//2+oy) , (cx+wx//2+ox,cy+wy//2+oy) , (255,0,255)))
 
                     socket_pub.send_multipart([config.topic_comp_vis,pickle.dumps(ret,-1)])
-                    pline = 'SNR{:5.2f} RG{:5.2f} OF {:03d},{:03d},     ftime {:3.3f}ms'.\
-                            format(ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000)
+                    pline = 'F{:06} SNR{:5.2f} RG{:5.2f} OF {:03d},{:03d},     ftime {:3.3f}ms'.\
+                            format(fmt_cnt_l,ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000)
                     if 'dx' in ret:
                         pline+=' DX{:5.3f} DY{:5.3f}'.format(ret['dx'],ret['dy'])
                     print(pline)

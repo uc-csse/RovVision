@@ -141,5 +141,6 @@ void loop() {
    }
    toc=micros();
    tdiff=(toc-tic)/1000;
-   if (tdiff>0 & tdiff<100) delay(100-tdiff); 
+   int ftime=50;
+   if (tdiff>0 & tdiff<ftime) delay(ftime-tdiff); 
 }

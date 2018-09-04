@@ -33,8 +33,10 @@ gst_pipes = None
 def init_gst(npipes):
     global gst_pipes
     #cmd='gst-launch-1.0 -e -v udpsrc port={} ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! videoconvert ! video/x-raw, format=RGB8P ! fdsink'
-    cmd='gst-launch-1.0 -q udpsrc port={} ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
-
+    if 0: #h264
+        cmd='gst-launch-1.0 -q udpsrc port={} ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
+    cmd='gst-launch-1.0 -q udpsrc port={} ! application/x-rtp,encoding-name=JPEG,payload=26 ! rtpjpegdepay ! jpegdec ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
+    
     gst_pipes=[]
     for i in range(npipes):
         gcmd = cmd.format(5700+i,sy,sx)
@@ -56,7 +58,7 @@ def draw_txt(img,vd,md):
         line1='{:4.1f}s R{:3.2f}m'.format(md['ts'],vd['range_avg'])
         cv2.putText(img,line1,(10,50), font, 0.5,(0,0,255),1,cv2.LINE_AA)
 
-    if md['lock']: 
+    if 'lock' in md and md['lock']: 
         line2='{:>4}bf {:4.2f}LR'.format(md['fb_cmd'],md['lock_range'])
         if 'ud_cmd' in md:
             line2+=' {:>4}ud {:>4}lr'.format(md['ud_cmd'],md['lr_cmd'])

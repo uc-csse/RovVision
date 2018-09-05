@@ -30,6 +30,10 @@ import config
 
 from subprocess import Popen,PIPE
 
+def get_disk_usage():
+    return os.popen("df -h / |tail -1 | gawk '{print $5}'").read()
+
+
 doplot=args.doplot
 if doplot:
     import matplotlib.pyplot as plt
@@ -116,7 +120,7 @@ socket_pub.bind("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_comp_vis) )
 #socket_pub_imgs = context.socket(zmq.PUB)
 #socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis_imgs )
 
-image_fmt='jpg'
+image_fmt='ppm'
 
 if load:
     def imggetter():
@@ -419,6 +423,9 @@ def listener():
         plot.__next__()
     keep_running=True
     track=None
+    
+    last_usage_test=time.time()
+    disk_usage=get_disk_usage()
     while keep_running:
         if not load and zmq_sub_joy.poll(0):
         #if len(zmq.select([zmq_sub_joy],[],[],0.001)[0])>0 :
@@ -463,7 +470,9 @@ def listener():
                     imgr=img
                 if save and record_state:
                     cv2.imwrite(save+'/{}{:08d}.{}'.format('l' if topic==topicl else 'r',info[3],image_fmt),img)
-
+                    if time.time()-last_usage_test>10.0:
+                        last_usage_test=10.0
+                        disk_usage=get_disk_usage()
 
             wx,wy=stereo_corr_params['ws']
             if 1 and fmt_cnt_r == fmt_cnt_l:
@@ -490,6 +499,7 @@ def listener():
                     ret['draw_rectsl']=draw_rectsl
                     ret['draw_rectsr']=draw_rectsr
                     ret['record_state']=record_state
+                    ret['disk_usage']=disk_usage
 
                     ox=int(ret['disp'])                    
                     draw_rectsr.append(((cx-wx//2+ox,cy-wy//2) , (cx+wx//2+ox,cy+wy//2) , (0,0,255)))

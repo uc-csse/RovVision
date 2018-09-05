@@ -4,3 +4,4 @@ ground_control/QGroundControl.AppImage
 out.txt
 *.log
 .nfs*
+data

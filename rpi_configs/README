@@ -1,0 +1,8 @@
+https://frillip.com/using-your-raspberry-pi-3-as-a-wifi-access-point-with-hostapd/
+
+
+/etc/dhcpcd.conf
+/etc/network/interfaces
+/etc/wpa_supplicant/wpa_supplicant.conf
+/etc/hostapd/hostapd.conf 
+/etc/dnsmasq.conf

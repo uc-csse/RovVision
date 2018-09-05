@@ -13,6 +13,6 @@ for i in $RP;do
 done
 
 #echo $LOCALS
-CMD="ssh -t $LOCALS $REMOTES  pi@192.168.2.2 ssh -N $LOCALS $REMOTES stereo@192.168.3.17"
+CMD="ssh -t $LOCALS $REMOTES -L 2222:localhost:2222 pi@192.168.2.2 ssh -N -L 2222:localhost:22 $LOCALS $REMOTES stereo@192.168.3.17"
 echo $CMD
 $CMD

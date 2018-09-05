@@ -23,3 +23,4 @@ topic_axes = b'topic_axes'
 zmq_pub_main=9921
 topic_main_telem=b'topic_main_telem'
 
+gst_ports=[5760,5761]

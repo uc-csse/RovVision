@@ -8,6 +8,7 @@ import numpy as np
 import scipy
 import scipy.signal
 import pickle
+import select
 
 parser = argparse.ArgumentParser()
 #parser.add_argument("-f","--dump_file_prefix", help="dump_file prefix name will create two file one for video and one for data")
@@ -62,8 +63,9 @@ def init_gst(sx,sy,npipes):
         gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
     
     if 1:
-        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=15 ! rtph264pay ! udpsink host=192.168.2.1 port={}"
-        gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
+        #cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=15 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
+        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=15 ! tcpserversink port={}"
+        gstsrc = 'fdsrc ! videoparse width={} height={} format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
     if 0:
         gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
        
@@ -71,15 +73,16 @@ def init_gst(sx,sy,npipes):
 
     gst_pipes=[]
     for i in range(npipes):
-        gcmd = cmd.format(gstsrc,5760+i)
-        p = Popen(gcmd, shell=True, bufsize=1024*10,stdin=PIPE, stdout=sys.stdout, close_fds=False)
+        gcmd = cmd.format(gstsrc,config.gst_ports[i])
+        p = Popen(gcmd, shell=True, bufsize=1024,stdin=PIPE, stdout=sys.stdout, close_fds=False)
         gst_pipes.append(p)
 
 def send_gst(imgs):
     global gst_pipes
     for i,im in enumerate(imgs):
         time.sleep(0.001)
-        gst_pipes[i].stdin.write(im.tostring())
+        if len(select.select([],[gst_pipes[i].stdin],[],0)[1])>0:
+            gst_pipes[i].stdin.write(im.tostring())
     
 #############################
 
@@ -99,12 +102,14 @@ if not load:
     zmq_sub.setsockopt(zmq.SUBSCRIBE,topicr)
 
     zmq_sub_joy = context.socket(zmq.SUB)
-    zmq_sub_joy.connect("tcp://%s:%d" % (os.environ['GCTRL_IP'],config.zmq_pub_joy))
+    #zmq_sub_joy.connect("tcp://%s:%d" % (os.environ['GCTRL_IP'],config.zmq_pub_joy))
+    zmq_sub_joy.connect("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_joy))
     zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_button)
 
 
 socket_pub = context.socket(zmq.PUB)
-socket_pub.bind("tcp://%s:%d" % (os.environ['STEREO_IP'],config.zmq_pub_comp_vis) )
+#socket_pub.bind("tcp://%s:%d" % (os.environ['STEREO_IP'],config.zmq_pub_comp_vis) )
+socket_pub.bind("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_comp_vis) )
 
 #socket_pub_imgs = context.socket(zmq.PUB)
 #socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis_imgs )
@@ -141,7 +146,7 @@ focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 #disparity=x-x'=baseline*focal_length/Z
 #=>> Z = baseline*focal_length/disparity 
 track_params = (30,30,20,20) 
-stereo_corr_params = {'ws':(50,50),'sxl':200,'sxr':0}
+stereo_corr_params = {'ws':(80,80),'sxl':200,'sxr':0}
 
 #disparity from left image to right image
 def disp2range(x):
@@ -366,7 +371,7 @@ def run_Trackers():
     print('-------------------- init trackers -------------')
     tc = None
     imgl,imgr,cmd = yield
-    tc=track_correlator(imgl[:,:,1],*track_params)
+    tc=track_correlator(imgl[:,:,0],*track_params)
     tc.__next__()
     sp = stereo_corr_params
     range_win=[]

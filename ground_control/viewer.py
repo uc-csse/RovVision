@@ -68,7 +68,7 @@ def draw_txt(img,vd,md):
             line2+=' {:>4}ud {:>4}lr'.format(md['ud_cmd'],md['lr_cmd'])
         cv2.putText(img,line2,(10,100), font, 0.5,(0,0,255),1,cv2.LINE_AA)
     if vd.get('record_state',False):
-        cv2.putText(img,'REC',(10,200),font, 0.5,(0,0,255),1,cv2.LINE_AA)
+        cv2.putText(img,'REC '+vd['disk_usage'],(10,200),font, 0.5,(0,0,255),1,cv2.LINE_AA)
     #cv2.putText(img,data_lines['last_cmd_str'][1],(10,250), font, 0.4,(0,0,255),1,cv2.LINE_AA)
 
 

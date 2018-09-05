@@ -71,6 +71,7 @@ def init():
 async def run():
     global mav1,event,__pos
     while True:
+        time.sleep(0)
         mav1.recv_msg()
         __pos=get_position_struct(mav1)
         if __pos  and event is not None and event.trigger():
@@ -80,7 +81,7 @@ async def run():
             #print(mav1.messages['SIMSTATE'])
             print(__pos)
             #print('X:%(posx).1f\tY:%(posy).1f\tZ:%(posz).1f\tYW:%(yaw).0f\tPI:%(pitch).1f\tRL:%(roll).1f'%__pos)
-        await asyncio.sleep(0) 
+        await asyncio.sleep(0.001) 
 
 if __name__=='__main__':
     init()

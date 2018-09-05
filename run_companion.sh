@@ -16,14 +16,15 @@ tmux send-keys "python main.py" ENTER
 
 
 tmux select-pane -t 1
-tmux send-keys "cd algs && python v3d.py --gst" ENTER
+tmux send-keys "cd algs && python v3d.py --gst --save" ENTER
 #tmux send-keys "cd algs && python v3d.py --cvshow" ENTER
 
 tmux select-pane -t 2
 tmux send-keys "cd flir &&  python flircam_proxy.py" ENTER
 #printf '\033]2;My Pane Title 3\033\\'
 
-tmux select-pane -t 2
+tmux select-pane -t 3
+tmux send-keys "htop" ENTER
 #printf '\033]2;My Pane Title 3\033\\'
 
 tmux att

@@ -51,7 +51,7 @@ async def get_zmq_events():
             if ret[0]==config.topic_comp_vis:
                 track_info=pickle.loads(ret[1])
                 #print('-------------topic',track_info)
-        await asyncio.sleep(0) 
+        await asyncio.sleep(0.001) 
 
 start = time.time()
 async def control():

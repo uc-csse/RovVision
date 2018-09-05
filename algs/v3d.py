@@ -1,5 +1,6 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import argparse,sys,os,time
+from datetime import datetime
 sys.path.append('../')
 import zmq
 import struct
@@ -12,7 +13,7 @@ import select
 
 parser = argparse.ArgumentParser()
 #parser.add_argument("-f","--dump_file_prefix", help="dump_file prefix name will create two file one for video and one for data")
-parser.add_argument("-o","--overide", help="allow overide of dump file", action='store_true')
+#parser.add_argument("-o","--overide", help="allow overide of dump file", action='store_true')
 #parser.add_argument("-s","--show",help="open opencv video",action='store_true')
 #parser.add_argument("-c","--cvstream",help="stream video to local port 9345", action='store_true')
 #parser.add_argument("-d","--dronesimlab",help="simulation mode", action='store_true')
@@ -37,11 +38,12 @@ if doplot:
 
 save=0
 if args.save:
-    if os.path.isdir(args.data_path) and not args.overide:
-        print('Error data path exist use -o to override')
-        sys.exit(-1)
-    ret=os.mkdir(args.data_path)
-    save=args.data_path
+    #if not os.path.isdir(args.data_path):
+    if not os.path.isdir('../data'):
+        os.mkdir('../data')
+    #else:
+    #    save=args.data_path
+    #ret=os.mkdir(save)
     #print(ret)
 
 if not save and 'data_path' in args:
@@ -408,7 +410,7 @@ def run_Trackers():
 
 
 def listener():
-    global debug,gst_pipes
+    global debug,gst_pipes,save
     record_state=False
     fmt_cnt_l=-1
     fmt_cnt_r=-2
@@ -427,9 +429,12 @@ def listener():
                     print('init tracker')
                     track = run_Trackers()
                     track.__next__()
-                if data[8]==1 and save:
+                if data[8]==1 and args.save:
                     record_state = not record_state
                     print('recording ',record_state)
+                    if record_state:
+                        save = '../data/'+datetime.now().strftime('%y%m%d-%H%M%S')
+                        os.mkdir(save)
 
         if load:
             frame_ready=True
@@ -496,7 +501,7 @@ def listener():
                             format(fmt_cnt_l,ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000)
                     if 'dx' in ret:
                         pline+=' DX{:5.3f} DY{:5.3f}'.format(ret['dx'],ret['dy'])
-                    print(pline)
+                    #print(pline)
 
                     #print('TC {:02d}, {:02d}'.format(ox,oy))
      

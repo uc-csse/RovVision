@@ -2,7 +2,7 @@
 LOCALS=""
 REMOTES=""
 
-LP="5761 5760 8877"
+LP="5761 5760 8877 9921"
 RP="9117"
 
 for i in $LP;do 

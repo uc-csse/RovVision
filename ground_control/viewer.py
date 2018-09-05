@@ -18,10 +18,12 @@ args = parser.parse_args()
 
 context = zmq.Context()
 zmq_sub_v3d = context.socket(zmq.SUB)
-zmq_sub_v3d.connect("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis)
+#zmq_sub_v3d.connect("tcp://%s:%d" % (os.environ['STEREO_IP'],config.zmq_pub_comp_vis))
+zmq_sub_v3d.connect("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_comp_vis))
 zmq_sub_v3d.setsockopt(zmq.SUBSCRIBE,config.topic_comp_vis)
 zmq_sub_main=context.socket(zmq.SUB)
-zmq_sub_main.connect("tcp://127.0.0.1:%d" % config.zmq_pub_main)
+#zmq_sub_main.connect("tcp://%s:%d" % (os.environ['GCTRL_IP'],config.zmq_pub_main))
+zmq_sub_main.connect("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_main))
 zmq_sub_main.setsockopt(zmq.SUBSCRIBE,config.topic_main_telem)
 
 ############# gst ########
@@ -34,7 +36,8 @@ def init_gst(npipes):
     global gst_pipes
     #cmd='gst-launch-1.0 -e -v udpsrc port={} ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! videoconvert ! video/x-raw, format=RGB8P ! fdsink'
     if 1: #h264
-        cmd='gst-launch-1.0 -q udpsrc port={} ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
+        #cmd='gst-launch-1.0 -q udpsrc port={} ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
+        cmd='gst-launch-1.0 -q tcpclientsrc port={} ! h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
     if 0:
         cmd='gst-launch-1.0 -q udpsrc port={} ! application/x-rtp,encoding-name=JPEG,payload=26 ! rtpjpegdepay ! jpegdec ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
     

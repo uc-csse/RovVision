@@ -1,5 +1,33 @@
-Tables:
+logins:
+=====================
 
+rpi:
+ssh pi@192.168.2.2 
+pass companion
+
+
+stereo:
+user: stereo pass: stereo
+
+laptop:
+uav uav
+
+
+routing:
+======================
+
+rpi:
+---------------------
+
+show dnsmasq:
+cat /var/lib/misc/dnsmasq.leases
+
+than add to /etc/dnsmasq.conf:
+dhcp-host=00:e0:2d:a7:1c:dc,192.168.3.17
+
+
+Tables:
+-----------------------
 laptop:
 Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 default         _gateway        0.0.0.0         UG    600    0        0 wlp3s0

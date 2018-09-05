@@ -26,6 +26,11 @@ than add to /etc/dnsmasq.conf:
 dhcp-host=00:e0:2d:a7:1c:dc,192.168.3.17
 
 
+laptop:
+when working with ucvisitor internet:
+> sudo route del default dev enp0s25
+
+
 Tables:
 -----------------------
 laptop:

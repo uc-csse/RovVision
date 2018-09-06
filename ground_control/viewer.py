@@ -1,5 +1,6 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import sys,os,time
+from datetime import datetime
 sys.path.append('../')
 import zmq
 import pickle
@@ -37,13 +38,16 @@ def init_gst(npipes):
     #cmd='gst-launch-1.0 -e -v udpsrc port={} ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! videoconvert ! video/x-raw, format=RGB8P ! fdsink'
     if 1: #h264
         #cmd='gst-launch-1.0 -q udpsrc port={} ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
-        cmd='gst-launch-1.0 -q tcpclientsrc port={} ! h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
+        #cmd='gst-launch-1.0 -q tcpclientsrc port={} ! h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
+        cmd='gst-launch-1.0 -q tcpclientsrc port={} ! identity sync=true ! tee name=t ! queue ! filesink location=../../data/{}.mp4 t. ! queue !'+\
+        ' h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
     if 0:
         cmd='gst-launch-1.0 -q udpsrc port={} ! application/x-rtp,encoding-name=JPEG,payload=26 ! rtpjpegdepay ! jpegdec ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
     
     gst_pipes=[]
     for i in range(npipes):
-        gcmd = cmd.format(5760+i,sy,sx)
+        gcmd = cmd.format(5760+i,datetime.now().strftime('%y%m%d-%H%M%S_{}'.format('lr'[i])),sy,sx)
+        print(gcmd)
         p = Popen(gcmd, shell=True, bufsize=1024*10, stdout=PIPE, stderr=sys.stderr, close_fds=False)
         gst_pipes.append(p)
 

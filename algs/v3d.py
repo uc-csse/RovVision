@@ -70,7 +70,7 @@ def init_gst(sx,sy,npipes):
     
     if 1:
         #cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=15 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
-        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=15 ! tcpserversink port={}"
+        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=50 ! tcpserversink port={}"
         gstsrc = 'fdsrc ! videoparse width={} height={} format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
     if 0:
         gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
@@ -413,6 +413,16 @@ def run_Trackers():
             tc.__next__()
 
 
+def shrink(img):
+    return ((img[::2,::2,:].astype('uint16')+
+            img[1::2,::2,:]+
+            img[1::2,1::2,:]+
+            img[::2,1::2,:])//4).astype('uint8')
+    #return ((img[::2,::2,:].astype('uint16')+
+    #        img[1::2,::2,:].astype('uint16')+
+    #        img[1::2,1::2,:].astype('uint16')+
+    #        img[::2,1::2,:].astype('uint16'))//4).astype('uint8')
+
 def listener():
     global debug,gst_pipes,save
     record_state=False
@@ -426,6 +436,7 @@ def listener():
     
     last_usage_test=time.time()
     disk_usage=get_disk_usage()
+    fd=None
     while keep_running:
         if not load and zmq_sub_joy.poll(0):
         #if len(zmq.select([zmq_sub_joy],[],[],0.001)[0])>0 :
@@ -441,7 +452,11 @@ def listener():
                     print('recording ',record_state)
                     if record_state:
                         save = '../data/'+datetime.now().strftime('%y%m%d-%H%M%S')
+                        #save = '/dev/shm/'+datetime.now().strftime('%y%m%d-%H%M%S')
                         os.mkdir(save)
+                        #fd=open(save+'/frames.bin','wb')
+                    #elif fd is not None:
+                    #    fd.close()
 
         if load:
             frame_ready=True
@@ -460,26 +475,33 @@ def listener():
                 #topic=topic.decode()
                 info=struct.unpack('llll',info)
                 shape=info[:3]
-                img=np.fromstring(data,'uint8').reshape(shape)
+                #img=np.fromstring(data,'uint8').reshape(shape)
                 #print('got ',topic, info[3])
                 if topic==topicl:
                     fmt_cnt_l=info[3]
-                    imgl=img
+                    imgl=data
                 if topic==topicr:
                     fmt_cnt_r=info[3] 
-                    imgr=img
-                if save and record_state:
-                    cv2.imwrite(save+'/{}{:08d}.{}'.format('l' if topic==topicl else 'r',info[3],image_fmt),img)
-                    if time.time()-last_usage_test>10.0:
-                        last_usage_test=10.0
-                        disk_usage=get_disk_usage()
+                    imgr=data
 
             wx,wy=stereo_corr_params['ws']
             if 1 and fmt_cnt_r == fmt_cnt_l:
+                imgl=np.fromstring(imgl,'uint8').reshape(shape)
+                imgr=np.fromstring(imgr,'uint8').reshape(shape)
+                if save and record_state and (info[3]%10==0): #save every 1 sec
+                    cv2.imwrite(save+'/l{:08d}.{}'.format(info[3],image_fmt),imgl)
+                    cv2.imwrite(save+'/r{:08d}.{}'.format(info[3],image_fmt),imgr)
+                    #fd.write(imgl)
+                    #fd.write(imgr)
+                if time.time()-last_usage_test>10.0:
+                    last_usage_test=time.time()
+                    disk_usage=get_disk_usage()
                 #### shrink images if needed  
-                if img.shape[1] > 640:
-                    img=imgl=imgl[::2,::2,:]
-                    imgr=imgr[::2,::2,:]
+                if shape[1] > 640:
+                    #img=imgl=imgl[::2,::2,:]
+                    #imgr=imgr[::2,::2,:]
+                    img=imgl=shrink(imgl)
+                    imgr=shrink(imgr)
                 
  
                 cx = img.shape[1]//2

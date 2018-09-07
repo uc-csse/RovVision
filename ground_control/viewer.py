@@ -37,74 +37,45 @@ shape = (sy, sx, 3)
 gst_pipes = None
 def init_gst(npipes):
     global gst_pipes,gst_pipes_264,gst_procs
-    #cmd='gst-launch-1.0 -e -v udpsrc port={} ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! videoconvert ! video/x-raw, format=RGB8P ! fdsink'
     if 1: #h264
-        #cmd='gst-launch-1.0 -q udpsrc port={} ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
-        #cmd='gst-launch-1.0 -q tcpclientsrc port={} ! h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
-        #cmd='gst-launch-1.0 -q tcpclientsrc port={} ! identity sync=true ! tee name=t ! queue ! filesink location=../../data/{}.mp4 t. ! queue !'+\
-        #cmd='gst-launch-1.0 tcpclientsrc port={} ! identity sync=true  ! tee name=t ! queue ! fdsink fd={}  t. ! queue !'+\
-        #' h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink fd={}'
         cmd='gst-launch-1.0 tcpclientsrc port={} ! identity sync=true  ! tee name=t ! queue ! filesink location=fifo_264_{}  sync=false  t. ! queue !'+\
         ' h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! filesink location=fifo_raw_{}  sync=false'
-        #cmd='gst-launch-1.0 -q tcpclientsrc port={} ! identity sync=true !'+\
-        #' h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
     if 0:
         cmd='gst-launch-1.0 -q udpsrc port={} ! application/x-rtp,encoding-name=JPEG,payload=26 ! rtpjpegdepay ! jpegdec ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
     
     gst_pipes=[]
     gst_pipes_264=[]
-    gst_procs=[]
     os.system('rm fifo_*')
     cmds=[]
     for i in range(npipes):
-        #gcmd = cmd.format(5760+i,datetime.now().strftime('%y%m%d-%H%M%S_{}'.format('lr'[i])),sy,sx)
-        #(r,w) = os.pipe()
         fname_264='fifo_264_'+'lr'[i]
-        if not os.path.isfile(fname_264):
-            os.mkfifo(fname_264)
+        os.mkfifo(fname_264)
         r = os.open(fname_264,os.O_RDONLY | os.O_NONBLOCK)
-        #print('openning pipes',r)
-
-        #(r1,w1) = os.pipe()
         fname_raw='fifo_raw_'+'lr'[i]
-        if not os.path.isfile(fname_raw):
-            os.mkfifo(fname_raw)
+        os.mkfifo(fname_raw)
         r1 = os.open(fname_raw,os.O_RDONLY | os.O_NONBLOCK)
-        #print('openning pipes 2',r1)
-        #os.set_inheritable(w,True)
-        #os.set_inheritable(w1,True)
-        #os.set_inheritable(r,True)
-        #os.set_inheritable(r1,True)
-        #gcmd = cmd.format(5760+i,w,sy,sx,w1)
         gcmd = cmd.format(5760+i,'lr'[i],sy,sx,'lr'[i])
-        #gcmd = cmd.format(5760+i,sy,sx)
-        #print(os.get_inheritable(w))
         print(gcmd)
-        #sys.exit(1)
-        #p = Popen(gcmd, shell=True, bufsize=1024*10, stdout=PIPE, stderr=sys.stderr, close_fds=False)
-        #p = Popen(gcmd, shell=True, bufsize=1024*10, stdout=sys.stdout, stderr=sys.stderr, close_fds=False)
         cmds.append(gcmd)
-        #r=open(fname_264,'rb')
         gst_pipes_264.append(r)
-        #r1=open(fname_raw,'rb')
-        #gst_procs+=[p,w,w1,r,r1]
         gst_pipes.append(r1)
-    #sys.exit(1)
     for cmd in cmds: #start together 
         Popen(cmd, shell=True)
 
 images=[None,None]
+save_files_fds=[None,None,None]
 
 def get_imgs():
     global gst_pipes,images
     for i in range(len(images)):
         if len(select.select([ gst_pipes[i] ],[],[],0.001)[0])>0 :
-            #data=gst_pipes[i].read(sx*sy*3)
             data=os.read(gst_pipes[i],sx*sy*3)
             images[i]=np.fromstring(data,'uint8').reshape([sy,sx,3])
         if len(select.select([ gst_pipes_264[i] ],[],[],0.001)[0])>0:
-            #os.pread(gst_pipes_264[i][0],1*1000*1000,0)
-            os.read(gst_pipes_264[i],1*1000*1000)
+            data=os.read(gst_pipes_264[i],1*1000*1000)
+            if save_files_fds[0] is not None:
+                save_files_fds[i].write(data)
+
 def draw_txt(img,vd,md):
     font = cv2.FONT_HERSHEY_SIMPLEX
     #print('-2-',md)
@@ -136,6 +107,15 @@ if __name__=='__main__':
         if zmq_sub_v3d.poll(0):
             topic , data = zmq_sub_v3d.recv_multipart()
             vis_data = pickle.loads(data)
+            if vis_data.get('record_state',False):
+                if save_files_fds[0] is None:
+                    for i in [0,1]:
+                        datestr=datetime.now().strftime('%y%m%d-%H%M%S')
+                        save_files_fds[i]=open('../../data/{}_{}.mp4'.format(datestr,'lr'[i]),'wb')
+                    save_files_fds[2]=open('../../data/{}.bin'.format(datestr),'wb')
+            else:
+                save_files_fds=[None,None,None]
+
         if zmq_sub_main.poll(0):
             topic , data = zmq_sub_main.recv_multipart()
             main_data = pickle.loads(data)

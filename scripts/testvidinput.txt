@@ -1,0 +1,2 @@
+gst-launch-1.0 videotestsrc horizontal-speed=0 ! video/x-raw,width=640,height=512 ! x264enc tune=zerolatency threads=1 ! tcpserversink port=5761
+gst-launch-1.0 videotestsrc horizontal-speed=0 ! video/x-raw,width=640,height=512 ! x264enc tune=zerolatency threads=1 ! tcpserversink port=5760

@@ -1,5 +1,6 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import argparse,sys,os,time
+from datetime import datetime
 sys.path.append('../')
 import zmq
 import struct
@@ -8,10 +9,11 @@ import numpy as np
 import scipy
 import scipy.signal
 import pickle
+import select
 
 parser = argparse.ArgumentParser()
 #parser.add_argument("-f","--dump_file_prefix", help="dump_file prefix name will create two file one for video and one for data")
-parser.add_argument("-o","--overide", help="allow overide of dump file", action='store_true')
+#parser.add_argument("-o","--overide", help="allow overide of dump file", action='store_true')
 #parser.add_argument("-s","--show",help="open opencv video",action='store_true')
 #parser.add_argument("-c","--cvstream",help="stream video to local port 9345", action='store_true')
 #parser.add_argument("-d","--dronesimlab",help="simulation mode", action='store_true')
@@ -28,6 +30,10 @@ import config
 
 from subprocess import Popen,PIPE
 
+def get_disk_usage():
+    return os.popen("df -h / |tail -1 | gawk '{print $5}'").read()
+
+
 doplot=args.doplot
 if doplot:
     import matplotlib.pyplot as plt
@@ -36,11 +42,12 @@ if doplot:
 
 save=0
 if args.save:
-    if os.path.isdir(args.data_path) and not args.overide:
-        print('Error data path exist use -o to override')
-        sys.exit(-1)
-    ret=os.mkdir(args.data_path)
-    save=args.data_path
+    #if not os.path.isdir(args.data_path):
+    if not os.path.isdir('../data'):
+        os.mkdir('../data')
+    #else:
+    #    save=args.data_path
+    #ret=os.mkdir(save)
     #print(ret)
 
 if not save and 'data_path' in args:
@@ -58,23 +65,30 @@ def init_gst(sx,sy,npipes):
     global gst_pipes
     #cmd="gst-launch-1.0 {}! x264enc tune=zerolatency  bitrate=500 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
     if 0: #h264 stream
-        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
+        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=300 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
         gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
     
-    cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=30 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
-    gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
+    if 1:
+        #cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=15 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
+        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=50 ! tcpserversink port={}"
+        gstsrc = 'fdsrc ! videoparse width={} height={} format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
+    if 0:
+        gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
+       
+        cmd="gst-launch-1.0 {} ! jpegenc quality=20 ! rtpjpegpay ! udpsink host=192.168.2.1 port={}"
 
     gst_pipes=[]
     for i in range(npipes):
-        gcmd = cmd.format(gstsrc,5700+i)
-        p = Popen(gcmd, shell=True, bufsize=1024*10,stdin=PIPE, stdout=sys.stdout, close_fds=False)
+        gcmd = cmd.format(gstsrc,config.gst_ports[i])
+        p = Popen(gcmd, shell=True, bufsize=1024,stdin=PIPE, stdout=sys.stdout, close_fds=False)
         gst_pipes.append(p)
 
 def send_gst(imgs):
     global gst_pipes
     for i,im in enumerate(imgs):
         time.sleep(0.001)
-        gst_pipes[i].stdin.write(im.tostring())
+        if len(select.select([],[gst_pipes[i].stdin],[],0)[1])>0:
+            gst_pipes[i].stdin.write(im.tostring())
     
 #############################
 
@@ -94,17 +108,19 @@ if not load:
     zmq_sub.setsockopt(zmq.SUBSCRIBE,topicr)
 
     zmq_sub_joy = context.socket(zmq.SUB)
-    zmq_sub_joy.connect("tcp://127.0.0.1:%d" % config.zmq_pub_joy)
+    #zmq_sub_joy.connect("tcp://%s:%d" % (os.environ['GCTRL_IP'],config.zmq_pub_joy))
+    zmq_sub_joy.connect("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_joy))
     zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_button)
 
 
 socket_pub = context.socket(zmq.PUB)
-socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis )
+#socket_pub.bind("tcp://%s:%d" % (os.environ['STEREO_IP'],config.zmq_pub_comp_vis) )
+socket_pub.bind("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_comp_vis) )
 
 #socket_pub_imgs = context.socket(zmq.PUB)
 #socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis_imgs )
 
-image_fmt='jpg'
+image_fmt='ppm'
 
 if load:
     def imggetter():
@@ -136,7 +152,7 @@ focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 #disparity=x-x'=baseline*focal_length/Z
 #=>> Z = baseline*focal_length/disparity 
 track_params = (30,30,20,20) 
-stereo_corr_params = {'ws':(100,100),'sxl':500,'sxr':0}
+stereo_corr_params = {'ws':(80,80),'sxl':200,'sxr':0}
 
 #disparity from left image to right image
 def disp2range(x):
@@ -156,8 +172,8 @@ def avg_disp_win(disp,centx,centy,wx,wy,tresh,min_dis=50):
 debug=False
 
 def preprep_corr(img):
-    ret=np.log(img.astype('float')+1)
-    #ret=img.astype('float')
+    #ret=np.log(img.astype('float')+1)
+    ret=img.astype('float')
     ret-=ret.mean()
     ret/=ret.max()
     return ret
@@ -204,7 +220,7 @@ def line_correlator(img1,img2,wx,wy,sxl,sxr):
 
     #patern=np.log(patern)
     #search=img2[cy-sy//2:cy+sy//2,cx-sx//2:cx+sx//2].copy()
-    l2,r2=cx-wx//2-sxl//2,cx+wx//2+sxr//2
+    l2,r2=cx-wx//2-sxl,cx+wx//2+sxr
     u2,d2=cy-wy//2,cy+wy//2
     search=img2[u2:d2,l2:r2]
     corr_search=preprep_corr(search)
@@ -223,14 +239,14 @@ def line_correlator(img1,img2,wx,wy,sxl,sxr):
     patern_zoom=corr_pat[uz:dz,lz1:rz1]
     patern_zoom=scipy.ndimage.zoom(patern_zoom, z, order=3)
 
-    nx=x
+    nx=x-sxl
     if x>sz:
         lz2,rz2=x+wx//2-(wx//2)//z-sz,x+wx//2+(wx//2)//z+sz
         search_zoom=corr_search[uz:dz,lz2:rz2]
         search_zoom=scipy.ndimage.zoom(search_zoom, z, order=3)
         corrz=scipy.signal.correlate2d(search_zoom, patern_zoom, mode='valid', boundary='fill', fillvalue=0)
         zy, zx = np.unravel_index(np.argmax(corrz), corrz.shape)         
-        nx=x-sz+zx/z
+        nx=x-sxl-sz+zx/z
 
     ##########################
     
@@ -361,7 +377,7 @@ def run_Trackers():
     print('-------------------- init trackers -------------')
     tc = None
     imgl,imgr,cmd = yield
-    tc=track_correlator(imgl[:,:,1],*track_params)
+    tc=track_correlator(imgl[:,:,0],*track_params)
     tc.__next__()
     sp = stereo_corr_params
     range_win=[]
@@ -397,8 +413,18 @@ def run_Trackers():
             tc.__next__()
 
 
+def shrink(img):
+    return ((img[::2,::2,:].astype('uint16')+
+            img[1::2,::2,:]+
+            img[1::2,1::2,:]+
+            img[::2,1::2,:])//4).astype('uint8')
+    #return ((img[::2,::2,:].astype('uint16')+
+    #        img[1::2,::2,:].astype('uint16')+
+    #        img[1::2,1::2,:].astype('uint16')+
+    #        img[::2,1::2,:].astype('uint16'))//4).astype('uint8')
+
 def listener():
-    global debug,gst_pipes
+    global debug,gst_pipes,save
     record_state=False
     fmt_cnt_l=-1
     fmt_cnt_r=-2
@@ -407,8 +433,11 @@ def listener():
         plot.__next__()
     keep_running=True
     track=None
+    
+    last_usage_test=time.time()
+    disk_usage=get_disk_usage()
+    fd=None
     while keep_running:
-
         if not load and zmq_sub_joy.poll(0):
         #if len(zmq.select([zmq_sub_joy],[],[],0.001)[0])>0 :
             ret  = zmq_sub_joy.recv_multipart()
@@ -418,9 +447,16 @@ def listener():
                     print('init tracker')
                     track = run_Trackers()
                     track.__next__()
-                if data[8]==1 and save:
+                if data[8]==1 and args.save:
                     record_state = not record_state
                     print('recording ',record_state)
+                    if record_state:
+                        save = '../data/'+datetime.now().strftime('%y%m%d-%H%M%S')
+                        #save = '/dev/shm/'+datetime.now().strftime('%y%m%d-%H%M%S')
+                        os.mkdir(save)
+                        #fd=open(save+'/frames.bin','wb')
+                    #elif fd is not None:
+                    #    fd.close()
 
         if load:
             frame_ready=True
@@ -439,18 +475,35 @@ def listener():
                 #topic=topic.decode()
                 info=struct.unpack('llll',info)
                 shape=info[:3]
-                img=np.fromstring(data,'uint8').reshape(shape)
+                #img=np.fromstring(data,'uint8').reshape(shape)
+                #print('got ',topic, info[3])
                 if topic==topicl:
                     fmt_cnt_l=info[3]
-                    imgl=img
+                    imgl=data
                 if topic==topicr:
                     fmt_cnt_r=info[3] 
-                    imgr=img
-                if save and record_state:
-                    cv2.imwrite(save+'/{}{:08d}.{}'.format('l' if topic==topicl else 'r',info[3],image_fmt),img)
+                    imgr=data
 
             wx,wy=stereo_corr_params['ws']
-            if fmt_cnt_r == fmt_cnt_l:
+            if 1 and fmt_cnt_r == fmt_cnt_l:
+                imgl=np.fromstring(imgl,'uint8').reshape(shape)
+                imgr=np.fromstring(imgr,'uint8').reshape(shape)
+                if save and record_state and (info[3]%10==0): #save every 1 sec
+                    cv2.imwrite(save+'/l{:08d}.{}'.format(info[3],image_fmt),imgl)
+                    cv2.imwrite(save+'/r{:08d}.{}'.format(info[3],image_fmt),imgr)
+                    #fd.write(imgl)
+                    #fd.write(imgr)
+                if time.time()-last_usage_test>10.0:
+                    last_usage_test=time.time()
+                    disk_usage=get_disk_usage()
+                #### shrink images if needed  
+                if shape[1] > 640:
+                    #img=imgl=imgl[::2,::2,:]
+                    #imgr=imgr[::2,::2,:]
+                    img=imgl=shrink(imgl)
+                    imgr=shrink(imgr)
+                
+ 
                 cx = img.shape[1]//2
                 cy = img.shape[0]//2
                 draw_rectsr=[((cx-wx//2,cy-wy//2) , (cx+wx//2,cy+wy//2) , (0,255,255))]
@@ -468,6 +521,7 @@ def listener():
                     ret['draw_rectsl']=draw_rectsl
                     ret['draw_rectsr']=draw_rectsr
                     ret['record_state']=record_state
+                    ret['disk_usage']=disk_usage
 
                     ox=int(ret['disp'])                    
                     draw_rectsr.append(((cx-wx//2+ox,cy-wy//2) , (cx+wx//2+ox,cy+wy//2) , (0,0,255)))
@@ -475,11 +529,11 @@ def listener():
                     draw_rectsl.append(((cx-wx//2+ox,cy-wy//2+oy) , (cx+wx//2+ox,cy+wy//2+oy) , (255,0,255)))
 
                     socket_pub.send_multipart([config.topic_comp_vis,pickle.dumps(ret,-1)])
-                    pline = 'SNR{:5.2f} RG{:5.2f} OF {:03d},{:03d},     ftime {:3.3f}ms'.\
-                            format(ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000)
+                    pline = 'F{:06} SNR{:5.2f} RG{:5.2f} OF {:03d},{:03d},     ftime {:3.3f}ms'.\
+                            format(fmt_cnt_l,ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000)
                     if 'dx' in ret:
                         pline+=' DX{:5.3f} DY{:5.3f}'.format(ret['dx'],ret['dy'])
-                    print(pline)
+                    #print(pline)
 
                     #print('TC {:02d}, {:02d}'.format(ox,oy))
      
@@ -492,7 +546,7 @@ def listener():
 
 
 
-                if args.gst:
+                if  args.gst:
                     if gst_pipes is None:
                         init_gst(img.shape[1],img.shape[0],2)
                     send_gst([imgl,imgr])

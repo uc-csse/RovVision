@@ -1,0 +1,6 @@
+set up
+-----------
+folow instructions in https://www.ptgrey.com/tan/10685
+make sure to run in rc.local the line:
+echo 1000 > /sys/module/usbcore/parameters/usbfs_memory_mb
+

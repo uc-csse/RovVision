@@ -1,5 +1,6 @@
 #!/bin/bash
 ##
+source set_env_oper.sh
 PATH=/local/ori/anaconda3.6/bin:$PATH
 tmux kill-session -t rov_groud_station
 tmux new-session -d -s rov_groud_station
@@ -18,6 +19,7 @@ tmux select-pane -t 1
 tmux send-keys "cd ground_control && python joy_rov.py" ENTER
 
 tmux select-pane -t 2
+tmux send-keys "cd ground_control && python viewer.py" ENTER
 
 tmux select-pane -t 2
 

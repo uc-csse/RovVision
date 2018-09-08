@@ -2,7 +2,7 @@
 from pymavlink import mavutil
 import numpy as np
 import zmq
-import sys
+import sys,os
 import time
 import pickle
 #import config
@@ -35,22 +35,28 @@ def set_rcs(ud, yaw, fb, lr):
 
 def get_position_struct(mav):
     d={}
-    d['posz']=mav1.messages['VFR_HUD'].alt
-    sm=mav1.messages['SIMSTATE']
-    home=mav1.messages['HOME']
-    lng_factor=np.cos(np.radians(sm.lng/1.0e7))
-    earth_rad_m=6371000.0
-    deg_len_m=earth_rad_m*np.pi/180.0
-    d['posx']=(sm.lng-home.lon)/1.0e7*lng_factor*deg_len_m
-    d['posy']=(sm.lat-home.lat)/1.0e7*deg_len_m
-    d['yaw']=np.degrees(sm.yaw)
-    d['roll']=np.degrees(sm.roll)
-    d['pitch']=np.degrees(sm.pitch)
+    if 'VFR_HUD' in mav1.messages:
+        d['posz']=mav1.messages['VFR_HUD'].alt
+    if 'SIMSTATE' in mav1.messages:
+        d['yaw']=np.degrees(sm.yaw)
+        d['roll']=np.degrees(sm.roll)
+        d['pitch']=np.degrees(sm.pitch)
+    if {'SIMSTATE','HOME'} in set(mav1.messages):
+        sm=mav1.messages['SIMSTATE']
+        home=mav1.messages['HOME']
+        lng_factor=np.cos(np.radians(sm.lng/1.0e7))
+        earth_rad_m=6371000.0
+        deg_len_m=earth_rad_m*np.pi/180.0
+        d['posx']=(sm.lng-home.lon)/1.0e7*lng_factor*deg_len_m
+        d['posy']=(sm.lat-home.lat)/1.0e7*deg_len_m
     return d
 
 def init():
     global mav1,event
-    mav1 = mavutil.mavlink_connection('udp:127.0.0.1:14551')
+    #mav1 = mavutil.mavlink_connection('udp:127.0.0.1:14551')
+    #mav1 = mavutil.mavlink_connection('udp:192.168.3.1:14551')
+    #mav1 = mavutil.mavlink_connection('udp:0.0.0.0:14551')
+    mav1 = mavutil.mavlink_connection(os.environ['ST_RASP_MAV'])
     if __name__=='__main__':
         event = mavutil.periodic_event(0.3)
     freq=30
@@ -59,20 +65,23 @@ def init():
     print("Waiting for HEARTBEAT")
     mav1.wait_heartbeat()
     print("Heartbeat from APM (system %u component %u)" % (mav1.target_system, mav1.target_system))
+    #set_rcs(1510,1510,1510,1510)
+
 
 async def run():
     global mav1,event,__pos
     while True:
+        time.sleep(0)
         mav1.recv_msg()
         __pos=get_position_struct(mav1)
-        if event is not None and event.trigger():
+        if __pos  and event is not None and event.trigger():
             #print(mav1.messages['VFR_HUD'].alt)
             #print(mav1.messages.keys())
             #print(mav1.messages['HOME'])
             #print(mav1.messages['SIMSTATE'])
-            
-            print('X:%(posx).1f\tY:%(posy).1f\tZ:%(posz).1f\tYW:%(yaw).0f\tPI:%(pitch).1f\tRL:%(roll).1f'%__pos)
-        await asyncio.sleep(0) 
+            print(__pos)
+            #print('X:%(posx).1f\tY:%(posy).1f\tZ:%(posz).1f\tYW:%(yaw).0f\tPI:%(pitch).1f\tRL:%(roll).1f'%__pos)
+        await asyncio.sleep(0.001) 
 
 if __name__=='__main__':
     init()

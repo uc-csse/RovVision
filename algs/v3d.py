@@ -156,6 +156,8 @@ stereo_corr_params = {'ws':(80,80),'sxl':200,'sxr':0}
 
 #disparity from left image to right image
 def disp2range(x):
+    if x==0:
+        x=0.01 #avoid devision by 0
     return -baseline*focal_length/x
 
 def avg_disp_win(disp,centx,centy,wx,wy,tresh,min_dis=50):
@@ -502,6 +504,8 @@ def listener():
                     #imgr=imgr[::2,::2,:]
                     img=imgl=shrink(imgl)
                     imgr=shrink(imgr)
+                else:
+                    img=imgl
                 
  
                 cx = img.shape[1]//2

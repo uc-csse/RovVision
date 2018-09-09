@@ -38,11 +38,11 @@ def get_position_struct(mav):
     if 'VFR_HUD' in mav1.messages:
         d['posz']=mav1.messages['VFR_HUD'].alt
     if 'SIMSTATE' in mav1.messages:
+        sm=mav1.messages['SIMSTATE']
         d['yaw']=np.degrees(sm.yaw)
         d['roll']=np.degrees(sm.roll)
         d['pitch']=np.degrees(sm.pitch)
     if {'SIMSTATE','HOME'} in set(mav1.messages):
-        sm=mav1.messages['SIMSTATE']
         home=mav1.messages['HOME']
         lng_factor=np.cos(np.radians(sm.lng/1.0e7))
         earth_rad_m=6371000.0

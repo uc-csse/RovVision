@@ -54,7 +54,7 @@ def init_gst(npipes):
         fname_raw='fifo_raw_'+'lr'[i]
         os.mkfifo(fname_raw)
         r1 = os.open(fname_raw,os.O_RDONLY | os.O_NONBLOCK)
-        gcmd = cmd.format(5760+i,'lr'[i],sy,sx,'lr'[i])
+        gcmd = cmd.format(config.gst_ports[i],'lr'[i],sy,sx,'lr'[i])
         print(gcmd)
         cmds.append(gcmd)
         gst_pipes_264.append(r)

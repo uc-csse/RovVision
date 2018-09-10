@@ -80,7 +80,7 @@ def init_gst(sx,sy,npipes):
     gst_pipes=[]
     for i in range(npipes):
         gcmd = cmd.format(gstsrc,config.gst_ports[i])
-        p = Popen(gcmd, shell=True, bufsize=1024,stdin=PIPE, stdout=sys.stdout, close_fds=False)
+        p = Popen(gcmd, shell=True, bufsize=0,stdin=PIPE, stdout=sys.stdout, close_fds=False)
         gst_pipes.append(p)
 
 def send_gst(imgs):
@@ -379,7 +379,10 @@ def run_Trackers():
     print('-------------------- init trackers -------------')
     tc = None
     imgl,imgr,cmd = yield
-    tc=track_correlator(imgl[:,:,0],*track_params)
+    c=2
+    imgl1c=imgl[:,:,c].copy()
+    imgr1c=imgr[:,:,c].copy()
+    tc=track_correlator(imgl1c,*track_params)
     tc.__next__()
     sp = stereo_corr_params
     range_win=[]
@@ -388,8 +391,8 @@ def run_Trackers():
         res={}
         res['img_shp']=imgl.shape
         res['line_corr_parr']=stereo_corr_params
-        cret = line_correlator(imgl[:,:,1],imgr[:,:,1],sp['ws'][0],sp['ws'][1],sp['sxl'],sp['sxr'])
-        ox,oy = tc.send(imgl[:,:,1])
+        cret = line_correlator(imgl1c,imgr1c,sp['ws'][0],sp['ws'][1],sp['sxl'],sp['sxr'])
+        ox,oy = tc.send(imgl1c)
         res['offx']=ox
         res['offy']=oy
         res['snr_corr']=cret[1]
@@ -405,13 +408,15 @@ def run_Trackers():
             res['dx']=dx
             res['dy']=dy
         else:
-            tc=track_correlator(imgl[:,:,1],*track_params)
+            tc=track_correlator(imgl1c,*track_params)
             tc.__next__()
             
 
         imgl,imgr,cmd = yield res 
+        imgl1c=imgl[:,:,c].copy()
+        imgr1c=imgr[:,:,c].copy()
         if cmd=='lock':
-            tc=track_correlator(imgl[:,:,1],*track_params)
+            tc=track_correlator(imgl1c,*track_params)
             tc.__next__()
 
 

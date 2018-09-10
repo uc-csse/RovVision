@@ -60,7 +60,7 @@ def init_gst(npipes):
         gst_pipes_264.append(r)
         gst_pipes.append(r1)
     for cmd in cmds: #start together 
-        Popen(cmd, shell=True)
+        Popen(cmd, shell=True, bufsize=0)
 
 images=[None,None]
 save_files_fds=[None,None,None]

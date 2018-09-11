@@ -50,8 +50,14 @@ void chksum()
   }
   ds.footer=tsum;
 }
-
+#if ARDUINO_ARCH_ESP32
+#define LED_PIN 2
+#define SERIAL Serial
+#else
 #define LED_PIN LED_BUILTIN
+#define SERIAL SerialUSB
+#endif
+
 #define TRIGER_PIN 3
 bool blinkState = false;
 int iters=0;
@@ -63,17 +69,17 @@ void setup() {
    accelgyro.setI2CBypassEnabled(true) ;
    accelgyro.setSleepEnabled(false);
 
-   SerialUSB.begin(115200);
+   SERIAL.begin(115200);
 
    // initialize device
-   SerialUSB.println("Initializing I2C devices...");
+   SERIAL.println("Initializing I2C devices...");
    accelgyro.initialize();
    mag.initialize();
-   SerialUSB.println(mag.testConnection() ? "HMC5883L connection successful" : "HMC5883L connection failed");
+   SERIAL.println(mag.testConnection() ? "HMC5883L connection successful" : "HMC5883L connection failed");
 
    // verify connection
-   SerialUSB.println("Testing device connections...");
-   SerialUSB.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+   SERIAL.println("Testing device connections...");
+   SERIAL.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
    ms5611.setOversampling(MS5611_ULTRA_HIGH_RES);
    ms5611.begin();
@@ -105,32 +111,32 @@ void loop() {
 
    // display tab-separated accel/gyro x/y/z values
 #if 0
-   SerialUSB.print("a/g:\t");
-   SerialUSB.print(ds.ax); SerialUSB.print("\t");
-   SerialUSB.print(ds.ay); SerialUSB.print("\t");
-   SerialUSB.print(ds.az); SerialUSB.print("\t");
-   SerialUSB.print(ds.gx); SerialUSB.print("\t");
-   SerialUSB.print(ds.gy); SerialUSB.print("\t");
-   SerialUSB.print(ds.gz);SerialUSB.print("\t");
+   SERIAL.print("a/g:\t");
+   SERIAL.print(ds.ax); SERIAL.print("\t");
+   SERIAL.print(ds.ay); SERIAL.print("\t");
+   SERIAL.print(ds.az); SERIAL.print("\t");
+   SERIAL.print(ds.gx); SERIAL.print("\t");
+   SERIAL.print(ds.gy); SERIAL.print("\t");
+   SERIAL.print(ds.gz);SERIAL.print("\t");
    
-   SerialUSB.print("mag:\t");
-   SerialUSB.print(ds.mx); SerialUSB.print("\t");
-   SerialUSB.print(ds.my); SerialUSB.print("\t");
-   SerialUSB.print(ds.mz); SerialUSB.print("\t");
+   SERIAL.print("mag:\t");
+   SERIAL.print(ds.mx); SERIAL.print("\t");
+   SERIAL.print(ds.my); SERIAL.print("\t");
+   SERIAL.print(ds.mz); SERIAL.print("\t");
 
 // To calculate heading in degrees. 0 degree indicates North
    float heading = atan2(ds.my, ds.mx);
    if(heading < 0)
      heading += 2 * M_PI;
-   SerialUSB.print("heading:\t");
-   SerialUSB.print(heading * 180/M_PI);SerialUSB.print("\t");
+   SERIAL.print("heading:\t");
+   SERIAL.print(heading * 180/M_PI);SERIAL.print("\t");
 
-   SerialUSB.print("alt:\t");
-   SerialUSB.println( ds.absoluteAltitude );
+   SERIAL.print("alt:\t");
+   SERIAL.println( ds.absoluteAltitude );
 #else
 
    chksum();
-   SerialUSB.write((const uint8_t*)&ds,sizeof(ds));
+   SERIAL.write((const uint8_t*)&ds,sizeof(ds));
 #endif
    // blink LED to indicate activity
    iters+=1;

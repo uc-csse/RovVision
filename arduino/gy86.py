@@ -1,0 +1,145 @@
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
+#to run recording include optitrack:
+
+#first find the rigid body number by running optitrack.py in the example below is 3
+#python gy86.py --prefix data/manuvers_optitrack/test%s --video 1 --dev 1 --rec --opti_track=3
+
+import serial,time,struct,math
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+from mpl_toolkits.mplot3d import Axes3D
+import argparse
+
+
+if 0 and __name__=="__main__":
+    parser = argparse.ArgumentParser()
+    args = parser.parse_args()
+
+lmap = lambda func, *iterable: list(map(func, *iterable))
+
+def reader():
+    ser = serial.Serial('/dev/ttyUSB0',115200)
+    ser.flush()
+    while ser.inWaiting():
+        ser.read()#flushing
+    print('flushing..')
+    while 1:
+        #while ser.inWaiting()<2:
+        #    yield None
+        while 1:
+            if ser.read()==b'\xa5':
+                if ser.read()==b'\xa5':
+                    break
+        #synced
+        ret={}
+        raw_data=ser.read(26)
+        chksum=struct.unpack('=H',ser.read(2))[0]
+       
+        calc_chksum=sum(struct.unpack('H'*13,raw_data))%2**16 
+        #if chksum!=calc_chksum:
+        #    print('Error, bad checksum',chksum,calc_chksum)
+        #    continue
+
+        data=struct.unpack('='+'h'*9+'fi',raw_data)
+        ret['a/g']=np.array(lmap(float,data[:6]))
+        ret['mag']=np.array(lmap(float,data[6:9]))
+        ret['alt']=data[9]
+        ret['t_stemp_ms']=data[10]/1000.0
+        #print('==== {:.3f}'.format(data[10]/1e6))
+        yield ret
+        
+def ploter():
+    fig = plt.figure(figsize=(8,6))
+    ax1 = fig.add_subplot(4, 1, 1)
+    ax1.set_title('acc')
+    ax2 = fig.add_subplot(4, 1, 2)
+    ax2.set_title('gyro')
+    ax3 = fig.add_subplot(4, 1, 3)
+    ax3.set_title('mag')
+    ax4 = fig.add_subplot(4, 1, 4)
+    ax4.set_title('alt')
+    ax4.set_ylim(-1,1)
+    fig.canvas.draw()   # note that the first draw comes before setting data 
+    #fig.canvas.mpl_connect('close_event', handle_close)
+    #h1 = ax1.plot([0,1],[0,1],[0,1], lw=3)[0]
+    #text = ax1.text(0.8,1.5, '')
+    t_start = time.time()
+    history=[]
+
+    cnt=0
+    mem_len=200
+    hdl_list=[]
+    alt_ref=None
+    last_plot=time.time()
+    while True:
+        cnt+=1
+        gy_data=yield
+        history=history[-mem_len:]
+        history.append(gy_data) 
+
+        if time.time()-last_plot<0.2 and cnt%10!=0:
+            continue        
+        last_plot=time.time()
+
+        for hdl in hdl_list:
+            hdl[0].remove()
+        hdl_list=[]
+        
+        acc_gyro=np.array(lmap(lambda x:x['a/g'],history))
+        mag=np.array(lmap(lambda x:x['mag'],history))
+        alt=np.array(lmap(lambda x:x['alt'],history))
+        #ts=np.array(lmap(lambda x:x['t_stemp_ms']/1000.0,history))
+        if 's_sync' in gy_data:
+            ts=np.array(lmap(lambda x:x['s_sync']/1000.0,history))
+        else:
+            ts=np.array(lmap(lambda x:x['t_stemp_ms']/1000.0,history))
+        if alt_ref is None:
+            alt_ref=alt[0]
+
+        hdl_list.append(ax1.plot(ts,acc_gyro[:,0],'-b',alpha=0.5)) 
+        hdl_list.append(ax1.plot(ts,acc_gyro[:,1],'-g',alpha=0.5)) 
+        hdl_list.append(ax1.plot(ts,acc_gyro[:,2],'-r',alpha=0.5)) 
+        ax1.set_xlim(ts.min(),ts.max())        
+        
+        hdl_list.append(ax2.plot(ts,acc_gyro[:,3],'-b',alpha=0.5)) 
+        hdl_list.append(ax2.plot(ts,acc_gyro[:,4],'-g',alpha=0.5)) 
+        hdl_list.append(ax2.plot(ts,acc_gyro[:,5],'-r',alpha=0.5)) 
+        ax2.set_xlim(ts.min(),ts.max())        
+
+        hdl_list.append(ax3.plot(ts,mag[:,0],'-b',alpha=0.5)) 
+        hdl_list.append(ax3.plot(ts,mag[:,1],'-g',alpha=0.5)) 
+        hdl_list.append(ax3.plot(ts,mag[:,2],'-r',alpha=0.5)) 
+        ax3.set_xlim(ts.min(),ts.max())        
+        
+        hdl_list.append(ax4.plot(ts,alt-alt_ref,'-r',alpha=0.5)) 
+        ax4.set_xlim(ts.min(),ts.max())
+        #if cnt<100:        
+        fig.canvas.draw()
+        plt.waitforbuttonpress(timeout=0.001)
+                
+
+
+if  __name__=="__main__":
+    rd=reader()
+    #rd=file_reader(prefix+'.pkl')
+    #plot=ploter()
+    #plot.__next__()
+    while 1:
+        data=rd.__next__()
+        #print(data)
+        if data is not None:
+            if 'a/g' in data:
+                fmt='{:7.1f} '*6
+                print(fmt.format(*(data['a/g'][:3]),*data['mag']))
+                #plot.send(data)
+        else:
+            #print('Error data is None')
+            time.sleep(0.01)
+
+            #if (k%256)==27:
+            #    break
+
+   
+

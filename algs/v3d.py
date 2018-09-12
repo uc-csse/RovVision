@@ -194,17 +194,27 @@ def track_correlator(img,wx,wy,sx,sy,tx=None,ty=None):
         l1,r1=cx-wx//2,cx+wx//2
         u1,d1=cy-wy//2,cy+wy//2
         patern=img[u1:d1,l1:r1]
-        corr_pat=preprep_corr(patern)
+        #corr_pat=preprep_corr(patern)
+        corr_pat=patern.copy()
 
         img2=img
         while True:
             l2,r2=cx-wx//2-sx,cx+wx//2+sx
             u2,d2=cy-wy//2-sy,cy+wy//2+sy
             search=img2[u2:d2,l2:r2]
-            corr_search=preprep_corr(search)
-            corr=scipy.signal.correlate2d(corr_search, corr_pat, mode='valid', boundary='fill', fillvalue=0)
-            corr = scipy.signal.convolve2d(corr,np.ones((3,3)),'same')
-            y, x = np.unravel_index(np.argmax(corr), corr.shape)
+            #corr_search=preprep_corr(search)
+            corr_search=search.copy()
+            #corr=scipy.signal.correlate2d(corr_search, corr_pat, mode='valid', boundary='fill', fillvalue=0)
+            #corr = scipy.signal.convolve2d(corr,np.ones((3,3)),'same')
+    
+            corr = cv2.matchTemplate(corr_search,corr_pat,cv2.TM_CCOEFF_NORMED)    
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(corr)
+            x,y = max_loc
+            if 1<=x<corr.shape[1]-1 and 1<=y<corr.shape[0]-1:
+                dx,dy=polyfit.fit(corr[y-1:y+2,x-1:x+2])
+                x+=dx
+                y+=dy
+            #y, x = np.unravel_index(np.argmax(corr), corr.shape)
             ox,oy = x-sx,y-sy
             if abs(ox)>tx or abs(oy)>ty : #new reference if translate to much
                 img=yield ox,oy
@@ -550,11 +560,11 @@ def listener():
 
                     ox=int(ret['disp'])                    
                     draw_rectsr.append(((cx-wx//2+ox,cy-wy//2) , (cx+wx//2+ox,cy+wy//2) , (0,0,255)))
-                    ox,oy=ret['offx'],ret['offy']
+                    ox,oy=int(ret['offx']),int(ret['offy'])
                     draw_rectsl.append(((cx-wx//2+ox,cy-wy//2+oy) , (cx+wx//2+ox,cy+wy//2+oy) , (255,0,255)))
 
                     socket_pub.send_multipart([config.topic_comp_vis,pickle.dumps(ret,-1)])
-                    pline = 'F{:06} SNR{:5.2f} RG{:5.2f} OF {:03d},{:03d},     ftime {:3.3f}ms'.\
+                    pline = 'F{:06} SNR{:5.2f} RG{:5.2f} OF {:3.2f},{:3.2f},     ftime {:3.3f}ms'.\
                             format(fmt_cnt_l,ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000)
                     if 'dx' in ret:
                         pline+=' DX{:5.3f} DY{:5.3f}'.format(ret['dx'],ret['dy'])

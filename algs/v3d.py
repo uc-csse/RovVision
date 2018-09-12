@@ -10,6 +10,7 @@ import scipy
 import scipy.signal
 import pickle
 import select
+import polyfit
 
 parser = argparse.ArgumentParser()
 #parser.add_argument("-f","--dump_file_prefix", help="dump_file prefix name will create two file one for video and one for data")
@@ -175,7 +176,7 @@ debug=False
 
 def preprep_corr(img):
     #ret=np.log(img.astype('float')+1)
-    ret=img.astype('float')
+    ret=img.astype('float32')
     ret-=ret.mean()
     ret/=ret.max()
     return ret
@@ -218,31 +219,44 @@ def line_correlator(img1,img2,wx,wy,sxl,sxr):
     l1,r1=cx-wx//2,cx+wx//2
     u1,d1=cy-wy//2,cy+wy//2
     patern=img1[u1:d1,l1:r1]
-    corr_pat=preprep_corr(patern)
+    #corr_pat=preprep_corr(patern)
+    corr_pat=patern.copy()
 
     #patern=np.log(patern)
     #search=img2[cy-sy//2:cy+sy//2,cx-sx//2:cx+sx//2].copy()
     l2,r2=cx-wx//2-sxl,cx+wx//2+sxr
-    u2,d2=cy-wy//2,cy+wy//2
+    #search up and down incase of inacurate camera model
+    sy=12
+    u2,d2=cy-wy//2-sy,cy+wy//2+sy
     search=img2[u2:d2,l2:r2]
-    corr_search=preprep_corr(search)
+    #corr_search=preprep_corr(search)
+    corr_search=search.copy()
+    
     #search_zoom=scipy.ndimage.zoom(search, 4, order=3)
     #search=np.log(search)
     #corr=scipy.signal.correlate2d(patern, search, mode='valid', boundary='fill', fillvalue=0)
-    corr=scipy.signal.correlate2d(corr_search, corr_pat, mode='valid', boundary='fill', fillvalue=0)
-    corr = scipy.signal.convolve2d(corr,np.ones((3,3)),'same')
-    y, x = np.unravel_index(np.argmax(corr), corr.shape) 
+    #corr = scipy.signal.convolve2d(corr,np.ones((3,3)),'same')
+    #y, x = np.unravel_index(np.argmax(corr), corr.shape) 
     
+    corr = cv2.matchTemplate(corr_search,corr_pat,cv2.TM_CCOEFF_NORMED)    
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(corr)
+    x,y = max_loc
     #################zoom
-    z=4
-    sz=3 #zoom search
-    lz1,rz1=wx//2-(wx//2)//z,wx//2+(wx//2)//z
-    uz,dz=wx//2-(wx//2)//z,wx//2+(wx//2)//z
-    patern_zoom=corr_pat[uz:dz,lz1:rz1]
-    patern_zoom=scipy.ndimage.zoom(patern_zoom, z, order=3)
+    #import ipdb;ipdb.set_trace()
+    if 1<=x<corr.shape[1]-1 and 1<=y<corr.shape[0]-1:
+        dx,dy=polyfit.fit(corr[y-1:y+2,x-1:x+2])
+        x+=dx
+        y+=dy
+        #:print(x,y)  
 
     nx=x-sxl
-    if x>sz:
+    if 0 and x>sz:
+        z=4
+        sz=3 #zoom search
+        lz1,rz1=wx//2-(wx//2)//z,wx//2+(wx//2)//z
+        uz,dz=wx//2-(wx//2)//z,wx//2+(wx//2)//z
+        patern_zoom=corr_pat[uz:dz,lz1:rz1]
+        patern_zoom=scipy.ndimage.zoom(patern_zoom, z, order=3)
         lz2,rz2=x+wx//2-(wx//2)//z-sz,x+wx//2+(wx//2)//z+sz
         search_zoom=corr_search[uz:dz,lz2:rz2]
         search_zoom=scipy.ndimage.zoom(search_zoom, z, order=3)
@@ -259,6 +273,7 @@ def line_correlator(img1,img2,wx,wy,sxl,sxr):
     offx = x
     offy = y
     snr = 10*np.log10((corr.max()/np.median(corr))**2) 
+    #snr = 10*np.log10(max_val) 
     #print('===',corr[y,x])
     if debug:
         if 1:
@@ -274,14 +289,15 @@ def line_correlator(img1,img2,wx,wy,sxl,sxr):
             c2=scipy.signal.resample(corr[0,:],l*4)
             plt.plot(np.linspace(0,l,len(c2)),c2)
 
-            plt.figure('search_zoom')
-            plt.subplot(3,1,1)
-            plt.imshow(patern_zoom)
-            plt.subplot(3,1,2)
-            plt.imshow(search_zoom)
-            plt.subplot(3,1,3)
-            l=len(corr[0,:])
-            plt.plot(corrz[0,:])
+            if 0:
+                plt.figure('search_zoom')
+                plt.subplot(3,1,1)
+                plt.imshow(patern_zoom)
+                plt.subplot(3,1,2)
+                plt.imshow(search_zoom)
+                plt.subplot(3,1,3)
+                l=len(corr[0,:])
+                plt.plot(corrz[0,:])
             #c2=scipy.signal.resample(corrz[0,:],l*4)
             #plt.plot(np.linspace(0,l,len(c2)),c2)
 

@@ -20,7 +20,7 @@ if 0 and __name__=="__main__":
 lmap = lambda func, *iterable: list(map(func, *iterable))
 
 def reader():
-    ser = serial.Serial('/dev/ttyUSB0',115200)
+    ser = serial.Serial('/dev/ttyUSB0',512000)
     ser.flush()
     while ser.inWaiting():
         ser.read()#flushing

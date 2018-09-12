@@ -61,15 +61,17 @@ void chksum()
 #define TRIGER_PIN 3
 bool blinkState = false;
 int iters=0;
+int dump_imu=1;
+int start_trig=1;
 
 void setup() {
-  
+   delay(2000);  
    Wire.begin();
    accelgyro.setI2CMasterModeEnabled(false);
    accelgyro.setI2CBypassEnabled(true) ;
    accelgyro.setSleepEnabled(false);
 
-   SERIAL.begin(115200);
+   SERIAL.begin(512000);
 
    // initialize device
    SERIAL.println("Initializing I2C devices...");
@@ -136,17 +138,34 @@ void loop() {
 #else
 
    chksum();
-   SERIAL.write((const uint8_t*)&ds,sizeof(ds));
+       //SERIAL.print("got");
+       //SERIAL.print(bt);
+
+
+   if (dump_imu && SERIAL.availableForWrite()>=sizeof(ds)) SERIAL.write((const uint8_t*)&ds,sizeof(ds));
 #endif
    // blink LED to indicate activity
    iters+=1;
-   if(iters%1==0){
+   if((iters%1)==0 && start_trig){
        blinkState = !blinkState;
        digitalWrite(LED_PIN, blinkState);
        digitalWrite(TRIGER_PIN, blinkState);
    }
-   toc=micros();
-   tdiff=(toc-tic)/1000;
    int ftime=50;
-   if (tdiff>0 & tdiff<ftime) delay(ftime-tdiff); 
+   while (1){
+       int bt=0;
+       toc=micros();
+       tdiff=(toc-tic)/1000;
+       if (tdiff>0 && tdiff>=ftime) break;
+       while (SERIAL.available() > 0)
+           bt = SERIAL.read();
+       if (bt==1) {
+           start_trig=1; dump_imu=1;
+       }
+       if (bt==2) {
+           start_trig=0; dump_imu=0;
+       }
+       delay(1); 
+   }
+
 }

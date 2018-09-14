@@ -29,8 +29,11 @@
 #define TRIGER_PIN 3
 #endif
 
-
-
+//###########  states
+int dump_imu=0; // 01
+int start_trig=0; // 02
+int laser1_trig=0; // 03
+//############ states end
 
 MS5611 ms5611;
 
@@ -42,140 +45,153 @@ HMC5883L mag;
 
 
 typedef struct {
-  uint16_t header;
-  int16_t ax, ay, az;
-  int16_t gx, gy, gz;
-  int16_t mx, my, mz;
-  float absoluteAltitude;
-  uint32_t t_stemp;
-  uint16_t footer; 
+    uint16_t header;
+    int16_t ax, ay, az;
+    int16_t gx, gy, gz;
+    int16_t mx, my, mz;
+    float absoluteAltitude;
+    uint32_t t_stemp;
+    uint16_t footer; 
 } data_struct;
 
 data_struct ds;
 
 void chksum()
 {
-  uint16_t tsum=0;
-  ds.header=0xa5a5;
-  ds.t_stemp=millis();
-  for(int i=1;i<(sizeof(ds)/2-1);i++)
-  {
-    uint16_t* pds=(uint16_t*)&ds;
-    tsum+=pds[i];
-  }
-  ds.footer=tsum;
+    uint16_t tsum=0;
+    ds.header=0xa5a5;
+    ds.t_stemp=millis();
+    for(int i=1;i<(sizeof(ds)/2-1);i++)
+    {
+        uint16_t* pds=(uint16_t*)&ds;
+        tsum+=pds[i];
+    }
+    ds.footer=tsum;
 }
 
-bool blinkState = false;
 int iters=0;
-int dump_imu=0;
-int start_trig=0;
 
 void setup() {
-   delay(2000);  
-   Wire.begin();
-   accelgyro.setI2CMasterModeEnabled(false);
-   accelgyro.setI2CBypassEnabled(true) ;
-   accelgyro.setSleepEnabled(false);
+    delay(2000);  
+    Wire.begin();
+    accelgyro.setI2CMasterModeEnabled(false);
+    accelgyro.setI2CBypassEnabled(true) ;
+    accelgyro.setSleepEnabled(false);
 
-   SERIAL.begin(460800);
+    SERIAL.begin(460800);
 
-   // initialize device
-   SERIAL.println("Initializing I2C devices...");
-   accelgyro.initialize();
-   mag.initialize();
-   SERIAL.println(mag.testConnection() ? "HMC5883L connection successful" : "HMC5883L connection failed");
+    // initialize device
+    SERIAL.println("Initializing I2C devices...");
+    accelgyro.initialize();
+    mag.initialize();
+    SERIAL.println(mag.testConnection() ? "HMC5883L connection successful" : "HMC5883L connection failed");
 
-   // verify connection
-   SERIAL.println("Testing device connections...");
-   SERIAL.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+    // verify connection
+    SERIAL.println("Testing device connections...");
+    SERIAL.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
-   ms5611.setOversampling(MS5611_ULTRA_HIGH_RES);
-   ms5611.begin();
+    ms5611.setOversampling(MS5611_ULTRA_HIGH_RES);
+    ms5611.begin();
 
-   // configure Arduino LED for
-   pinMode(LED_PIN, OUTPUT);
-   pinMode(TRIGER_PIN, OUTPUT);
-   
+    // configure Arduino LED for
+    pinMode(LED_PIN, OUTPUT);
+    pinMode(TRIGER_PIN, OUTPUT);
+    pinMode(LASER1_PIN, OUTPUT);
+
 
 }
 
 
 void loop() {
-   unsigned long tdiff,toc,tic=micros();   
-   accelgyro.getMotion6(&ds.ax, &ds.ay, &ds.az, &ds.gx, &ds.gy, &ds.gz);
-   mag.getHeading(&ds.mx, &ds.my, &ds.mz);
-     // Read raw values
-   //uint32_t rawTemp = ms5611.readRawTemperature();
-   //uint32_t rawPressure = ms5611.readRawPressure();
+    unsigned long tdiff,toc,tic=micros();   
+    accelgyro.getMotion6(&ds.ax, &ds.ay, &ds.az, &ds.gx, &ds.gy, &ds.gz);
+    mag.getHeading(&ds.mx, &ds.my, &ds.mz);
+    // Read raw values
+    //uint32_t rawTemp = ms5611.readRawTemperature();
+    //uint32_t rawPressure = ms5611.readRawPressure();
 
-   // Read true temperature & Pressure
-   //double realTemperature = ms5611.readTemperature();
-   int32_t realPressure = ms5611.readPressure();
+    // Read true temperature & Pressure
+    //double realTemperature = ms5611.readTemperature();
+    int32_t realPressure = ms5611.readPressure();
 
-   // Calculate altitude
-   ds.absoluteAltitude = ms5611.getAltitude(realPressure);
-   //float relativeAltitude = ms5611.getAltitude(realPressure, referencePressure);
+    // Calculate altitude
+    ds.absoluteAltitude = ms5611.getAltitude(realPressure);
+    //float relativeAltitude = ms5611.getAltitude(realPressure, referencePressure);
 
 
-   // display tab-separated accel/gyro x/y/z values
+    // display tab-separated accel/gyro x/y/z values
 #if 0
-   SERIAL.print("a/g:\t");
-   SERIAL.print(ds.ax); SERIAL.print("\t");
-   SERIAL.print(ds.ay); SERIAL.print("\t");
-   SERIAL.print(ds.az); SERIAL.print("\t");
-   SERIAL.print(ds.gx); SERIAL.print("\t");
-   SERIAL.print(ds.gy); SERIAL.print("\t");
-   SERIAL.print(ds.gz);SERIAL.print("\t");
-   
-   SERIAL.print("mag:\t");
-   SERIAL.print(ds.mx); SERIAL.print("\t");
-   SERIAL.print(ds.my); SERIAL.print("\t");
-   SERIAL.print(ds.mz); SERIAL.print("\t");
+    SERIAL.print("a/g:\t");
+    SERIAL.print(ds.ax); SERIAL.print("\t");
+    SERIAL.print(ds.ay); SERIAL.print("\t");
+    SERIAL.print(ds.az); SERIAL.print("\t");
+    SERIAL.print(ds.gx); SERIAL.print("\t");
+    SERIAL.print(ds.gy); SERIAL.print("\t");
+    SERIAL.print(ds.gz);SERIAL.print("\t");
 
-// To calculate heading in degrees. 0 degree indicates North
-   float heading = atan2(ds.my, ds.mx);
-   if(heading < 0)
-     heading += 2 * M_PI;
-   SERIAL.print("heading:\t");
-   SERIAL.print(heading * 180/M_PI);SERIAL.print("\t");
+    SERIAL.print("mag:\t");
+    SERIAL.print(ds.mx); SERIAL.print("\t");
+    SERIAL.print(ds.my); SERIAL.print("\t");
+    SERIAL.print(ds.mz); SERIAL.print("\t");
 
-   SERIAL.print("alt:\t");
-   SERIAL.println( ds.absoluteAltitude );
+    // To calculate heading in degrees. 0 degree indicates North
+    float heading = atan2(ds.my, ds.mx);
+    if(heading < 0)
+        heading += 2 * M_PI;
+    SERIAL.print("heading:\t");
+    SERIAL.print(heading * 180/M_PI);SERIAL.print("\t");
+
+    SERIAL.print("alt:\t");
+    SERIAL.println( ds.absoluteAltitude );
 #else
 
-   chksum();
-       //SERIAL.print("got");
-       //SERIAL.print(bt);
+    chksum();
+    //SERIAL.print("got");
+    //SERIAL.print(bt);
 
 
-   if (dump_imu && SERIAL.availableForWrite()>=sizeof(ds)) SERIAL.write((const uint8_t*)&ds,sizeof(ds));
+    if (dump_imu && SERIAL.availableForWrite()>=sizeof(ds)) SERIAL.write((const uint8_t*)&ds,sizeof(ds));
 #endif
-   // blink LED to indicate activity
-   // triggering every second cycle
-   int ftime=25;
-   if((iters%2)==0 && start_trig){
-       blinkState = !blinkState;
-       digitalWrite(LED_PIN, blinkState);
-       digitalWrite(TRIGER_PIN, blinkState);
-   }
-   iters+=1;
+    // blink LED to indicate activity
+    // triggering every second cycle
+    int ftime=25;
+    if((iters%4)==0){
+        digitalWrite(LED_PIN, HIGH);
+        if(start_trig) digitalWrite(TRIGER_PIN, HIGH);
+    }
+    if((iters%4)==2){
+        digitalWrite(LED_PIN, LOW);
+        if(start_trig) digitalWrite(TRIGER_PIN, LOW);
+    }
+    if((iters%8)==0 && laser1_trig) digitalWrite(LASER1_PIN,HIGH);
+    if((iters%8)==4 && laser1_trig) digitalWrite(LASER1_PIN,LOW);
+
+    iters+=1;
 
 
-   while (1){
-       int bt=0;
-       toc=micros();
-       tdiff=(toc-tic)/1000;
-       if (tdiff>0 && tdiff>=ftime) break;
-       while (SERIAL.available() > 0)
-           bt = SERIAL.read();
-       if (bt==1) {
-           start_trig=1; dump_imu=1;
-       }
-       if (bt==2) {
-           start_trig=0; dump_imu=0;
-       }
-       delay(1); 
-   }
+    while (1){
+        int bt=0;
+        toc=micros();
+        tdiff=(toc-tic)/1000;
+        if (tdiff>0 && tdiff>=ftime) break;
+        while (SERIAL.available() > 0) {
+            bt = SERIAL.read();
+            switch(bt) {
+                case 1:
+                    dump_imu=!dump_imu;
+                    break;
+                case 2:
+                    start_trig=!start_trig;
+                    break;
+                case 3:
+                    laser1_trig=!laser1_trig;
+                    if(!laser1_trig)  digitalWrite(LASER1_PIN,LOW); 
+                    break;
+                default:
+                    break;
+            }
+        }
+        delay(1); 
+    }
 
 }

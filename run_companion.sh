@@ -24,7 +24,8 @@ tmux send-keys "cd flir &&  python flircam_proxy.py" ENTER
 #printf '\033]2;My Pane Title 3\033\\'
 
 tmux select-pane -t 3
-tmux send-keys "htop" ENTER
+#tmux send-keys "htop" ENTER
+tmux send-keys "cd arduino && python send_byte.py -d 0 && sleep 5 && python gy86.py" ENTER
 #printf '\033]2;My Pane Title 3\033\\'
 
 tmux att

@@ -26,3 +26,7 @@ topic_main_telem=b'topic_main_telem'
 
 #currently need to be changed also in ssh_route.sh
 gst_ports=[6760,6761]
+
+
+zmq_pub_imu=9217
+topic_imu=b'topic_imu'

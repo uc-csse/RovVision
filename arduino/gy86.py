@@ -35,7 +35,7 @@ def reader():
         ser.read()#flushing
 
     #start triggering
-    ser.write(b'\x02\x01')     
+    ser.write(b'\x02\x01\x03')     
     #ser.flush()
     print('done flushing..')
     while 1:

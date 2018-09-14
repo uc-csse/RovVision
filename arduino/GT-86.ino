@@ -163,8 +163,9 @@ void loop() {
         digitalWrite(LED_PIN, LOW);
         if(start_trig) digitalWrite(TRIGER_PIN, LOW);
     }
-    if((iters%8)==0 && laser1_trig) digitalWrite(LASER1_PIN,HIGH);
-    if((iters%8)==4 && laser1_trig) digitalWrite(LASER1_PIN,LOW);
+    //if((iters%8)==0 && laser1_trig) digitalWrite(LASER1_PIN,HIGH);
+    //if((iters%8)==4 && laser1_trig) digitalWrite(LASER1_PIN,LOW);
+    //if((iters%8)==4 && laser1_trig) digitalWrite(LASER1_PIN,LOW);
 
     iters+=1;
 
@@ -185,7 +186,10 @@ void loop() {
                     break;
                 case 3:
                     laser1_trig=!laser1_trig;
-                    if(!laser1_trig)  digitalWrite(LASER1_PIN,LOW); 
+                    if(!laser1_trig)  
+                        digitalWrite(LASER1_PIN,LOW);
+                    else
+                        digitalWrite(LASER1_PIN,HIGH); 
                     break;
                 default:
                     break;

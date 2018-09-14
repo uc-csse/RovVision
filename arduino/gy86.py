@@ -139,19 +139,21 @@ if  __name__=="__main__":
     #rd=file_reader(prefix+'.pkl')
     #plot=ploter()
     #plot.__next__()
+    cnt=0
     while 1:
         data=rd.__next__()
         #print(data)
         if data is not None:
-            if 'a/g' in data:
+            if 'a/g' in data: 
                 socket_pub.send_multipart([config.topic_imu,pickle.dumps(data,-1)])
-                fmt='{:7.1f} '*6
-                print(fmt.format(*(data['a/g'][:3]),*data['mag']))
+                if cnt%5==0:
+                    fmt='{:7.1f} '*6
+                    print(fmt.format(*(data['a/g'][:3]),*data['mag']))
                 #plot.send(data)
+                cnt+=1
         else:
             #print('Error data is None')
             time.sleep(0.01)
-
             #if (k%256)==27:
             #    break
 

@@ -405,10 +405,11 @@ def run_Trackers():
     print('-------------------- init trackers -------------')
     tc = None
     imgl,imgr,cmd = yield
-    c=2
-    imgl1c=imgl[:,:,c].copy()
-    imgr1c=imgr[:,:,c].copy()
-    tc=track_correlator(imgl1c,*track_params)
+    imgl1b=imgl[:,:,2].copy()
+    imgr1b=imgr[:,:,2].copy()
+    imgl1r=imgl[:,:,0].copy()
+    imgr1r=imgr[:,:,0].copy()
+    tc=track_correlator(imgl1b,*track_params)
     tc.__next__()
     sp = stereo_corr_params
     range_win=[]
@@ -417,8 +418,8 @@ def run_Trackers():
         res={}
         res['img_shp']=imgl.shape
         res['line_corr_parr']=stereo_corr_params
-        cret = line_correlator(imgl1c,imgr1c,sp['ws'][0],sp['ws'][1],sp['sxl'],sp['sxr'])
-        ox,oy = tc.send(imgl1c)
+        cret = line_correlator(imgl1r,imgr1r,sp['ws'][0],sp['ws'][1],sp['sxl'],sp['sxr'])
+        ox,oy = tc.send(imgl1b)
         res['offx']=ox
         res['offy']=oy
         res['snr_corr']=cret[1]
@@ -434,15 +435,17 @@ def run_Trackers():
             res['dx']=dx
             res['dy']=dy
         else:
-            tc=track_correlator(imgl1c,*track_params)
+            tc=track_correlator(imgl1b,*track_params)
             tc.__next__()
             
 
         imgl,imgr,cmd = yield res 
-        imgl1c=imgl[:,:,c].copy()
-        imgr1c=imgr[:,:,c].copy()
+        imgl1b=imgl[:,:,2].copy()
+        imgr1b=imgr[:,:,2].copy()
+        imgl1r=imgl[:,:,0].copy()
+        imgr1r=imgr[:,:,0].copy()
         if cmd=='lock':
-            tc=track_correlator(imgl1c,*track_params)
+            tc=track_correlator(imgl1b,*track_params)
             tc.__next__()
 
 

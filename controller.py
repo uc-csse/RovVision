@@ -55,8 +55,8 @@ def init():
     global mav1,event
     #mav1 = mavutil.mavlink_connection('udp:127.0.0.1:14551')
     #mav1 = mavutil.mavlink_connection('udp:192.168.3.1:14551')
-    #mav1 = mavutil.mavlink_connection('udp:0.0.0.0:14551')
-    mav1 = mavutil.mavlink_connection(os.environ['ST_RASP_MAV'])
+    mav1 = mavutil.mavlink_connection('udp:0.0.0.0:14551')
+    #mav1 = mavutil.mavlink_connection(os.environ['ST_RASP_MAV'])
     if __name__=='__main__':
         event = mavutil.periodic_event(0.3)
     freq=30

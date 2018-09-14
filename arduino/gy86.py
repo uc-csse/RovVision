@@ -9,22 +9,35 @@ import serial,time,struct,math
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+sys.path.append('../')
 from mpl_toolkits.mplot3d import Axes3D
 import argparse
+import time,zmq
+import pickle
+import config
 
 
 if 0 and __name__=="__main__":
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
 
+
+context = zmq.Context()
+socket_pub = context.socket(zmq.PUB)
+socket_pub.bind("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_imu) )
+
 lmap = lambda func, *iterable: list(map(func, *iterable))
 
 def reader():
-    ser = serial.Serial('/dev/ttyUSB0',512000)
+    ser = serial.Serial('/dev/ttyUSB0',460800)
     ser.flush()
     while ser.inWaiting():
         ser.read()#flushing
-    print('flushing..')
+
+    #start triggering
+    ser.write(b'\x01')     
+    #ser.flush()
+    print('done flushing..')
     while 1:
         #while ser.inWaiting()<2:
         #    yield None
@@ -131,6 +144,7 @@ if  __name__=="__main__":
         #print(data)
         if data is not None:
             if 'a/g' in data:
+                socket_pub.send_multipart([config.topic_imu,pickle.dumps(data,-1)])
                 fmt='{:7.1f} '*6
                 print(fmt.format(*(data['a/g'][:3]),*data['mag']))
                 #plot.send(data)

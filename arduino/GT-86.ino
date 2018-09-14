@@ -14,13 +14,28 @@
 //in Wire.cpp
 //TwoWire Wire(PB10, PB11, SOFT_STANDARD);
 
+#if ARDUINO_ARCH_ESP32
+#define LED_PIN 2
+#define TRIGER_PIN 4
+#define SERIAL Serial
+#elif ESP8266
+#define SERIAL Serial
+#define LED_PIN 2
+#define TRIGER_PIN 16
+#define LASER1_PIN 14
+#else
+#define LED_PIN LED_BUILTIN
+#define SERIAL SerialUSB
+#define TRIGER_PIN 3
+#endif
+
 
 
 
 MS5611 ms5611;
 
 
-uint32_t time;
+//uint32_t time;
 
 MPU6050 accelgyro;
 HMC5883L mag;
@@ -50,19 +65,11 @@ void chksum()
   }
   ds.footer=tsum;
 }
-#if ARDUINO_ARCH_ESP32
-#define LED_PIN 2
-#define SERIAL Serial
-#else
-#define LED_PIN LED_BUILTIN
-#define SERIAL SerialUSB
-#endif
 
-#define TRIGER_PIN 3
 bool blinkState = false;
 int iters=0;
-int dump_imu=1;
-int start_trig=1;
+int dump_imu=0;
+int start_trig=0;
 
 void setup() {
    delay(2000);  
@@ -71,7 +78,7 @@ void setup() {
    accelgyro.setI2CBypassEnabled(true) ;
    accelgyro.setSleepEnabled(false);
 
-   SERIAL.begin(512000);
+   SERIAL.begin(460800);
 
    // initialize device
    SERIAL.println("Initializing I2C devices...");
@@ -145,13 +152,16 @@ void loop() {
    if (dump_imu && SERIAL.availableForWrite()>=sizeof(ds)) SERIAL.write((const uint8_t*)&ds,sizeof(ds));
 #endif
    // blink LED to indicate activity
-   iters+=1;
-   if((iters%1)==0 && start_trig){
+   // triggering every second cycle
+   int ftime=25;
+   if((iters%2)==0 && start_trig){
        blinkState = !blinkState;
        digitalWrite(LED_PIN, blinkState);
        digitalWrite(TRIGER_PIN, blinkState);
    }
-   int ftime=50;
+   iters+=1;
+
+
    while (1){
        int bt=0;
        toc=micros();

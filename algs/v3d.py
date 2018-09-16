@@ -479,11 +479,11 @@ def listener():
             ret  = zmq_sub_joy.recv_multipart()
             if ret[0]==config.topic_button:
                 data=pickle.loads(ret[1])
-                if data[5]==1:
+                if data[config.joy_init_track]==1:
                     print('init tracker')
                     track = run_Trackers()
                     track.__next__()
-                if data[8]==1 and args.save:
+                if data[config.joy_save]==1 and args.save:
                     record_state = not record_state
                     print('recording ',record_state)
                     if record_state:

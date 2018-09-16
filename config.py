@@ -30,3 +30,8 @@ gst_ports=[6760,6761]
 
 zmq_pub_imu=9217
 topic_imu=b'topic_imu'
+
+#joystick mapping
+joy_save = 8
+joy_toggle_laser1 = 1
+joy_init_track = 5

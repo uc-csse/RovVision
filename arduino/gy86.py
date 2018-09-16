@@ -17,14 +17,20 @@ import pickle
 import config
 
 
-if 0 and __name__=="__main__":
+if __name__=="__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("-s","--send_start",help="sends 02 01 03", action='store_true')
     args = parser.parse_args()
 
 
 context = zmq.Context()
 socket_pub = context.socket(zmq.PUB)
 socket_pub.bind("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_imu) )
+
+zmq_sub_joy = context.socket(zmq.SUB)
+zmq_sub_joy.connect("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_joy))
+zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_button)
+
 
 lmap = lambda func, *iterable: list(map(func, *iterable))
 
@@ -35,12 +41,20 @@ def reader():
         ser.read()#flushing
 
     #start triggering
-    ser.write(b'\x02\x01\x03')     
+    if args.send_start:
+        ser.write(b'\x02\x01')     
     #ser.flush()
     print('done flushing..')
     while 1:
         #while ser.inWaiting()<2:
         #    yield None
+        if zmq_sub_joy.poll():
+            ret  = zmq_sub_joy.recv_multipart()
+            if ret[0]==config.topic_button:
+                data=pickle.loads(ret[1])
+                if data[config.joy_toggle_laser1]==1:
+                    ser.write(b'\x03')
+            
         while 1:
             if ser.read()==b'\xa5':
                 if ser.read()==b'\xa5':
@@ -140,15 +154,18 @@ if  __name__=="__main__":
     #plot=ploter()
     #plot.__next__()
     cnt=0
+    last_t=0
     while 1:
         data=rd.__next__()
         #print(data)
         if data is not None:
             if 'a/g' in data: 
                 socket_pub.send_multipart([config.topic_imu,pickle.dumps(data,-1)])
-                if cnt%5==0:
-                    fmt='{:7.1f} '*6
-                    print(fmt.format(*(data['a/g'][:3]),*data['mag']))
+                tdiff = data['t_stemp_ms']-last_t
+                last_t = data['t_stemp_ms']
+                if cnt%10==0:
+                    fmt='{:7.2f} '*6 + '{:2.4f}'
+                    print(fmt.format(*(data['a/g'][:3]),*data['mag'],tdiff))
                 #plot.send(data)
                 cnt+=1
         else:

@@ -14,6 +14,16 @@
 //in Wire.cpp
 //TwoWire Wire(PB10, PB11, SOFT_STANDARD);
 
+///constants
+
+#define TRIG_FPS 10
+#define IMU_FPS 50
+#define FULL_CYCLE_MICRO (1000000/IMU_FPS)
+#define TRIG_FULL_CYCLE_MICRO (1000000/TRIG_FPS)
+#define TRIG_FULL_CYCLE_ITERS (TRIG_FULL_CYCLE_MICRO/FULL_CYCLE_MICRO)
+#define TRIG_HALF_CYCLE_ITERS (TRIG_FULL_CYCLE_ITERS/2) 
+
+
 #if ARDUINO_ARCH_ESP32
 #define LED_PIN 2
 #define TRIGER_PIN 4
@@ -28,6 +38,7 @@
 #define SERIAL SerialUSB
 #define TRIGER_PIN 3
 #endif
+
 
 //###########  states
 int dump_imu=0; // 01
@@ -70,6 +81,7 @@ void chksum()
 }
 
 int iters=0;
+unsigned long tic;
 
 void setup() {
     delay(2000);  
@@ -98,12 +110,12 @@ void setup() {
     pinMode(TRIGER_PIN, OUTPUT);
     pinMode(LASER1_PIN, OUTPUT);
 
-
+    tic=micros();
 }
 
 
 void loop() {
-    unsigned long tdiff,toc,tic=micros();   
+    unsigned long tdiff,toc;   
     accelgyro.getMotion6(&ds.ax, &ds.ay, &ds.az, &ds.gx, &ds.gy, &ds.gz);
     mag.getHeading(&ds.mx, &ds.my, &ds.mz);
     // Read raw values
@@ -154,12 +166,11 @@ void loop() {
 #endif
     // blink LED to indicate activity
     // triggering every second cycle
-    int ftime=25;
-    if((iters%4)==0){
+    if((iters%TRIG_FULL_CYCLE_ITERS)==0){
         digitalWrite(LED_PIN, HIGH);
         if(start_trig) digitalWrite(TRIGER_PIN, HIGH);
     }
-    if((iters%4)==2){
+    if((iters%TRIG_FULL_CYCLE_ITERS)==TRIG_HALF_CYCLE_ITERS){
         digitalWrite(LED_PIN, LOW);
         if(start_trig) digitalWrite(TRIGER_PIN, LOW);
     }
@@ -173,8 +184,8 @@ void loop() {
     while (1){
         int bt=0;
         toc=micros();
-        tdiff=(toc-tic)/1000;
-        if (tdiff>0 && tdiff>=ftime) break;
+        tdiff=(toc-tic);
+        if (tdiff>0 && tdiff>=FULL_CYCLE_MICRO) break;
         while (SERIAL.available() > 0) {
             bt = SERIAL.read();
             switch(bt) {
@@ -195,7 +206,8 @@ void loop() {
                     break;
             }
         }
-        delay(1); 
+        //delay(1); 
     }
+    tic=micros();
 
 }

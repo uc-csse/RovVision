@@ -19,7 +19,7 @@ ser = serial.Serial(args.usbdevice,baudrate=int(args.baudrate), rtscts=True, dsr
 if args.send is not None:
     tosend = b'%c'%int(args.send,16)
     print('sending ...',tosend)
-    #ser.write(tosend)
+    ser.write(tosend)
     #print(ser.read(1))
     ser.flush()
 if  args.rts is not None:

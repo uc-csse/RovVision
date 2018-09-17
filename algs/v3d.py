@@ -72,6 +72,11 @@ def listener():
     last_usage_test=time.time()
     disk_usage=get_disk_usage()
     fd=None
+
+    #send initial trigger
+    print('start trig')
+    socket_pub.send_multipart([config.topic_comp_vis_cmd,b'start_trig'])
+
     while keep_running:
         socks=zmq.select(subs_socks,[],[],0.001)[0]
         for sock in socks:

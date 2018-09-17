@@ -15,6 +15,7 @@ import argparse
 import time,zmq
 import pickle
 import config
+import utils
 
 
 if __name__=="__main__":
@@ -23,16 +24,15 @@ if __name__=="__main__":
     args = parser.parse_args()
 
 
-context = zmq.Context()
-socket_pub = context.socket(zmq.PUB)
-socket_pub.bind("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_imu) )
+socket_pub = utils.publisher(config.zmq_pub_imu)
 
-zmq_sub_joy = context.socket(zmq.SUB)
-zmq_sub_joy.connect("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_joy))
-zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_button)
+zmq_sub_joy = utils.subscribe([config.topic_button],config.zmq_pub_joy)
 
+zmq_sub_v3d = utils.subscribe([config.topic_comp_vis_cmd],config.zmq_pub_comp_vis)
 
 lmap = lambda func, *iterable: list(map(func, *iterable))
+
+laser1_status=False
 
 def reader():
     ser = serial.Serial('/dev/ttyUSB0',460800)
@@ -42,7 +42,8 @@ def reader():
 
     #start triggering
     if args.send_start:
-        ser.write(b'\x02\x01')     
+        print('sending start')
+        ser.write(b'\x01')     
     #ser.flush()
     print('done flushing..')
     while 1:
@@ -53,12 +54,29 @@ def reader():
             if ret[0]==config.topic_button:
                 data=pickle.loads(ret[1])
                 if data[config.joy_toggle_laser1]==1:
-                    ser.write(b'\x03')
-            
-        while 1:
-            if ser.read()==b'\xa5':
-                if ser.read()==b'\xa5':
-                    break
+                    laser1_status = not laser1_status
+                    if laser1_status:
+                        ser.write(b'\x03')
+                    else:
+                        ser.write(b'\x04')
+
+        if zmq_sub_v3d.poll(0):
+            print('got')
+            ret  = zmq_sub_v3d.recv_multipart()
+            if ret[0] == config.topic_comp_vis_cmd:
+                if ret[1] == b'start_trig':
+                    print('start trig')
+                    ser.write(b'\x01')
+        
+        if ser.inWaiting()>=2:
+            if ser.read()!=b'\xa5':
+                print('-1-') 
+                continue
+                if ser.read()!=b'\xa5':
+                    print('-2-') 
+                    continue
+        else:
+            continue
         #synced
         ret={}
         raw_data=ser.read(26)

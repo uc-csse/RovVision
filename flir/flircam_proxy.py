@@ -12,16 +12,14 @@ import numpy as np
 import cv2,struct
 import queue
 import config
+import utils
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--cvshow",help="show opencv mode", action='store_true')
 args = parser.parse_args()
 #
 
-context = zmq.Context()
-socket_pub = context.socket(zmq.PUB)
-socket_pub.bind("tcp://%s:%d" % config.zmq_pub_unreal_proxy )
-
-
+socket_pub = utils.publisher(config.zmq_pub_unreal_proxy)
 
 
 class TriggerType:

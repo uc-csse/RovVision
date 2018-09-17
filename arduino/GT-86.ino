@@ -43,7 +43,7 @@
 //###########  states
 int dump_imu=0; // 01
 int start_trig=0; // 02
-int laser1_trig=0; // 03
+//int laser1_trig=0; // 03
 //############ states end
 
 MS5611 ms5611;
@@ -188,24 +188,28 @@ void loop() {
         if (tdiff>0 && tdiff>=FULL_CYCLE_MICRO) break;
         while (SERIAL.available() > 0) {
             bt = SERIAL.read();
+	    //SERIAL.println(bt);
             switch(bt) {
                 case 1:
-                    dump_imu=!dump_imu;
+                    dump_imu=1;
+                    start_trig=1;
                     break;
                 case 2:
-                    start_trig=!start_trig;
+                    dump_imu=0;
+                    start_trig=0;
                     break;
                 case 3:
-                    laser1_trig=!laser1_trig;
-                    if(!laser1_trig)  
-                        digitalWrite(LASER1_PIN,LOW);
-                    else
-                        digitalWrite(LASER1_PIN,HIGH); 
+		    digitalWrite(LASER1_PIN,HIGH); 
+                    break;
+		case 4:
+                    digitalWrite(LASER1_PIN,LOW);
                     break;
                 default:
                     break;
             }
         }
+        //delay(1); 
+	//delayMicroseconds(1)
         //delay(1); 
     }
     tic=micros();

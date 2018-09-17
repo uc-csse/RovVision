@@ -32,9 +32,10 @@ zmq_sub_v3d = utils.subscribe([config.topic_comp_vis_cmd],config.zmq_pub_comp_vi
 
 lmap = lambda func, *iterable: list(map(func, *iterable))
 
-laser1_status=False
 
 def reader():
+    laser1_status=False
+    
     ser = serial.Serial('/dev/ttyUSB0',460800)
     ser.flush()
     while ser.inWaiting():
@@ -60,7 +61,7 @@ def reader():
                     else:
                         ser.write(b'\x04')
 
-        if zmq_sub_v3d.poll(0):
+        if 1 and zmq_sub_v3d.poll(0):
             print('got')
             ret  = zmq_sub_v3d.recv_multipart()
             if ret[0] == config.topic_comp_vis_cmd:
@@ -68,15 +69,10 @@ def reader():
                     print('start trig')
                     ser.write(b'\x01')
         
-        if ser.inWaiting()>=2:
-            if ser.read()!=b'\xa5':
-                print('-1-') 
-                continue
-                if ser.read()!=b'\xa5':
-                    print('-2-') 
-                    continue
-        else:
-            continue
+        while 1:#ser.inWaiting():
+            if ser.read()==b'\xa5':
+                if ser.read()==b'\xa5':
+                    break
         #synced
         ret={}
         raw_data=ser.read(26)
@@ -178,7 +174,7 @@ if  __name__=="__main__":
         #print(data)
         if data is not None:
             if 'a/g' in data: 
-                socket_pub.send_multipart([config.topic_imu,pickle.dumps(data,-1)])
+                #socket_pub.send_multipart([config.topic_imu,pickle.dumps(data,-1)])
                 tdiff = data['t_stemp_ms']-last_t
                 last_t = data['t_stemp_ms']
                 if cnt%10==0:
@@ -188,7 +184,7 @@ if  __name__=="__main__":
                 cnt+=1
         else:
             #print('Error data is None')
-            time.sleep(0.01)
+            time.sleep(0.001)
             #if (k%256)==27:
             #    break
 

@@ -188,7 +188,6 @@ void loop() {
         if (tdiff>0 && tdiff>=FULL_CYCLE_MICRO) break;
         while (SERIAL.available() > 0) {
             bt = SERIAL.read();
-	    //SERIAL.println(bt);
             switch(bt) {
                 case 1:
                     dump_imu=1;

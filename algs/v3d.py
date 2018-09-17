@@ -95,7 +95,7 @@ def listener():
                         os.mkdir(save)
                         data_fd=open(save+'/data.pkl','rb')
             
-            if ret[0] not in [topicl,topicr]:
+            if record_state and ret[0] not in [topicl,topicr]:
                 #save only data not images
                 pickle.dump(ret,data_fd,-1)
 

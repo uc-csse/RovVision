@@ -12,6 +12,7 @@ import select
 import tracker
 import gst
 import config
+import utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--cvshow",help="show opencv mode", action='store_true')
@@ -31,21 +32,16 @@ if args.save:
     if not os.path.isdir('../data'):
         os.mkdir('../data')
 
-context = zmq.Context()
-zmq_sub = context.socket(zmq.SUB)
-addr="tcp://%s:%d" % (config.zmq_pub_unreal_proxy)
-zmq_sub.connect(addr)
 topicl=config.topic_unreal_drone_rgb_camera%0+b'l'
 topicr=config.topic_unreal_drone_rgb_camera%0+b'r'
-zmq_sub.setsockopt(zmq.SUBSCRIBE,topicl)
-zmq_sub.setsockopt(zmq.SUBSCRIBE,topicr)
-zmq_sub_joy = context.socket(zmq.SUB)
-zmq_sub_joy.connect("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_joy))
-zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_button)
-socket_pub = context.socket(zmq.PUB)
-socket_pub.bind("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_comp_vis) )
 
-subs_socks=[zmq_sub_joy,zmq_sub]
+subs_socks=[]
+subs_socks.append( utils.subscribe([ topicl,topicr ],config.zmq_pub_unreal_proxy))
+subs_socks.append( utils.subscribe([ config.topic_button,config.topic_axes ],config.zmq_pub_joy))
+subs_socks.append( utils.subscribe([ config.topic_imu ],config.zmq_pub_imu) )
+
+socket_pub = utils.publisher(config.zmq_pub_comp_vis)
+
 
 
 image_fmt='ppm'
@@ -92,6 +88,11 @@ def listener():
                     if record_state:
                         save = '../data/'+datetime.now().strftime('%y%m%d-%H%M%S')
                         os.mkdir(save)
+                        data_fd=open(save+'/data.pkl','rb')
+            
+            if ret[0] not in [topicl,topicr]:
+                #save only data not images
+                pickle.dump(ret,data_fd,-1)
 
             if ret[0] in [topicl,topicr]:
                 topic, info, data = ret

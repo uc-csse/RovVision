@@ -1,5 +1,5 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
+import numpy as np
 #pubsub
 zmq_pub_drone_fdm=('127.0.0.1',5566)
 #zmq_pub_drone_fdm=('127.0.0.1',12466)
@@ -35,3 +35,19 @@ topic_imu=b'topic_imu'
 joy_save = 8
 joy_toggle_laser1 = 1
 joy_init_track = 5
+
+
+#camera params
+
+#camera info estimate
+fov=60.97
+pixelwidthx = 640 #after shrink
+pixelwidthy = 512 #after shrink
+baseline = 0.14 # (240-100)*.1scale in cm from unreal engine
+focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
+#disparity=x-x'=baseline*focal_length/Z
+#=>> Z = baseline*focal_length/disparity 
+
+
+track_params = (30,30,20,20) 
+stereo_corr_params = {'ws':(80,80),'sxl':200,'sxr':0}

@@ -48,7 +48,7 @@ def reader():
     while 1:
         #while ser.inWaiting()<2:
         #    yield None
-        if zmq_sub_joy.poll():
+        if zmq_sub_joy.poll(0):
             ret  = zmq_sub_joy.recv_multipart()
             if ret[0]==config.topic_button:
                 data=pickle.loads(ret[1])

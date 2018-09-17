@@ -7,7 +7,7 @@ import time
 import pickle
 #import config
 import asyncio
-
+import config
 
 mav1 = None
 event = None
@@ -36,6 +36,7 @@ def set_rcs(ud, yaw, fb, lr):
 def get_position_struct(mav):
     d={}
     if 'VFR_HUD' in mav1.messages:
+        #import pdb;pdb.set_trace()
         d['posz']=mav1.messages['VFR_HUD'].alt
     if 'SIMSTATE' in mav1.messages:
         sm=mav1.messages['SIMSTATE']
@@ -43,6 +44,7 @@ def get_position_struct(mav):
         d['roll']=np.degrees(sm.roll)
         d['pitch']=np.degrees(sm.pitch)
     if {'SIMSTATE','HOME'} in set(mav1.messages):
+        #import pdb;pdb.set_trace()
         home=mav1.messages['HOME']
         lng_factor=np.cos(np.radians(sm.lng/1.0e7))
         earth_rad_m=6371000.0
@@ -68,17 +70,17 @@ def init():
     #set_rcs(1510,1510,1510,1510)
 
 
-async def run():
+async def run(socket_pub=None):
     global mav1,event,__pos
     while True:
         time.sleep(0)
-        mav1.recv_msg()
-        __pos=get_position_struct(mav1)
+        ret=mav1.recv_msg()
+        if ret is not None:
+            if socket_pub is not None:
+                socket_pub.send_multipart([config.topic_mav_telem, pickle.dumps(ret.to_dict(),-1)])
+            __pos=get_position_struct(mav1)
+        
         if __pos  and event is not None and event.trigger():
-            #print(mav1.messages['VFR_HUD'].alt)
-            #print(mav1.messages.keys())
-            #print(mav1.messages['HOME'])
-            #print(mav1.messages['SIMSTATE'])
             print(__pos)
             #print('X:%(posx).1f\tY:%(posy).1f\tZ:%(posz).1f\tYW:%(yaw).0f\tPI:%(pitch).1f\tRL:%(roll).1f'%__pos)
         await asyncio.sleep(0.001) 

@@ -24,6 +24,7 @@ topic_axes = b'topic_axes'
 
 zmq_pub_main=9921
 topic_main_telem=b'topic_main_telem'
+topic_mav_telem=b'topic_mav_telem'
 
 
 #currently need to be changed also in ssh_route.sh

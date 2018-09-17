@@ -39,6 +39,8 @@ subs_socks=[]
 subs_socks.append( utils.subscribe([ topicl,topicr ],config.zmq_pub_unreal_proxy))
 subs_socks.append( utils.subscribe([ config.topic_button,config.topic_axes ],config.zmq_pub_joy))
 subs_socks.append( utils.subscribe([ config.topic_imu ],config.zmq_pub_imu) )
+subs_socks.append( utils.subscribe([ config.topic_main_telem, config.topic_mav_telem ],config.zmq_pub_main) )
+
 
 socket_pub = utils.publisher(config.zmq_pub_comp_vis)
 
@@ -85,7 +87,7 @@ def listener():
                 data=pickle.loads(ret[1])
                 if data[config.joy_init_track]==1:
                     print('init tracker')
-                    track = run_Trackers()
+                    track = tracker.run_Trackers()
                     track.__next__()
                 if data[config.joy_save]==1 and args.save:
                     record_state = not record_state
@@ -93,7 +95,7 @@ def listener():
                     if record_state:
                         save = '../data/'+datetime.now().strftime('%y%m%d-%H%M%S')
                         os.mkdir(save)
-                        data_fd=open(save+'/data.pkl','rb')
+                        data_fd=open(save+'/data.pkl','wb')
             
             if record_state and ret[0] not in [topicl,topicr]:
                 #save only data not images

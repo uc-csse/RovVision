@@ -115,7 +115,7 @@ if __name__=='__main__':
     init()
     loop = asyncio.get_event_loop()
     loop.run_until_complete(asyncio.gather(
-        controller.run(),
+        controller.run(socket_pub),
         get_zmq_events(),
         control(),
         ))

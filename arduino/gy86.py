@@ -174,7 +174,7 @@ if  __name__=="__main__":
         #print(data)
         if data is not None:
             if 'a/g' in data: 
-                #socket_pub.send_multipart([config.topic_imu,pickle.dumps(data,-1)])
+                socket_pub.send_multipart([config.topic_imu,pickle.dumps(data,-1)])
                 tdiff = data['t_stemp_ms']-last_t
                 last_t = data['t_stemp_ms']
                 if cnt%10==0:

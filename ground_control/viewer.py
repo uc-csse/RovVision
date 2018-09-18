@@ -11,21 +11,15 @@ import argparse
 import numpy as np
 import config
 from gst import init_gst_reader,get_imgs
+import utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gst",help="stream with gst", action='store_true')
 args = parser.parse_args()
 
 
-context = zmq.Context()
-zmq_sub_v3d = context.socket(zmq.SUB)
-#zmq_sub_v3d.connect("tcp://%s:%d" % (os.environ['STEREO_IP'],config.zmq_pub_comp_vis))
-zmq_sub_v3d.connect("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_comp_vis))
-zmq_sub_v3d.setsockopt(zmq.SUBSCRIBE,config.topic_comp_vis)
-zmq_sub_main=context.socket(zmq.SUB)
-#zmq_sub_main.connect("tcp://%s:%d" % (os.environ['GCTRL_IP'],config.zmq_pub_main))
-zmq_sub_main.connect("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_main))
-zmq_sub_main.setsockopt(zmq.SUBSCRIBE,config.topic_main_telem)
+zmq_sub_v3d=utils.subscribe([config.topic_comp_vis],config.zmq_pub_comp_vis)
+zmq_sub_main=utils.subscribe([config.topic_main_telem],config.zmq_pub_main)
 
 def draw_txt(img,vd,md):
     font = cv2.FONT_HERSHEY_SIMPLEX

@@ -147,11 +147,16 @@ def listener():
                     ret['draw_rectsr']=draw_rectsr
                     ret['record_state']=record_state
                     ret['disk_usage']=disk_usage
+                    ret['fnum']=fmt_cnt_l
+
                     ox=int(ret['disp'])                    
                     draw_rectsr.append(((cx-wx//2+ox,cy-wy//2) , (cx+wx//2+ox,cy+wy//2) , (0,0,255)))
                     ox,oy=int(ret['offx']),int(ret['offy'])
                     draw_rectsl.append(((cx-wx//2+ox,cy-wy//2+oy) , (cx+wx//2+ox,cy+wy//2+oy) , (255,0,255)))
                     socket_pub.send_multipart([config.topic_comp_vis,pickle.dumps(ret,-1)])
+                    if record_state:
+                        pickle.dump([config.topic_comp_vis,ret],data_fd,-1)
+
                     pline = 'F{:06} SNR{:5.2f} RG{:5.2f} OF {:3.2f},{:3.2f},     ftime {:3.3f}ms'.\
                             format(fmt_cnt_l,ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000)
                     if 'dx' in ret:

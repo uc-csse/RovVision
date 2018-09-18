@@ -41,6 +41,7 @@ joy_init_track = 5
 
 
 #camera params
+fps = 10
 
 #camera info estimate
 fov=60.97
@@ -54,3 +55,5 @@ focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 
 track_params = (30,30,20,20) 
 stereo_corr_params = {'ws':(80,80),'sxl':200,'sxr':0}
+
+

@@ -90,6 +90,33 @@ def get_imgs():
     return images
 
 
-#############################
+############ gst from files #################
+import glob
+def gst_file_reader(path):
+    cmd='gst-launch-1.0 filesrc location={} ! '+\
+        ' h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! filesink location=fifo_raw_{}  sync=false'
+    gst_pipes=[]
+    os.system('rm fifo_raw_*')
+  
+    for i in [0,1]:
+        fname_raw='fifo_raw_'+'lr'[i]
+        os.mkfifo(fname_raw)
+        r1 = os.open(fname_raw,os.O_RDONLY | os.O_NONBLOCK)
+        fname=glob.glob(path+'/*_'+'lr'[i]+'.mp4')[0]
+        gcmd = cmd.format(fname,sy,sx,'lr'[i])
+        print(gcmd)
+        gst_pipes.append(r1)
+        Popen(gcmd, shell=True)
+
+    while 1:
+        if len(select.select(gst_pipes,[],[],0.1)[0])==len(gst_pipes):
+            for i in [0,1]:
+                data=os.read(gst_pipes[i],sx*sy*3)
+                if data:
+                    images[i]=np.fromstring(data,'uint8').reshape([sy,sx,3])
+                else:
+                    time.sleep(0.1)
+            yield images
+
 
 

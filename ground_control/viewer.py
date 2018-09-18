@@ -10,7 +10,7 @@ import cv2,os
 import argparse
 import numpy as np
 import config
-from gst import init_gst_reader,get_imgs
+from gst import init_gst_reader,get_imgs,set_files_fds,get_files_fds
 from annotations import draw_txt
 import utils
 
@@ -36,13 +36,15 @@ if __name__=='__main__':
             topic , data = zmq_sub_v3d.recv_multipart()
             vis_data = pickle.loads(data)
             if vis_data.get('record_state',False):
-                if save_files_fds[0] is None:
+                if get_files_fds()[0] is None:
+                    fds=[]
                     for i in [0,1]:
                         datestr=datetime.now().strftime('%y%m%d-%H%M%S')
-                        save_files_fds[i]=open('../../data/{}_{}.mp4'.format(datestr,'lr'[i]),'wb')
-                    save_files_fds[2]=open('../../data/{}.bin'.format(datestr),'wb')
+                        fds.append(open('../../data/{}_{}.mp4'.format(datestr,'lr'[i]),'wb'))
+                    set_files_fds(fds)
+                    #save_files_fds[2]=open('../../data/{}.bin'.format(datestr),'wb')
             else:
-                save_files_fds=[None,None,None]
+                set_files_fds([None,None])
 
         if zmq_sub_main.poll(0):
             topic , data = zmq_sub_main.recv_multipart()

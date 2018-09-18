@@ -75,7 +75,13 @@ def init_gst_reader(npipes):
         Popen(cmd, shell=True, bufsize=0)
 
 images=[None,None]
-save_files_fds=[None,None,None]
+save_files_fds=[None,None]
+def get_files_fds():
+    return save_files_fds
+
+def set_files_fds(fds):
+    for i in [0,1]:
+        save_files_fds[i]=fds[i]
 
 def get_imgs():
     global images

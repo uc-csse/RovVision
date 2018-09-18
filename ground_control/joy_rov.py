@@ -48,9 +48,9 @@ while not done:
 
         
         hold = joystick.get_hat(0)
-        if abs(hold[0])>0 or abs(hold[1])>0:
-            print('{} hold {}'.format(cnt,hold))
-            pub(config.topic_hold,pickle.dumps(hold))
+        #if abs(hold[0])>0 or abs(hold[1])>0:
+        #    print('{} hold {}'.format(cnt,hold))
+        #    pub(config.topic_hold,pickle.dumps(hold))
             #socket.send_multipart([config.topic_hold,pickle.dumps(hold)])
 
 

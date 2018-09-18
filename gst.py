@@ -4,9 +4,10 @@
 #gst-launch-1.0 -e -v udpsrc port=5700 ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! autovideosink
 #gst-launch-1.0 -e -v udpsrc port=5701 ! application/x-rtp, payload=96 ! rtph264depay ! avdec_h264 ! autovideosink
 from subprocess import Popen,PIPE
-import sys,time,select
+import sys,time,select,os
+import numpy as np
 import config
-
+############# gst wirite #########
 gst_pipes=None
 def init_gst(sx,sy,npipes):
     global gst_pipes
@@ -36,7 +37,59 @@ def send_gst(imgs):
         time.sleep(0.001)
         if len(select.select([],[gst_pipes[i].stdin],[],0)[1])>0:
             gst_pipes[i].stdin.write(im.tostring())
+
+def init_gst_files(sx,sy):
+   pass
+
+
+############# gst read #########
+gst_pipes_264=None
+sx,sy=config.pixelwidthx, config.pixelwidthy
+shape = (sx, sy, 3)
+
+def init_gst_reader(npipes):
+    global gst_pipes,gst_pipes_264
+    if 1: #h264
+        cmd='gst-launch-1.0 tcpclientsrc port={} ! identity sync=true  ! tee name=t ! queue ! filesink location=fifo_264_{}  sync=false  t. ! queue !'+\
+        ' h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! filesink location=fifo_raw_{}  sync=false'
+    if 0:
+        cmd='gst-launch-1.0 -q udpsrc port={} ! application/x-rtp,encoding-name=JPEG,payload=26 ! rtpjpegdepay ! jpegdec ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
     
+    gst_pipes=[]
+    gst_pipes_264=[]
+    os.system('rm fifo_*')
+    cmds=[]
+    for i in range(npipes):
+        fname_264='fifo_264_'+'lr'[i]
+        os.mkfifo(fname_264)
+        r = os.open(fname_264,os.O_RDONLY | os.O_NONBLOCK)
+        fname_raw='fifo_raw_'+'lr'[i]
+        os.mkfifo(fname_raw)
+        r1 = os.open(fname_raw,os.O_RDONLY | os.O_NONBLOCK)
+        gcmd = cmd.format(config.gst_ports[i],'lr'[i],sy,sx,'lr'[i])
+        print(gcmd)
+        cmds.append(gcmd)
+        gst_pipes_264.append(r)
+        gst_pipes.append(r1)
+    for cmd in cmds: #start together 
+        Popen(cmd, shell=True, bufsize=0)
+
+images=[None,None]
+save_files_fds=[None,None,None]
+
+def get_imgs():
+    global images
+    for i in range(len(images)):
+        if len(select.select([ gst_pipes[i] ],[],[],0.001)[0])>0 :
+            data=os.read(gst_pipes[i],sx*sy*3)
+            images[i]=np.fromstring(data,'uint8').reshape([sy,sx,3])
+        if len(select.select([ gst_pipes_264[i] ],[],[],0.001)[0])>0:
+            data=os.read(gst_pipes_264[i],1*1000*1000)
+            if save_files_fds[0] is not None:
+                save_files_fds[i].write(data)
+    return images
+
+
 #############################
 
 

@@ -93,11 +93,11 @@ async def control():
 
             if range_key in track_info: 
                 fb_cmd = fb_pid(track_info[range_key],lock_range)
-                #print('-----',fb_cmd,fb_pid.p,fb_pid.d,fb_pid.i)
+                print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(fb_cmd,fb_pid.p,fb_pid.i,fb_pid.d))
                 fb_cmd=int(-fb_cmd*500+1500)
             else:
                 fb_pid=pid.PID(*fb_params)
-            print('-----------',ud_cmd,lr_cmd,fb_cmd,lock_range)
+            #print('-----------',ud_cmd,lr_cmd,fb_cmd,lock_range)
             telem.update({'ud_cmd':ud_cmd,'lr_cmd':lr_cmd,'fb_cmd':fb_cmd,'lock_range':lock_range})
             track_info = None
             controller.set_rcs(ud_cmd,1500,fb_cmd,lr_cmd)

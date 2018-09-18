@@ -10,7 +10,7 @@ import cv2,os
 import argparse
 import numpy as np
 import config
-from subprocess import Popen,PIPE
+from gst import init_gst_reader,get_imgs
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gst",help="stream with gst", action='store_true')
@@ -26,55 +26,6 @@ zmq_sub_main=context.socket(zmq.SUB)
 #zmq_sub_main.connect("tcp://%s:%d" % (os.environ['GCTRL_IP'],config.zmq_pub_main))
 zmq_sub_main.connect("tcp://%s:%d" % ('127.0.0.1',config.zmq_pub_main))
 zmq_sub_main.setsockopt(zmq.SUBSCRIBE,config.topic_main_telem)
-
-############# gst ########
-gst_pipes=None
-gst_pipes_264=None
-gst_procs=None
-sx,sy=640,512
-shape = (sy, sx, 3)
-
-gst_pipes = None
-def init_gst(npipes):
-    global gst_pipes,gst_pipes_264,gst_procs
-    if 1: #h264
-        cmd='gst-launch-1.0 tcpclientsrc port={} ! identity sync=true  ! tee name=t ! queue ! filesink location=fifo_264_{}  sync=false  t. ! queue !'+\
-        ' h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! filesink location=fifo_raw_{}  sync=false'
-    if 0:
-        cmd='gst-launch-1.0 -q udpsrc port={} ! application/x-rtp,encoding-name=JPEG,payload=26 ! rtpjpegdepay ! jpegdec ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
-    
-    gst_pipes=[]
-    gst_pipes_264=[]
-    os.system('rm fifo_*')
-    cmds=[]
-    for i in range(npipes):
-        fname_264='fifo_264_'+'lr'[i]
-        os.mkfifo(fname_264)
-        r = os.open(fname_264,os.O_RDONLY | os.O_NONBLOCK)
-        fname_raw='fifo_raw_'+'lr'[i]
-        os.mkfifo(fname_raw)
-        r1 = os.open(fname_raw,os.O_RDONLY | os.O_NONBLOCK)
-        gcmd = cmd.format(config.gst_ports[i],'lr'[i],sy,sx,'lr'[i])
-        print(gcmd)
-        cmds.append(gcmd)
-        gst_pipes_264.append(r)
-        gst_pipes.append(r1)
-    for cmd in cmds: #start together 
-        Popen(cmd, shell=True, bufsize=0)
-
-images=[None,None]
-save_files_fds=[None,None,None]
-
-def get_imgs():
-    global gst_pipes,images
-    for i in range(len(images)):
-        if len(select.select([ gst_pipes[i] ],[],[],0.001)[0])>0 :
-            data=os.read(gst_pipes[i],sx*sy*3)
-            images[i]=np.fromstring(data,'uint8').reshape([sy,sx,3])
-        if len(select.select([ gst_pipes_264[i] ],[],[],0.001)[0])>0:
-            data=os.read(gst_pipes_264[i],1*1000*1000)
-            if save_files_fds[0] is not None:
-                save_files_fds[i].write(data)
 
 def draw_txt(img,vd,md):
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -94,14 +45,14 @@ def draw_txt(img,vd,md):
 
 
     
-
 if __name__=='__main__':
-    init_gst(2)
+    init_gst_reader(2)
+    sx,sy=config.pixelwidthx,config.pixelwidthy
     join=np.zeros((sy,sx*2,3),'uint8')
     vis_data = {}
     main_data  ={}
     while 1:
-        get_imgs()
+        images=get_imgs()
 
         #if all(images):
         if zmq_sub_v3d.poll(0):

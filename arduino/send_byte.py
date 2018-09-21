@@ -12,7 +12,7 @@ python send_byte.py -d 0
     parser.add_argument("-d","--dtr",help="sets value 0 or 1 to DTR line in esp32 its GPIO0") 
     parser.add_argument("-r","--rts",help="sets value 0 or 1 to RTS line in esp32 its EN") 
     parser.add_argument("-b","--baudrate",help="sets baudrate default 512000",default="460800")
-    parser.add_argument("-u","--usbdevice",help="sets usbdevice default /dev/ttyUSB0",default='/dev/ttyUSB0')
+    parser.add_argument("-u","--usbdevice",help="sets usbdevice default /dev/ttyUSB1",default='/dev/ttyUSB1')
     args = parser.parse_args()
 #import pdb;pdb.set_trace()
 ser = serial.Serial(args.usbdevice,baudrate=int(args.baudrate), rtscts=True, dsrdtr=True)

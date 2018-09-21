@@ -1,0 +1,33 @@
+set upboard:
+------------
+add lines to rc.local (before exit 0)
+echo 1000 > /sys/module/usbcore/parameters/usbfs_memory_mb
+/home/stereo/bluerov/scripts/run_serial_proxy.sh
+
+
+on both rpi and upboard:
+update /etc/ppp/options to:
+asyncmap 0
+netmask 255.255.254.0
+proxyarp
+lock
+local
+
+
+to test speed:
+from the up board:
+> dd if=/dev/zero of=tmpfile bs=10M count=1
+> time scp ./tmpfile pi@10.0.0.2:
+
+or
+
+>time rsync --progress ./tmpfile pi@10.0.0.2:/home/pi
+
+#### in the raspberry pi add to /etc/rc.local at the end the folowing lines
+
+tmux new-session -d -s run_pppd
+tmux send-keys "while true; do" ENTER
+tmux send-keys "sudo pppd -detach noipx  10.0.0.2:10.0.0.1 /dev/ttyUSB0 1000000" ENTER
+tmux send-keys "sleep 4" ENTER
+tmux send-keys "done" ENTER
+

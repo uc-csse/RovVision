@@ -4,4 +4,4 @@
 --cmd="set heartbeat 0"
 --out udpin:localhost:9000
 --out udpout:192.168.2.1:14550
---out udpout:stereo-UP-APL01:14551
+--out udpout:10.0.0.1:14551

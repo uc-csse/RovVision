@@ -24,8 +24,9 @@ tmux send-keys "cd flir &&  python flircam_proxy.py" ENTER
 #printf '\033]2;My Pane Title 3\033\\'
 
 tmux select-pane -t 3
+tmux send-keys "source scripts/detect_usbs.sh" ENTER
 #tmux send-keys "htop" ENTER
-tmux send-keys "cd arduino && python send_byte.py -d 0 && sleep 5 && python gy86.py -s" ENTER
+tmux send-keys "cd arduino && python send_byte.py -d 0 -u /dev/\$ESP_USB && sleep 5 && python gy86.py -s -u /dev/\$ESP_USB" ENTER
 #printf '\033]2;My Pane Title 3\033\\'
 
 tmux att

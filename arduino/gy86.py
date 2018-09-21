@@ -21,6 +21,7 @@ import utils
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-s","--send_start",help="sends 02 01 03", action='store_true')
+    parser.add_argument("-u","--usbdevice",help="sets usbdevice default /dev/ttyUSB1",default='/dev/ttyUSB1')
     args = parser.parse_args()
 
 
@@ -36,7 +37,7 @@ lmap = lambda func, *iterable: list(map(func, *iterable))
 def reader():
     laser1_status=False
     
-    ser = serial.Serial('/dev/ttyUSB0',460800)
+    ser = serial.Serial(args.usbdevice,460800)
     ser.flush()
     while ser.inWaiting():
         ser.read()#flushing

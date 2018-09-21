@@ -6,3 +6,11 @@ https://frillip.com/using-your-raspberry-pi-3-as-a-wifi-access-point-with-hostap
 /etc/wpa_supplicant/wpa_supplicant.conf
 /etc/hostapd/hostapd.conf 
 /etc/dnsmasq.conf
+
+
+to set serial on rpi:
+folow
+https://www.raspberrypi.org/documentation/configuration/uart.md
+
+basicly run:
+sudo raspi-config

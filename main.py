@@ -4,7 +4,7 @@ import controller
 import zmq
 import asyncio
 import pickle
-import time
+import time,os
 from algs import pid
 
 topic_postition=config.topic_sitl_position_report
@@ -22,7 +22,12 @@ zmq_sub_v3d.setsockopt(zmq.SUBSCRIBE,config.topic_comp_vis)
 socket_pub = context.socket(zmq.PUB)
 socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_main )
 
-
+def get_temp():
+    cmd="sensors -u |grep temp1_input |gawk '{ print $2 }'"
+    try:
+        float(os.popen(cmd).read())
+    except:
+        return -100
 
 ## system states 
 lock_state=False
@@ -73,6 +78,7 @@ async def control():
 
 
     telem={}
+    cnt=0
     while 1:
         if track_info is not None and lock_state:
             if 'dy' in track_info: 
@@ -102,9 +108,11 @@ async def control():
             track_info = None
             controller.set_rcs(ud_cmd,1500,fb_cmd,lr_cmd)
         
+        if cnt%100==0: #every 10 sec
+            telem['temp']=get_temp()
         telem.update({'ts':time.time()-start, 'lock':lock_state}) 
         socket_pub.send_multipart([config.topic_main_telem,pickle.dumps(telem,-1)]) 
-
+        cnt+=1
         await asyncio.sleep(0.1)#~10hz control 
 
 

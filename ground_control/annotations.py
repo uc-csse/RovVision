@@ -4,8 +4,9 @@ import cv2
 def draw_txt(img,vd,md):
     font = cv2.FONT_HERSHEY_SIMPLEX
     #print('-2-',md)
-    if 'ts' in md and 'range_avg' in vd:
-        line1='{:4.1f}s R{:3.2f}m'.format(md['ts'],vd['range_avg'])
+    if 'ts' in md and 'range' in vd and 'temp' in md:
+        rng = vd.get('range_avg',vd['range']) 
+        line1='{:4.1f}s R{:3.2f}m {:3.1f}C'.format(md['ts'],rng,md['temp'])
         cv2.putText(img,line1,(10,50), font, 0.5,(0,0,255),1,cv2.LINE_AA)
 
     if 'lock' in md and md['lock']: 

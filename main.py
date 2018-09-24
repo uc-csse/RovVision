@@ -25,7 +25,7 @@ socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_main )
 def get_temp():
     cmd="sensors -u |grep temp1_input |gawk '{ print $2 }'"
     try:
-        float(os.popen(cmd).read())
+        return float(os.popen(cmd).read())
     except:
         return -100
 

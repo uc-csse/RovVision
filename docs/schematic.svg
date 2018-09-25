@@ -16,7 +16,7 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   sodipodi:docname="tubes_setup.svg">
+   sodipodi:docname="schematic.svg">
   <defs
      id="defs4">
     <inkscape:path-effect
@@ -171,9 +171,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.2099609"
-     inkscape:cx="517.62203"
-     inkscape:cy="496.62099"
+     inkscape:zoom="1.0457182"
+     inkscape:cx="525.11291"
+     inkscape:cy="470.78818"
      inkscape:document-units="px"
      inkscape:current-layer="g8301"
      showgrid="true"
@@ -201,7 +201,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -270,59 +270,17 @@
          inkscape:connector-curvature="0" />
       <path
          style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.53754157px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-         d="m 685.32442,425.18461 h 63.48221 v 5.26956"
-         id="path8703"
-         inkscape:connector-type="orthogonal"
-         inkscape:connector-curvature="0"
-         inkscape:connection-start="#g8637-0"
-         inkscape:connection-end="#use8687" />
-      <use
-         id="use8687"
-         style="fill:#aaccee;stroke:#000000"
-         xlink:href="#InputOutput"
-         transform="matrix(0.58925762,0,0,0.49036432,704.61231,393.67685)"
-         x="0"
-         y="0"
-         width="100%"
-         height="100%" />
-      <path
-         style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.53754157px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-         d="m 554.33572,461.52759 h 130.9887 v -36.34298"
+         d="m 201.3046,404.36031 v 0"
          id="path8711"
          inkscape:connector-type="orthogonal"
          inkscape:connector-curvature="0"
          inkscape:connection-start="#g8637"
          inkscape:connection-end="#g8637-0" />
-      <g
-         id="g8637-0"
-         transform="matrix(0.79059738,0,0,0.97709904,256.24464,-57.475481)">
-        <use
-           height="100%"
-           width="100%"
-           y="0"
-           x="0"
-           transform="matrix(0.37555736,0,0,0.22949604,514.56176,476.76034)"
-           xlink:href="#Process"
-           style="fill:#aaccee;stroke:#000000"
-           id="use8345-4" />
-        <text
-           transform="scale(1.1480192,0.87106557)"
-           id="text8435-5"
-           y="564.69574"
-           x="472.76248"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           xml:space="preserve"><tspan
-             y="564.69574"
-             x="472.76248"
-             id="tspan8463-4"
-             sodipodi:role="line"
-             style="font-size:8.44677544px;line-height:1.25">Interface</tspan><tspan
-             y="575.25421"
-             x="472.76248"
-             id="tspan8465-2"
-             sodipodi:role="line"
-             style="font-size:8.44677544px;line-height:1.25">Card</tspan></text>
-      </g>
+      <path
+         style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.7697891px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="m 699.81655,422.01343 h 37.12323"
+         id="path4946"
+         inkscape:connector-curvature="0" />
       <path
          style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.49040419px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          d="m 550.47956,458.81304 v 19.51477 H 440.03184"
@@ -358,72 +316,6 @@
              id="tspan8465"
              sodipodi:role="line"
              style="font-size:8.44677544px;line-height:1.25">Card</tspan></text>
-      </g>
-      <path
-         style="fill:none;fill-rule:evenodd;stroke:#ff0000;stroke-width:0.53754157px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-         d="m 442.36689,485.34395 v -4.48952 h -85.00624"
-         id="path8719"
-         inkscape:connector-type="orthogonal"
-         inkscape:connector-curvature="0"
-         inkscape:connection-start="#g8631"
-         inkscape:connection-end="#g8626" />
-      <path
-         style="fill:none;fill-rule:evenodd;stroke:#ff0000;stroke-width:0.53754157px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-         d="m 357.36065,480.85443 v 1.6366 h -82.26504"
-         id="path8721"
-         inkscape:connector-type="orthogonal"
-         inkscape:connector-curvature="0"
-         inkscape:connection-start="#g8626"
-         inkscape:connection-end="#g8621" />
-      <g
-         id="g8626"
-         transform="matrix(0.94517528,0,0,0.92134324,-4.8811717,14.167912)">
-        <use
-           height="100%"
-           width="100%"
-           y="0"
-           x="0"
-           transform="matrix(0.44351121,0,0,0.30843497,349.99026,484.46185)"
-           xlink:href="#Process"
-           style="fill:#aaccee;stroke:#000000"
-           id="use8345-6" />
-        <text
-           transform="scale(0.95689321,1.0450487)"
-           id="text8443"
-           y="489.03207"
-           x="376.32803"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           xml:space="preserve"><tspan
-             y="489.03207"
-             x="376.32803"
-             id="tspan8445"
-             sodipodi:role="line"
-             style="font-size:12.71133137px;line-height:1.25">Pixhawk</tspan></text>
-      </g>
-      <g
-         id="g8621"
-         transform="matrix(1.0004582,-0.0220968,0,0.94542774,-0.12600975,15.208039)">
-        <use
-           height="100%"
-           width="100%"
-           y="0"
-           x="0"
-           transform="matrix(-0.34621061,-0.00294349,0.00363345,-0.28046912,300.71464,522.09428)"
-           xlink:href="#Delay"
-           style="fill:#aaccee;stroke:#000000"
-           id="use8479" />
-        <text
-           transform="scale(1.0874771,0.9195596)"
-           id="text8447"
-           y="547.50311"
-           x="236.76241"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           xml:space="preserve"><tspan
-             y="547.50311"
-             x="236.76241"
-             id="tspan8449"
-             sodipodi:role="line"
-             style="font-size:9.42130661px;line-height:1.25">Camera</tspan></text>
       </g>
       <path
          style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.58103216px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -500,28 +392,31 @@
                style="font-size:9.42130661px;line-height:1.25">Camera</tspan></text>
         </g>
       </g>
-      <use
-         id="use8871"
-         style="fill:#aaccee;stroke:#000000"
-         xlink:href="#MagneticDrum"
-         transform="matrix(2.5027312,0,0,0.47770261,263.56253,500.00502)"
-         x="0"
-         y="0"
-         width="100%"
-         height="100%" />
-      <flowRoot
-         xml:space="preserve"
-         id="flowRoot8884"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0.01%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-         transform="matrix(0.58925762,0,0,0.49036432,143.56631,248.82268)"><flowRegion
-           id="flowRegion8886"><rect
-             id="rect8888"
-             width="270"
-             height="81"
-             x="396"
-             y="558" /></flowRegion><flowPara
-           id="flowPara8890"
-           style="font-size:37.11875153px;line-height:1.25">Battery Tube</flowPara></flowRoot>      <path
+      <g
+         id="g4953">
+        <use
+           height="100%"
+           width="100%"
+           y="0"
+           x="0"
+           transform="matrix(2.5027312,0,0,0.47770261,263.56253,500.00502)"
+           xlink:href="#MagneticDrum"
+           style="fill:#aaccee;stroke:#000000"
+           id="use8871" />
+        <flowRoot
+           transform="matrix(0.58925762,0,0,0.49036432,143.56631,248.82268)"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0.01%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           id="flowRoot8884"
+           xml:space="preserve"><flowRegion
+             id="flowRegion8886"><rect
+               y="558"
+               x="396"
+               height="81"
+               width="270"
+               id="rect8888" /></flowRegion><flowPara
+             style="font-size:37.11875153px;line-height:1.25"
+             id="flowPara8890">Battery Tube</flowPara></flowRoot>      </g>
+      <path
          style="fill:none;fill-rule:evenodd;stroke:#ff0000;stroke-width:0.52027357px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          d="M 457.89401,612.03475 H 710.4279 v 43.87937"
          id="path8911"
@@ -539,76 +434,6 @@
          id="path8958"
          inkscape:connector-type="orthogonal"
          inkscape:connector-curvature="0" />
-      <path
-         style="fill:none;fill-rule:evenodd;stroke:#ff0000;stroke-width:0.53754157px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-         d="m 466.52287,605.77202 v -2.81416 h -84.90544"
-         id="path8962"
-         inkscape:connector-type="orthogonal"
-         inkscape:connector-curvature="0"
-         inkscape:connection-start="#g8730" />
-      <path
-         style="fill:none;fill-rule:evenodd;stroke:#ff0000;stroke-width:0.53754157px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-         d="m 467.93326,630.38463 v -0.9471 h -86.31583"
-         id="path8964"
-         inkscape:connector-type="orthogonal"
-         inkscape:connector-curvature="0"
-         inkscape:connection-start="#g8773" />
-      <g
-         id="g8773"
-         transform="translate(205.95307,-76.778129)">
-        <use
-           height="100%"
-           width="100%"
-           y="0"
-           x="0"
-           transform="matrix(0.59219174,0,0,0.2396879,217.56581,689.18617)"
-           xlink:href="#Process"
-           style="fill:#aaccee;stroke:#000000"
-           id="use8757" />
-        <text
-           transform="scale(1.0879128,0.91919131)"
-           id="text8769"
-           y="774.32269"
-           x="210.14159"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           xml:space="preserve"><tspan
-             y="774.32269"
-             x="210.14159"
-             id="tspan8771"
-             sodipodi:role="line"
-             style="font-size:14.61347866px;line-height:1.25">Controler</tspan></text>
-      </g>
-      <path
-         style="fill:#0000ff;fill-rule:evenodd;stroke:#ff0000;stroke-width:0.53754157px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-         d="M 381.61743,629.43753 V 602.95786"
-         id="path8966"
-         inkscape:connector-type="orthogonal"
-         inkscape:connector-curvature="0" />
-      <g
-         id="g8730"
-         transform="matrix(1.0030293,0,0,0.65743722,-33.056545,222.49464)">
-        <use
-           height="100%"
-           width="100%"
-           y="0"
-           x="0"
-           transform="matrix(1.0702211,0,0,0.37669105,417.80402,554.00992)"
-           xlink:href="#AuxillaryOp"
-           style="fill:#aaccee;stroke:#000000"
-           id="use8593" />
-        <text
-           transform="scale(1.0401385,0.96141043)"
-           id="text8609"
-           y="610.39484"
-           x="444.40244"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           xml:space="preserve"><tspan
-             y="610.39484"
-             x="444.40244"
-             id="tspan8611"
-             sodipodi:role="line"
-             style="font-size:16.03026199px;line-height:1.25">Up Board</tspan></text>
-      </g>
       <path
          style="fill:none;fill-rule:evenodd;stroke:#00ff00;stroke-width:1.00789039;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
          d="m 533.15539,489.18351 h 177.32323 l 10e-6,109.37854"
@@ -743,6 +568,31 @@
          id="path8590"
          inkscape:connector-curvature="0" />
       <g
+         id="g8730"
+         transform="matrix(1.0030293,0,0,0.65743722,-33.056545,222.49464)">
+        <use
+           height="100%"
+           width="100%"
+           y="0"
+           x="0"
+           transform="matrix(1.0702211,0,0,0.37669105,417.80402,554.00992)"
+           xlink:href="#AuxillaryOp"
+           style="fill:#aaccee;stroke:#000000"
+           id="use8593" />
+        <text
+           transform="scale(1.0401385,0.96141043)"
+           id="text8609"
+           y="610.39484"
+           x="444.40244"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           xml:space="preserve"><tspan
+             y="610.39484"
+             x="444.40244"
+             id="tspan8611"
+             sodipodi:role="line"
+             style="font-size:16.03026199px;line-height:1.25">Up Board</tspan></text>
+      </g>
+      <g
          id="g9035-8"
          transform="matrix(0.40183667,0,0,0.28707292,289.91335,497.16134)">
         <g
@@ -862,6 +712,15 @@
          y="0"
          width="100%"
          height="100%" />
+      <use
+         id="use8687"
+         style="fill:#aaccee;stroke:#000000"
+         xlink:href="#InputOutput"
+         transform="matrix(0.58925762,0,0,0.49036432,704.61231,393.67685)"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
       <text
          xml:space="preserve"
          style="font-style:normal;font-weight:normal;font-size:12.06914711px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.30172867px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -895,6 +754,136 @@
            x="195.40274"
            y="835.86542"
            style="stroke-width:0.23239987px">Laser</tspan></text>
+      <path
+         style="fill:none;fill-rule:evenodd;stroke:#ff0000;stroke-width:0.5039452;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+         d="m 424.04398,602.95786 h -26.51659 l 0,26.47968 h 37.12323"
+         id="path4936"
+         inkscape:connector-curvature="0" />
+      <g
+         id="g8773"
+         transform="translate(205.95307,-76.778129)">
+        <use
+           height="100%"
+           width="100%"
+           y="0"
+           x="0"
+           transform="matrix(0.59219174,0,0,0.2396879,217.56581,689.18617)"
+           xlink:href="#Process"
+           style="fill:#aaccee;stroke:#000000"
+           id="use8757" />
+        <text
+           transform="scale(1.0879128,0.91919131)"
+           id="text8769"
+           y="774.32269"
+           x="210.14159"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           xml:space="preserve"><tspan
+             y="774.32269"
+             x="210.14159"
+             id="tspan8771"
+             sodipodi:role="line"
+             style="font-size:14.61347866px;line-height:1.25">Controler</tspan></text>
+      </g>
+      <path
+         style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.50394517px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="M 413.43734,479.38605 H 381.61743"
+         id="path4938"
+         inkscape:connector-curvature="0" />
+      <path
+         style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.50394517px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="M 333.88756,479.38605 H 296.76433"
+         id="path4940"
+         inkscape:connector-curvature="0" />
+      <g
+         id="g8621"
+         transform="matrix(1.0004582,-0.0220968,0,0.94542774,0.68941226,14.031915)">
+        <use
+           height="100%"
+           width="100%"
+           y="0"
+           x="0"
+           transform="matrix(-0.34621061,-0.00294349,0.00363345,-0.28046912,300.71464,522.09428)"
+           xlink:href="#Delay"
+           style="fill:#aaccee;stroke:#000000"
+           id="use8479" />
+        <text
+           transform="scale(1.0874771,0.9195596)"
+           id="text8447"
+           y="547.50311"
+           x="236.76241"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           xml:space="preserve"><tspan
+             y="547.50311"
+             x="236.76241"
+             id="tspan8449"
+             sodipodi:role="line"
+             style="font-size:9.42130661px;line-height:1.25">Camera</tspan></text>
+      </g>
+      <g
+         id="g8626"
+         transform="matrix(0.94517528,0,0,0.92134324,-4.8811717,14.167912)">
+        <use
+           height="100%"
+           width="100%"
+           y="0"
+           x="0"
+           transform="matrix(0.44351121,0,0,0.30843497,349.99026,484.46185)"
+           xlink:href="#Process"
+           style="fill:#aaccee;stroke:#000000"
+           id="use8345-6" />
+        <text
+           transform="scale(0.95689321,1.0450487)"
+           id="text8443"
+           y="489.03207"
+           x="376.32803"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           xml:space="preserve"><tspan
+             y="489.03207"
+             x="376.32803"
+             id="tspan8445"
+             sodipodi:role="line"
+             style="font-size:12.71133137px;line-height:1.25">Pixhawk</tspan></text>
+      </g>
+      <path
+         style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.50394517px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="m 577.84022,457.31966 h 63.63982 v 0"
+         id="path4942"
+         inkscape:connector-curvature="0" />
+      <path
+         style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.50394517px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="m 641.48004,457.31966 v -35.30623 l 26.5166,0"
+         id="path4944"
+         inkscape:connector-curvature="0" />
+      <g
+         id="g8637-0"
+         transform="matrix(0.79059738,0,0,0.97709904,256.24464,-57.475481)">
+        <use
+           height="100%"
+           width="100%"
+           y="0"
+           x="0"
+           transform="matrix(0.37555736,0,0,0.22949604,514.56176,476.76034)"
+           xlink:href="#Process"
+           style="fill:#aaccee;stroke:#000000"
+           id="use8345-4" />
+        <text
+           transform="scale(1.1480192,0.87106557)"
+           id="text8435-5"
+           y="564.69574"
+           x="472.76248"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           xml:space="preserve"><tspan
+             y="564.69574"
+             x="472.76248"
+             id="tspan8463-4"
+             sodipodi:role="line"
+             style="font-size:8.44677544px;line-height:1.25">Interface</tspan><tspan
+             y="575.25421"
+             x="472.76248"
+             id="tspan8465-2"
+             sodipodi:role="line"
+             style="font-size:8.44677544px;line-height:1.25">Card</tspan></text>
+      </g>
     </g>
   </g>
 </svg>

@@ -148,6 +148,7 @@ def listener():
                     ret['record_state']=record_state
                     ret['disk_usage']=disk_usage
                     ret['fnum']=fmt_cnt_l
+                    ret['send_cnt']=gst.send_cnt.copy()
 
                     ox=int(ret['disp'])                    
                     draw_rectsr.append(((cx-wx//2+ox,cy-wy//2) , (cx+wx//2+ox,cy+wy//2) , (0,0,255)))

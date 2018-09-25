@@ -9,6 +9,7 @@ import numpy as np
 import config
 ############# gst wirite #########
 gst_pipes=None
+send_cnt=[0,0]
 def init_gst(sx,sy,npipes):
     global gst_pipes
     #cmd="gst-launch-1.0 {}! x264enc tune=zerolatency  bitrate=500 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
@@ -37,6 +38,7 @@ def send_gst(imgs):
         time.sleep(0.001)
         if len(select.select([],[gst_pipes[i].stdin],[],0)[1])>0:
             gst_pipes[i].stdin.write(im.tostring())
+            send_cnt[i]+=1
 
 def init_gst_files(sx,sy):
    pass

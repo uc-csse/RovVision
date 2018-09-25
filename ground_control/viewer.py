@@ -18,9 +18,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--gst",help="stream with gst", action='store_true')
 args = parser.parse_args()
 
+subs_socks=[]
+subs_socks.append(utils.subscribe([config.topic_comp_vis],config.zmq_pub_comp_vis))
+subs_socks.append(utils.subscribe([config.topic_main_telem],config.zmq_pub_main))
 
-zmq_sub_v3d=utils.subscribe([config.topic_comp_vis],config.zmq_pub_comp_vis)
-zmq_sub_main=utils.subscribe([config.topic_main_telem],config.zmq_pub_main)
 
 if __name__=='__main__':
     init_gst_reader(2)
@@ -28,13 +29,24 @@ if __name__=='__main__':
     join=np.zeros((sy,sx*2,3),'uint8')
     vis_data = {}
     main_data  ={}
+    data_file_fd=None
+    rcv_cnt=0
     while 1:
         images=get_imgs()
-
+        rcv_cnt+=1
         #if all(images):
-        if zmq_sub_v3d.poll(0):
-            topic , data = zmq_sub_v3d.recv_multipart()
-            vis_data = pickle.loads(data)
+        socks=zmq.select(subs_socks,[],[],0.001)[0]
+        for sock in socks:
+            ret = sock.recv_multipart()
+            topic , data = ret
+            if ret[0]==config.topic_comp_vis:
+                vis_data=pickle.loads(ret[1])
+                break
+            if ret[0]==config.topic_mav_telem:
+                mav_data=pickle.loads(ret[1])
+            if ret[0]==config.topic_main_telem:
+                main_data.update(pickle.loads(ret[1]))
+
             if vis_data.get('record_state',False):
                 if get_files_fds()[0] is None:
                     fds=[]
@@ -42,13 +54,15 @@ if __name__=='__main__':
                         datestr=datetime.now().strftime('%y%m%d-%H%M%S')
                         fds.append(open('../../data/{}_{}.mp4'.format(datestr,'lr'[i]),'wb'))
                     set_files_fds(fds)
-                    #save_files_fds[2]=open('../../data/{}.bin'.format(datestr),'wb')
+                    data_file_fd=open('../../data/{}.bin'.format(datestr),'wb')
             else:
                 set_files_fds([None,None])
+                data_file_fd=None
 
-        if zmq_sub_main.poll(0):
-            topic , data = zmq_sub_main.recv_multipart()
-            main_data = pickle.loads(data)
+            if data_file_fd is not None:
+                pickle.dump(ret,data_file_fd,-1)
+                pickle.dump(['viewer_data',{'rcv_cnt':rcv_cnt}],data_file_fd,-1)
+
         #print('-1-',main_data)
 
         if images[0] is not None and images[1] is not None:

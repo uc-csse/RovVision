@@ -403,6 +403,26 @@
        effect="spiro"
        id="path-effect8997-5"
        is_visible="true" />
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Lend-9"
+       style="overflow:visible"
+       inkscape:isstock="true"
+       inkscape:collect="always">
+      <path
+         inkscape:connector-curvature="0"
+         id="path8155-0"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 Z"
+         style="fill:#00ff00;fill-opacity:1;fill-rule:evenodd;stroke:#00ff00;stroke-width:1pt;stroke-opacity:1"
+         transform="matrix(-0.8,0,0,-0.8,-10,0)" />
+    </marker>
+    <inkscape:path-effect
+       effect="spiro"
+       id="path-effect8138-9"
+       is_visible="true" />
   </defs>
   <sodipodi:namedview
      id="base"
@@ -412,8 +432,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.0619722"
-     inkscape:cx="345.64843"
-     inkscape:cy="415.59395"
+     inkscape:cx="478.89109"
+     inkscape:cy="386.40298"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -507,6 +527,24 @@
        y="0"
        width="100%"
        height="100%" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:6.4833169px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.20524429px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="168.94513"
+       y="111.65778"
+       id="text8806"
+       transform="scale(0.95453666,1.0476287)"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan8804"
+         x="168.94513"
+         y="111.65778"
+         style="stroke-width:0.20524429px">main.py</tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#ff0000;stroke-width:0.28336594;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 184.9085,135.04345 41.21659,0"
+       id="path4971"
+       inkscape:connector-curvature="0" />
     <g
        id="g4854"
        transform="matrix(0.28255944,0,0,0.36672801,187.92709,92.074904)">
@@ -532,24 +570,6 @@
            id="tspan8808"
            sodipodi:role="line">controller.py</tspan></text>
     </g>
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:6.4833169px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.20524429px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="168.94513"
-       y="111.65778"
-       id="text8806"
-       transform="scale(0.95453666,1.0476287)"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan8804"
-         x="168.94513"
-         y="111.65778"
-         style="stroke-width:0.20524429px">main.py</tspan></text>
-    <path
-       style="fill:none;fill-rule:evenodd;stroke:#ff0000;stroke-width:0.27689737;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 186.76877,135.04345 39.35632,0"
-       id="path4971"
-       inkscape:connector-curvature="0" />
     <use
        id="use4985"
        transform="matrix(1.258635,0,0,2.0929387,86.959136,182.26394)"
@@ -723,23 +743,21 @@
            y="268.79999" /></flowRegion><flowPara
          id="flowPara5199" /></flowRoot>    <path
        style="fill:none;fill-rule:evenodd;stroke:#00ff00;stroke-width:0.28192195;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow1Lend)"
-       d="m 69.698071,127.10412 28.819293,0 0,0"
+       d="m 69.963824,124.44659 28.819293,0 0,0"
        id="path8136"
        inkscape:path-effect="#path-effect8138"
-       inkscape:original-d="m 69.698071,127.10412 28.819293,0 0,0"
+       inkscape:original-d="m 69.963824,124.44659 28.819293,0 0,0"
        inkscape:connector-curvature="0" />
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.10883236px;line-height:125%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="99.238716"
-       y="89.392471"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.10881875px;line-height:125%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
+       x="99.608421"
+       y="87.482162"
        id="text8436"
        sodipodi:linespacing="125%"
        transform="scale(0.71882805,1.3911533)"><tspan
          sodipodi:role="line"
-         id="tspan8470"
-         x="99.238716"
-         y="89.392471">unreal drone rgb camera</tspan></text>
+         id="tspan9359">unreal drone rgb camera1</tspan></text>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#00ff00;stroke-width:0.22287294px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 49.717239,149.25437 0,8.05464 111.892651,0"
@@ -1259,30 +1277,6 @@
            id="tspan5091"
            sodipodi:role="line">flircam_proxy.py  </tspan></text>
     </g>
-    <g
-       id="g11974"
-       transform="matrix(0.78664689,0,0,0.74087226,-173.14544,62.487809)">
-      <use
-         height="100%"
-         width="100%"
-         y="0"
-         x="0"
-         transform="matrix(10.021603,0,0,3.2598459,161.74245,22.412979)"
-         xlink:href="#AuxillaryOp"
-         style="fill:#c80000;fill-opacity:0.39215686;stroke:none;stroke-opacity:0.39215686"
-         id="use11927" />
-      <text
-         sodipodi:linespacing="125%"
-         id="text11970"
-         y="64.362816"
-         x="260.6955"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.47573566px;line-height:125%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-         xml:space="preserve"><tspan
-           y="64.362816"
-           x="260.6955"
-           id="tspan11972"
-           sodipodi:role="line">UP Board</tspan></text>
-    </g>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#ff0000;stroke-width:0.28222221px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 256.54,121.74 17.78,0 0,124.45999 -40.64,0"
@@ -1535,5 +1529,46 @@
        y="0"
        width="100%"
        height="100%" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#00ff00;stroke-width:0.28192195;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow1Lend-9)"
+       d="m 69.672625,131.00358 28.819298,0 0,0"
+       id="path8136-9"
+       inkscape:path-effect="#path-effect8138-9"
+       inkscape:original-d="m 69.672625,131.00358 28.819298,0 0,0"
+       inkscape:connector-curvature="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.10881875px;line-height:125%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
+       x="99.573013"
+       y="92.768608"
+       id="text8436-4"
+       sodipodi:linespacing="125%"
+       transform="scale(0.71882805,1.3911533)"><tspan
+         sodipodi:role="line"
+         id="tspan9361">unreal drone rgb camera2</tspan></text>
+    <g
+       id="g11974"
+       transform="matrix(0.78664689,0,0,0.74087226,-171.01941,64.34808)">
+      <use
+         height="100%"
+         width="100%"
+         y="0"
+         x="0"
+         transform="matrix(10.021603,0,0,3.2598459,161.74245,22.412979)"
+         xlink:href="#AuxillaryOp"
+         style="fill:#c80000;fill-opacity:0.39215686;stroke:none;stroke-opacity:0.39215686"
+         id="use11927" />
+      <text
+         sodipodi:linespacing="125%"
+         id="text11970"
+         y="64.362816"
+         x="260.6955"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.47573566px;line-height:125%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         xml:space="preserve"><tspan
+           y="64.362816"
+           x="260.6955"
+           id="tspan11972"
+           sodipodi:role="line">UP Board</tspan></text>
+    </g>
   </g>
 </svg>

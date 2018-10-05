@@ -172,7 +172,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.0457182"
-     inkscape:cx="371.48586"
+     inkscape:cx="178.79532"
      inkscape:cy="470.78818"
      inkscape:document-units="px"
      inkscape:current-layer="g8301"
@@ -213,31 +213,27 @@
     <g
        id="g8301"
        transform="matrix(1.6970506,0,0,2.0393001,-341.6241,-537.24983)">
-      <g
-         id="g8643"
-         transform="translate(-6.5476391,26.748509)">
-        <use
-           id="use8279"
-           style="fill:#aaccee;stroke:#000000"
-           xlink:href="#MagneticDrum"
-           transform="matrix(3.6361099,0,0,0.93490006,187.73449,371.26036)"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <text
-           transform="scale(1.3263878,0.75392732)"
-           xml:space="preserve"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           x="295.59668"
-           y="555.43726"
-           id="text8297"><tspan
-             sodipodi:role="line"
-             id="tspan8299"
-             x="295.59668"
-             y="555.43726"
-             style="font-size:21.19281769px;line-height:1.25">Main Tube</tspan></text>
-      </g>
+      <use
+         height="100%"
+         width="100%"
+         y="0"
+         x="0"
+         transform="matrix(3.6361099,0,0,0.93490006,181.18685,398.00887)"
+         xlink:href="#MagneticDrum"
+         style="fill:#aaccee;stroke:#000000"
+         id="use8279" />
+      <text
+         id="text8297"
+         y="590.91614"
+         x="290.66025"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         xml:space="preserve"
+         transform="scale(1.3263878,0.75392732)"><tspan
+           style="font-size:21.19281769px;line-height:1.25"
+           y="590.91614"
+           x="290.66025"
+           id="tspan8299"
+           sodipodi:role="line">Main Tube</tspan></text>
       <g
          id="g8723"
          transform="translate(117.85753,-74.301417)">
@@ -392,32 +388,28 @@
                style="font-size:9.42130661px;line-height:1.25">Camera</tspan></text>
         </g>
       </g>
-      <g
-         id="g4953"
-         transform="translate(1.4362947,-0.52902465)">
-        <use
-           height="100%"
-           width="100%"
-           y="0"
-           x="0"
-           transform="matrix(2.5027312,0,0,0.47770261,263.56253,500.00502)"
-           xlink:href="#MagneticDrum"
-           style="fill:#aaccee;stroke:#000000"
-           id="use8871" />
-        <flowRoot
-           transform="matrix(0.58925762,0,0,0.49036432,143.56631,248.82268)"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0.01%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           id="flowRoot8884"
-           xml:space="preserve"><flowRegion
-             id="flowRegion8886"><rect
-               y="558"
-               x="396"
-               height="81"
-               width="270"
-               id="rect8888" /></flowRegion><flowPara
-             style="font-size:37.11875153px;line-height:1.25"
-             id="flowPara8890">Battery Tube</flowPara></flowRoot>      </g>
-      <path
+      <use
+         id="use8871"
+         style="fill:#aaccee;stroke:#000000"
+         xlink:href="#MagneticDrum"
+         transform="matrix(2.5027312,0,0,0.47770261,264.99882,499.476)"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <flowRoot
+         xml:space="preserve"
+         id="flowRoot8884"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0.01%;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         transform="matrix(0.58925762,0,0,0.49036432,145.0026,248.29366)"><flowRegion
+           id="flowRegion8886"><rect
+             id="rect8888"
+             width="270"
+             height="81"
+             x="396"
+             y="558" /></flowRegion><flowPara
+           id="flowPara8890"
+           style="font-size:37.11875153px;line-height:1.25">Battery Tube</flowPara></flowRoot>      <path
          style="fill:none;fill-rule:evenodd;stroke:#ff0000;stroke-width:0.52027357px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          d="M 457.89401,612.03475 H 710.4279 v 43.87937"
          id="path8911"

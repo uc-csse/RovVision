@@ -15,8 +15,8 @@
    viewBox="0 0 990 765"
    id="svg2"
    version="1.1"
-   inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   sodipodi:docname="schematic.svg">
+   inkscape:version="0.92.3 (unknown)"
+   sodipodi:docname="schematic_inkscape.svg">
   <defs
      id="defs4">
     <inkscape:path-effect
@@ -172,7 +172,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.0457182"
-     inkscape:cx="564.1764"
+     inkscape:cx="371.48586"
      inkscape:cy="470.78818"
      inkscape:document-units="px"
      inkscape:current-layer="g8301"
@@ -393,7 +393,8 @@
         </g>
       </g>
       <g
-         id="g4953">
+         id="g4953"
+         transform="translate(1.4362947,-0.52902465)">
         <use
            height="100%"
            width="100%"

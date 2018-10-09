@@ -399,7 +399,8 @@ def run_single_camera(cams):
                         for q in [ql,qr]:
                             frame_cnt,img = q.get()
                             topic = config.topic_unreal_drone_rgb_camera%0+(b'l' if q is ql else b'r')
-                            print('sending --- ',frame_cnt)
+                            if frame_cnt%10==0:
+                                print('sending --- ',frame_cnt)
                             socket_pub.send_multipart([topic,struct.pack('llll',*img.shape,frame_cnt),img.tostring()]) 
                         cnt=frame_cnt
                     else:

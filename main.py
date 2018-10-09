@@ -22,6 +22,9 @@ zmq_sub_v3d.setsockopt(zmq.SUBSCRIBE,config.topic_comp_vis)
 socket_pub = context.socket(zmq.PUB)
 socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_main )
 
+fb_dir=-1.0
+lr_dir=1.0
+
 def get_temp():
     cmd="sensors -u |grep temp1_input |gawk '{ print $2 }'"
     try:
@@ -71,7 +74,7 @@ async def control():
     lr_pid=pid.PID(*lr_params)
     
     ### range
-    fb_params=(0.2,0.001,0.2,0.2)
+    fb_params=(0.2,0.002,0.2,0.2)
     fb_pid=pid.PID(*fb_params)
 
     ud_cmd,lr_cmd,fb_cmd = 1500,1500,1500
@@ -90,7 +93,7 @@ async def control():
             
             if 'dx' in track_info: 
                 lr_cmd = lr_pid(track_info['dx'],0)
-                lr_cmd=int(-lr_cmd*500+1500)
+                lr_cmd=int(-lr_cmd*300+1500)
             else:
                 lr_pid=pid.PID(*lr_params)
                 #lr_cmd=1500
@@ -100,13 +103,14 @@ async def control():
             if range_key in track_info: 
                 fb_cmd = fb_pid(track_info[range_key],lock_range)
                 print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(fb_cmd,fb_pid.p,fb_pid.i,fb_pid.d))
-                fb_cmd=int(-fb_cmd*500+1500)
+                fb_cmd=int(fb_dir*fb_cmd*300+1500)
             else:
                 fb_pid=pid.PID(*fb_params)
             #print('-----------',ud_cmd,lr_cmd,fb_cmd,lock_range)
+            ud_cmd=0xffff
             telem.update({'ud_cmd':ud_cmd,'lr_cmd':lr_cmd,'fb_cmd':fb_cmd,'lock_range':lock_range})
             track_info = None
-            controller.set_rcs(ud_cmd,1500,fb_cmd,lr_cmd)
+            controller.set_rcs(ud_cmd,0xffff,fb_cmd,lr_cmd)
         
         if cnt%100==0: #every 10 sec
             telem['temp']=get_temp()

@@ -178,7 +178,7 @@ if  __name__=="__main__":
                 socket_pub.send_multipart([config.topic_imu,pickle.dumps(data,-1)])
                 tdiff = data['t_stemp_ms']-last_t
                 last_t = data['t_stemp_ms']
-                if cnt%10==0:
+                if cnt%50==0:
                     fmt='{:7.2f} '*6 + '{:2.4f}'
                     print(fmt.format(*(data['a/g'][:3]),*data['mag'],tdiff))
                 #plot.send(data)

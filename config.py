@@ -40,7 +40,8 @@ joy_toggle_laser1 = 1
 joy_init_track = 5
 joy_arm = 7
 joy_disarm = 6
-
+joy_manual = 0
+joy_depth_hold = 3
 
 #camera params
 fps = 10

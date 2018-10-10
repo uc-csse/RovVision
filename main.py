@@ -5,7 +5,13 @@ import zmq
 import asyncio
 import pickle
 import time,os
+import argparse
 from algs import pid
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--sim",help="run in simulation", action='store_true')
+args = parser.parse_args()
 
 topic_postition=config.topic_sitl_position_report
 
@@ -24,6 +30,12 @@ socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_main )
 
 fb_dir=-1.0
 lr_dir=1.0
+
+if args.sim:
+    idle_cmd=1500
+else:
+    idle_cmd=0xffff
+
 
 def get_temp():
     cmd="sensors -u |grep temp1_input |gawk '{ print $2 }'"
@@ -107,10 +119,12 @@ async def control():
             else:
                 fb_pid=pid.PID(*fb_params)
             #print('-----------',ud_cmd,lr_cmd,fb_cmd,lock_range)
-            ud_cmd=0xffff
+            if not args.sim:
+                ud_cmd=idle_cmd
             telem.update({'ud_cmd':ud_cmd,'lr_cmd':lr_cmd,'fb_cmd':fb_cmd,'lock_range':lock_range})
             track_info = None
-            controller.set_rcs(ud_cmd,0xffff,fb_cmd,lr_cmd)
+            controller.set_rcs_diff(ud_cmd,idle_cmd,fb_cmd,lr_cmd,idle_val=idle_cmd)
+            #controller.set_rcs(ud_cmd,idle_cmd,fb_cmd,lr_cmd)
         
         if cnt%100==0: #every 10 sec
             telem['temp']=get_temp()

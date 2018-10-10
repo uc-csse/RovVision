@@ -32,6 +32,29 @@ def set_rcs(ud, yaw, fb, lr):
     values[5] = lr
     mav1.mav.rc_channels_override_send(mav1.target_system, mav1.target_component, *values)
 
+def set_rcs_diff(ud, yaw, fb, lr, idle_val):
+    out_values = [ idle_val for i in range(8)] 
+    in_values=get_rcs()
+
+    if in_values is None:
+        print('Warning no in_values from rcs')
+        in_values=out_values.copy()
+    if yaw != idle_val:
+        out_values[3]=in_values[3]+(yaw-1500)
+    if fb != idle_val:
+        out_values[4]=in_values[4]+(fb-1500) 
+    if lr != idle_val:
+        out_values[5]=in_values[5]+(lr-1500) 
+    if ud != idle_val:
+        out_values[2]=in_values[2]+(ud-1500) 
+    mav1.mav.rc_channels_override_send(mav1.target_system, mav1.target_component, *out_values)
+
+
+def get_rcs():
+    global mav1
+    if 'RC_CHANNELS_RAW' in mav1.messages:
+        return [mav1.messages['RC_CHANNELS_RAW'].to_dict()['chan%d_raw'%(i+1)] for i in range(8)]
+
 
 def get_position_struct(mav):
     d={}

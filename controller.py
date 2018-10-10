@@ -1,5 +1,10 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 from pymavlink import mavutil
+
+#pymavlink documentation for bluerov2
+#https://www.ardusub.com/developers/pymavlink.html
+
+
 import numpy as np
 import zmq
 import sys,os
@@ -18,18 +23,29 @@ __pos = None
 #chan 5 fwd/back  (left fwd,back)
 #chan 6 lef/right (left left,right)
 
+#joy axes mapping
+class R:
+    ud=2
+    yaw=3
+    fb=4
+    lr=5
+
 
 
 def get_pos():
     return __pos
 
+def to_pwm(val):
+    return int(val*200)+1500
+
 def set_rcs(ud, yaw, fb, lr):
     global mav1
     values = [ 1500 ] * 8
-    values[2] = ud
-    values[3] = yaw
-    values[4] = fb
-    values[5] = lr
+    values[R.ud] = to_pwm(ud)
+    values[R.yaw] = to_pwm(yaw)
+    values[R.fb] = to_pwm(fb)
+    values[R.lr] = to_pwm(lr)
+    #print(values) 
     mav1.mav.rc_channels_override_send(mav1.target_system, mav1.target_component, *values)
 
 def set_rcs_diff(ud, yaw, fb, lr, idle_val):
@@ -48,6 +64,42 @@ def set_rcs_diff(ud, yaw, fb, lr, idle_val):
     if ud != idle_val:
         out_values[2]=in_values[2]+(ud-1500) 
     mav1.mav.rc_channels_override_send(mav1.target_system, mav1.target_component, *out_values)
+
+
+def update_joy_buttons(data):
+    if data[config.joy_arm]==1:
+        mav1.mav.command_long_send(
+                mav1.target_system,
+                mav1.target_component,
+                mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+                0, 1, 0, 0, 0, 0, 0, 0)
+
+    if data[config.joy_disarm]==1:
+        mav1.mav.command_long_send(
+	    mav1.target_system,
+	    mav1.target_component,
+	    mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+	    0, 0, 0, 0, 0, 0, 0, 0)
+
+    if data[config.joy_depth_hold]==1:
+        mode_id = mav1.mode_mapping()['ALT_HOLD']
+        mav1.mav.set_mode_send(
+            mav1.target_system,
+            mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+            mode_id)
+
+    if data[config.joy_manual]==1:
+        mode_id = mav1.mode_mapping()['MANUAL'] #maybe STABILIZE
+        mav1.mav.set_mode_send(
+            mav1.target_system,
+            mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+            mode_id)
+
+
+joy_axes=None
+def update_joy_axes(data):
+    global joy_axes
+    joy_axes=np.array(data)
 
 
 def get_rcs():

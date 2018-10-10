@@ -141,7 +141,9 @@ async def control():
 
             if not args.sim:
                 ud_cmd=idle_cmd
-            telem.update({'ud_cmd':ud_cmd,'lr_cmd':lr_cmd,'fb_cmd':fb_cmd,'lock_range':lock_range})
+            to_pwm=controller.to_pwm
+            telem.update({\
+                    'ud_cmd':to_pwm(ud_cmd),'lr_cmd':to_pwm(lr_cmd),'fb_cmd':to_pwm(fb_cmd),'lock_range':lock_range})
             track_info = None
             #controller.set_rcs_diff(ud_cmd,idle_cmd,fb_cmd,lr_cmd,idle_val=idle_cmd)
             #controller.set_rcs(ud_cmd,idle_cmd,fb_cmd,lr_cmd)

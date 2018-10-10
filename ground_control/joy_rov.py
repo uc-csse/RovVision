@@ -62,7 +62,7 @@ while not done:
             print('axes_vals=',','.join(['{:4.3f}'.format(i) for i in axes_vals]))
         #mixng axes
         
-        pub(config.topic_axes,pickle.dumps(axes,-1))
+        pub(config.topic_axes,pickle.dumps(axes_vals,-1))
         #socket.send_multipart([config.topic_mixing,pickle.dumps([port,starboard,vertical],-1)])
         #print('{:> 5} P {:> 5.3f} S {:> 5.3f} V {:> 5.3f}'.format(cnt,port,starboard,vertical),end='\r')
 

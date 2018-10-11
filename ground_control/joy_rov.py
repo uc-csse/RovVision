@@ -47,11 +47,10 @@ while not done:
 
 
         
-        hold = joystick.get_hat(0)
-        #if abs(hold[0])>0 or abs(hold[1])>0:
-        #    print('{} hold {}'.format(cnt,hold))
-        #    pub(config.topic_hold,pickle.dumps(hold))
-            #socket.send_multipart([config.topic_hold,pickle.dumps(hold)])
+        hat = joystick.get_hat(0)
+        if abs(hat[0])>0 or abs(hat[1])>0:
+            print('hat',hat)
+            socket.send_multipart([config.topic_hat,pickle.dumps(hat)])
 
 
         axes_vals = []

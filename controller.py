@@ -29,6 +29,7 @@ class R:
     yaw=3
     fb=4
     lr=5
+    lights1=6
 
 
 
@@ -45,6 +46,7 @@ def set_rcs(ud, yaw, fb, lr):
     values[R.yaw] = to_pwm(yaw)
     values[R.fb] = to_pwm(fb)
     values[R.lr] = to_pwm(lr)
+    values[R.lights1] = lights1
     #print(values) 
     mav1.mav.rc_channels_override_send(mav1.target_system, mav1.target_component, *values)
 
@@ -65,6 +67,12 @@ def set_rcs_diff(ud, yaw, fb, lr, idle_val):
         out_values[2]=in_values[2]+(ud-1500) 
     mav1.mav.rc_channels_override_send(mav1.target_system, mav1.target_component, *out_values)
 
+lights1=1500
+def update_joy_hat(hat):
+    global lights1
+    lights1+=hat[1]*100
+    lights1=max(1500,min(2000,lights1))
+    print('got hat',hat,lights1) 
 
 def update_joy_buttons(data):
     if data[config.joy_arm]==1:

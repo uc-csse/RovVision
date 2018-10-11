@@ -19,8 +19,10 @@ n_drones = 1
 
 
 zmq_pub_joy=9117
+### joystick topics
 topic_button = b'topic_button'
 topic_axes = b'topic_axes'
+topic_hat = b'topic_hat'
 
 zmq_pub_main=9921
 topic_main_telem=b'topic_main_telem'

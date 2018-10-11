@@ -20,6 +20,7 @@ zmq_sub_joy = context.socket(zmq.SUB)
 zmq_sub_joy.connect("tcp://127.0.0.1:%d" % config.zmq_pub_joy)
 zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_button)
 zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_axes)
+zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_hat)
 
 zmq_sub_v3d = context.socket(zmq.SUB)
 zmq_sub_v3d.connect("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis)
@@ -78,6 +79,10 @@ async def get_zmq_events():
                     #else:
                     #    lock_range = track_info['range']
                 controller.update_joy_buttons(data)
+            if ret[0]==config.topic_hat:
+                data=pickle.loads(ret[1])
+                controller.update_joy_hat(data)
+
             if ret[0]==config.topic_axes:
                 joy_axes=pickle.loads(ret[1])
                 #print('joy',joy_axes)

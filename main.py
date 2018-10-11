@@ -102,8 +102,8 @@ async def control():
     lr_pid=pid.PID(*lr_params)
     
     ### range
-    scl=5
-    fb_params=(0.2*scl,0.002*scl,0.2*scl,0.2*scl)
+    scl=8
+    fb_params=(0.24*scl,0.002*scl,0.4*scl,0.4*scl)
     fb_pid=pid.PID(*fb_params)
 
     ud_cmd,lr_cmd,fb_cmd = 0,0,0 

@@ -50,9 +50,9 @@ def track_correlator(img,wx,wy,sx,sy,tx=None,ty=None):
             #y, x = np.unravel_index(np.argmax(corr), corr.shape)
             ox,oy = x-sx,y-sy
             if abs(ox)>tx or abs(oy)>ty : #new reference if translate to much
-                img=yield ox,oy
+                img=yield ox,oy,1 #sending new reference flag
                 break
-            img2=yield ox,oy
+            img2=yield ox,oy,0
 
 
 def line_correlator(img1,img2,wx,wy,sxl,sxr):
@@ -179,7 +179,7 @@ def run_Trackers():
         res['img_shp']=imgl.shape
         res['line_corr_parr']=stereo_corr_params
         cret = line_correlator(imgl1r,imgr1r,sp['ws'][0],sp['ws'][1],sp['sxl'],sp['sxr'])
-        ox,oy = tc.send(imgl1b)
+        ox,oy,new_ref_flag = tc.send(imgl1b)
         res['offx']=ox
         res['offy']=oy
         res['snr_corr']=cret[1]
@@ -192,8 +192,9 @@ def run_Trackers():
             res['range_avg']=np.mean(range_win)
             dx = res['range_avg'] * ox/config.focal_length
             dy = res['range_avg'] * oy/config.focal_length
-            res['dx']=dx
-            res['dy']=dy
+            if not new_ref_flag:
+                res['dx']=dx
+                res['dy']=dy
         else:
             tc=track_correlator(imgl1b,*track_params)
             tc.__next__()

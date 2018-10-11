@@ -39,10 +39,10 @@ class J:
     fb=1
     lr=0
 
-if args.sim:
-    idle_cmd=1500
-else:
-    idle_cmd=0xffff
+#if args.sim:
+#    idle_cmd=1500
+#else:
+#    idle_cmd=0xffff
 
 
 def get_temp():
@@ -102,7 +102,7 @@ async def control():
     lr_pid=pid.PID(*lr_params)
     
     ### range
-    scl=3
+    scl=5
     fb_params=(0.2*scl,0.002*scl,0.2*scl,0.2*scl)
     fb_pid=pid.PID(*fb_params)
 
@@ -140,7 +140,7 @@ async def control():
             
 
             if not args.sim:
-                ud_cmd=idle_cmd
+                ud_cmd=0
             to_pwm=controller.to_pwm
             telem.update({\
                     'ud_cmd':to_pwm(ud_cmd),'lr_cmd':to_pwm(lr_cmd),'fb_cmd':to_pwm(fb_cmd),'lock_range':lock_range})

@@ -13,6 +13,7 @@ import tracker
 import gst
 import config
 import utils
+import image_enc_dec
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--cvshow",help="show opencv mode", action='store_true')
@@ -167,6 +168,8 @@ def listener():
                 if  args.gst:
                     if gst.gst_pipes is None:
                         gst.init_gst(img.shape[1],img.shape[0],2)
+                    image_enc_dec.encode(imgl,fmt_cnt_l)
+                    image_enc_dec.encode(imgr,fmt_cnt_r)
                     gst.send_gst([imgl,imgr])
 
                 ######################################################################

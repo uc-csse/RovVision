@@ -101,6 +101,7 @@ def get_imgs():
 ############ gst from files #################
 import glob
 def gst_file_reader(path):
+    global images
     cmd='gst-launch-1.0 filesrc location={} ! '+\
         ' h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! filesink location=fifo_raw_{}  sync=false'
     gst_pipes=[]
@@ -124,6 +125,7 @@ def gst_file_reader(path):
                     images[i]=np.fromstring(data,'uint8').reshape([sy,sx,3])
                 else:
                     time.sleep(0.1)
+                    images=[None,None]
             yield images
 
 

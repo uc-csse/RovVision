@@ -13,6 +13,7 @@ import config
 from gst import init_gst_reader,get_imgs,set_files_fds,get_files_fds
 from annotations import draw_txt
 import utils
+import image_enc_dec
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gst",help="stream with gst", action='store_true')
@@ -66,6 +67,8 @@ if __name__=='__main__':
         #print('-1-',main_data)
 
         if images[0] is not None and images[1] is not None:
+            fmt_cnt_l=image_enc_dec.decode(images[0])
+            fmt_cnt_r=image_enc_dec.decode(images[1])
             if 'draw_rectsl' in vis_data:
                 for rectp in vis_data['draw_rectsr']:
                     cv2.rectangle(images[1],*rectp)

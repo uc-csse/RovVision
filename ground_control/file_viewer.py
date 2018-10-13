@@ -14,6 +14,7 @@ import config
 from gst import gst_file_reader
 from annotations import draw_txt
 import utils
+import image_enc_dec
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gst",help="stream with gst", action='store_true')
@@ -46,6 +47,8 @@ if __name__=='__main__':
         images=reader.__next__()
 
         if images[0] is not None and images[1] is not None:
+            fmt_cnt_l=image_enc_dec.decode(images[0])
+            fmt_cnt_r=image_enc_dec.decode(images[1])
             if 'draw_rectsl' in vis_data:
                 for rectp in vis_data['draw_rectsr']:
                     cv2.rectangle(images[1],*rectp)

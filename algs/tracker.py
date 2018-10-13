@@ -1,10 +1,12 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import numpy as np
 import polyfit
-import config
 import cv2
 import scipy
 import scipy.signal
+import sys
+sys.path.append("..")
+import config
 
 track_params = config.track_params 
 stereo_corr_params = config.stereo_corr_params
@@ -208,5 +210,38 @@ def run_Trackers():
         if cmd=='lock':
             tc=track_correlator(imgl1b,*track_params)
             tc.__next__()
+
+
+if __name__=="__main__":
+    import numpy as np
+    import cv2
+    
+
+    cap = cv2.VideoCapture('/home/ori/projects/openrov_control/datap5/norm2.avi')
+    skip=356
+    cnt=0
+    while(True):
+        ret, frame = cap.read()
+        img=frame[:,:,0]
+        print(cnt)
+        cnt+=1
+        if cnt==skip:
+            tc=track_correlator(img,*track_params)
+            wx,wy,sx,sy=track_params
+            next(tc)
+        if cnt>skip:
+            ox,oy,new_ref_flag = tc.send(img)
+            ox,oy=int(ox),int(oy)
+            cx = img.shape[1]//2
+            cy = img.shape[0]//2
+            rectp=((cx-wx//2+ox,cy-wy//2+oy) , (cx+wx//2+ox,cy+wy//2+oy) , (255,0,255))
+            print(rectp)
+            cv2.rectangle(frame,*rectp)
+        cv2.imshow('frame',frame)
+        if cv2.waitKey(0 if cnt>skip else 1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
 
 

@@ -51,11 +51,14 @@ if __name__=='__main__':
             if vis_data.get('record_state',False):
                 if get_files_fds()[0] is None:
                     fds=[]
+                    datestr=vis_data['record_date_str']
+                    save_path='../../data/'+datestr
+                    os.mkdir(save_path)
                     for i in [0,1]:
-                        datestr=datetime.now().strftime('%y%m%d-%H%M%S')
-                        fds.append(open('../../data/{}_{}.mp4'.format(datestr,'lr'[i]),'wb'))
+                        #datestr=datetime.now().strftime('%y%m%d-%H%M%S')
+                        fds.append(open(save_path+'/vid_{}.mp4'.format('lr'[i]),'wb'))
                     set_files_fds(fds)
-                    data_file_fd=open('../../data/{}.bin'.format(datestr),'wb')
+                    data_file_fd=open(save_path+'/viewer_data.pkl','wb')
             else:
                 set_files_fds([None,None])
                 data_file_fd=None

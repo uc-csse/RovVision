@@ -79,7 +79,7 @@ def listener():
     #send initial trigger
     print('start trig')
     socket_pub.send_multipart([config.topic_comp_vis_cmd,b'start_trig'])
-
+    date_str=None
     while keep_running:
         socks=zmq.select(subs_socks,[],[],0.001)[0]
         for sock in socks:
@@ -94,7 +94,8 @@ def listener():
                     record_state = not record_state
                     print('recording ',record_state)
                     if record_state:
-                        save = '../data/'+datetime.now().strftime('%y%m%d-%H%M%S')
+                        date_str=datetime.now().strftime('%y%m%d-%H%M%S') 
+                        save = '../data/'+date_str
                         os.mkdir(save)
                         data_fd=open(save+'/data.pkl','wb')
             
@@ -147,6 +148,8 @@ def listener():
                     ret['draw_rectsl']=draw_rectsl
                     ret['draw_rectsr']=draw_rectsr
                     ret['record_state']=record_state
+                    if record_state:
+                        ret['record_date_str']=date_str
                     ret['disk_usage']=disk_usage
                     ret['fnum']=fmt_cnt_l
                     ret['send_cnt']=gst.send_cnt.copy()

@@ -29,7 +29,7 @@ class R:
     yaw=3
     fb=4
     lr=5
-    lights1=6
+    lights1=8
 
 
 
@@ -41,7 +41,7 @@ def to_pwm(val):
 
 def set_rcs(ud, yaw, fb, lr):
     global mav1
-    values = [ 1500 ] * 8
+    values = [ 1500 ] * 9
     values[R.ud] = to_pwm(ud)
     values[R.yaw] = to_pwm(yaw)
     values[R.fb] = to_pwm(fb)

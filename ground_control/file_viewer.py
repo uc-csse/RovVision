@@ -26,26 +26,31 @@ args = parser.parse_args()
 if __name__=='__main__':
     print('nosync',args.nosync)
     reader = gst_file_reader(args.path,nosync = args.nosync)
-    fd = open(args.path+'/data.pkl','rb')
+    #fd = open(args.path+'/data.pkl','rb')
+    fd = open(args.path+'/viewer_data.pkl','rb')
     sx,sy=config.pixelwidthx,config.pixelwidthy
     join=np.zeros((sy,sx*2,3),'uint8')
     vis_data = {}
     main_data  ={}
     while 1:
+        images,fcnt=reader.__next__()
+        print('fnum in image',fcnt)
         while 1:
             ret=pickle.load(fd)
             print('topic=',ret[0])
             if ret[0]==config.topic_comp_vis:
                 vis_data=ret[1]
-                print('fnum',vis_data['fnum'])
-                break
+                print('fnum in vis',vis_data['fnum'])
+                if vis_data['fnum']>=fcnt:
+                    break
             if ret[0]==config.topic_mav_telem:
-                data=pickle.loads(ret[1])
+                #data=pickle.loads(ret[1])
+                data=ret[1]
             if ret[0]==config.topic_main_telem:
-                main_data.update(pickle.loads(ret[1]))
+                #main_data.update(pickle.loads(ret[1]))
+                main_data.update(ret[1])
                 #if 'mavpackettype' not in data:
                 #    print(data)
-        images,fcnt=reader.__next__()
 
         if images[0] is not None and images[1] is not None:
             if 'draw_rectsl' in vis_data:

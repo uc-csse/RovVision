@@ -17,6 +17,7 @@ import image_enc_dec
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gst",help="stream with gst", action='store_true')
+parser.add_argument("--data_path", help="path for data" , default='../../data')
 args = parser.parse_args()
 
 subs_socks=[]
@@ -40,19 +41,19 @@ if __name__=='__main__':
         for sock in socks:
             ret = sock.recv_multipart()
             topic , data = ret
+            data=pickle.loads(ret[1])
             if ret[0]==config.topic_comp_vis:
-                vis_data=pickle.loads(ret[1])
-                break
+                vis_data=data
             if ret[0]==config.topic_mav_telem:
-                mav_data=pickle.loads(ret[1])
+                mav_data=data
             if ret[0]==config.topic_main_telem:
-                main_data.update(pickle.loads(ret[1]))
+                main_data.update(data)
 
             if vis_data.get('record_state',False):
                 if get_files_fds()[0] is None:
                     fds=[]
                     datestr=vis_data['record_date_str']
-                    save_path='../../data/'+datestr
+                    save_path=args.data_path+'/'+datestr
                     os.mkdir(save_path)
                     for i in [0,1]:
                         #datestr=datetime.now().strftime('%y%m%d-%H%M%S')
@@ -64,7 +65,7 @@ if __name__=='__main__':
                 data_file_fd=None
 
             if data_file_fd is not None:
-                pickle.dump(ret,data_file_fd,-1)
+                pickle.dump([topic,data],data_file_fd,-1)
                 pickle.dump(['viewer_data',{'rcv_cnt':rcv_cnt}],data_file_fd,-1)
 
         #print('-1-',main_data)

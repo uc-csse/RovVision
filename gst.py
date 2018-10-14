@@ -7,6 +7,7 @@ from subprocess import Popen,PIPE
 import sys,time,select,os
 import numpy as np
 import config
+import image_enc_dec
 ############# gst wirite #########
 gst_pipes=None
 send_cnt=[0,0]
@@ -100,7 +101,17 @@ def get_imgs():
 
 ############ gst from files #################
 import glob
-def gst_file_reader(path):
+def read_image_from_pipe(p):
+    data=os.read(p,sx*sy*3)
+    if data:
+        img=np.fromstring(data,'uint8').reshape([sy,sx,3])
+        fmt_cnt=image_enc_dec.decode(img)
+    else:
+        print('Error no data')
+        sys.exit(0)
+    return img,fmt_cnt
+
+def gst_file_reader(path, nosync):
     global images
     cmd='gst-launch-1.0 filesrc location={} ! '+\
         ' h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! filesink location=fifo_raw_{}  sync=false'
@@ -116,17 +127,23 @@ def gst_file_reader(path):
         print(gcmd)
         gst_pipes.append(r1)
         Popen(gcmd, shell=True)
-
+    
+    fcnt=[-1,-1]
     while 1:
         if len(select.select(gst_pipes,[],[],0.1)[0])==len(gst_pipes):
-            for i in [0,1]:
-                data=os.read(gst_pipes[i],sx*sy*3)
-                if data:
-                    images[i]=np.fromstring(data,'uint8').reshape([sy,sx,3])
-                else:
-                    time.sleep(0.1)
-                    images=[None,None]
-            yield images
+            im1,cnt1=read_image_from_pipe(gst_pipes[0])
+            im2,cnt2=read_image_from_pipe(gst_pipes[1])
+            #syncing frame numbers
+            if not nosync:
+                if cnt1 is not None and cnt2 is not None:
+                    while cnt2>cnt1:
+                        im1,cnt1=read_image_from_pipe(gst_pipes[0])
+                    while cnt1>cnt2:
+                        im2,cnt2=read_image_from_pipe(gst_pipes[1])
+            images=[im1,im2] 
+            yield images,cnt1
+        else:
+            time.sleep(0.001)
 
 
 

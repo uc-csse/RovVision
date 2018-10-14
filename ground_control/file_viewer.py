@@ -14,17 +14,18 @@ import config
 from gst import gst_file_reader
 from annotations import draw_txt
 import utils
-import image_enc_dec
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gst",help="stream with gst", action='store_true')
+parser.add_argument("--nosync", help="dont sync videos", action='store_true')
 parser.add_argument("--path",help="dir path")
 args = parser.parse_args()
 
 
 
 if __name__=='__main__':
-    reader = gst_file_reader(args.path)
+    print('nosync',args.nosync)
+    reader = gst_file_reader(args.path,nosync = args.nosync)
     fd = open(args.path+'/data.pkl','rb')
     sx,sy=config.pixelwidthx,config.pixelwidthy
     join=np.zeros((sy,sx*2,3),'uint8')
@@ -44,11 +45,9 @@ if __name__=='__main__':
                 main_data.update(pickle.loads(ret[1]))
                 #if 'mavpackettype' not in data:
                 #    print(data)
-        images=reader.__next__()
+        images,fcnt=reader.__next__()
 
         if images[0] is not None and images[1] is not None:
-            fmt_cnt_l=image_enc_dec.decode(images[0])
-            fmt_cnt_r=image_enc_dec.decode(images[1])
             if 'draw_rectsl' in vis_data:
                 for rectp in vis_data['draw_rectsr']:
                     cv2.rectangle(images[1],*rectp)

@@ -101,7 +101,7 @@ def listener():
             
             if record_state and ret[0] not in [topicl,topicr]:
                 #save only data not images
-                pickle.dump(ret,data_fd,-1)
+                pickle.dump((ret[0],pickle.loads(ret[1])),data_fd,-1)
 
             if ret[0] in [topicl,topicr]:
                 topic, info, data = ret

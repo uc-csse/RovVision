@@ -22,7 +22,13 @@ args = parser.parse_args()
 
 subs_socks=[]
 subs_socks.append(utils.subscribe([config.topic_comp_vis],config.zmq_pub_comp_vis))
-subs_socks.append(utils.subscribe([config.topic_main_telem],config.zmq_pub_main))
+if 1:
+    subs_socks.append(utils.subscribe([config.topic_main_telem],config.zmq_pub_main))
+    subs_socks.append( utils.subscribe([ config.topic_button,config.topic_axes,config.topic_hat ],config.zmq_pub_joy))
+    subs_socks.append( utils.subscribe([ config.topic_imu ],config.zmq_pub_imu) )
+else:
+    subs_socks.append( utils.subscribe([ config.topic_main_telem, config.topic_mav_telem ],config.zmq_pub_main) )
+
 
 
 if __name__=='__main__':

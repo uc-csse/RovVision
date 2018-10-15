@@ -22,10 +22,10 @@ args = parser.parse_args()
 
 subs_socks=[]
 subs_socks.append(utils.subscribe([config.topic_comp_vis],config.zmq_pub_comp_vis))
+subs_socks.append( utils.subscribe([ config.topic_button,config.topic_axes,config.topic_hat ],config.zmq_pub_joy))
+subs_socks.append( utils.subscribe([ config.topic_imu ],config.zmq_pub_imu) )
 if 1:
     subs_socks.append(utils.subscribe([config.topic_main_telem],config.zmq_pub_main))
-    subs_socks.append( utils.subscribe([ config.topic_button,config.topic_axes,config.topic_hat ],config.zmq_pub_joy))
-    subs_socks.append( utils.subscribe([ config.topic_imu ],config.zmq_pub_imu) )
 else:
     subs_socks.append( utils.subscribe([ config.topic_main_telem, config.topic_mav_telem ],config.zmq_pub_main) )
 
@@ -51,8 +51,10 @@ if __name__=='__main__':
             if ret[0]==config.topic_comp_vis:
                 vis_data=data
             if ret[0]==config.topic_mav_telem:
+                #print('-----==config.topic_mav_telem')
                 mav_data=data
             if ret[0]==config.topic_main_telem:
+                #print('-----==config.topic_main_telem')
                 main_data.update(data)
 
             if vis_data.get('record_state',False):
@@ -74,7 +76,7 @@ if __name__=='__main__':
                 pickle.dump([topic,data],data_file_fd,-1)
                 pickle.dump(['viewer_data',{'rcv_cnt':rcv_cnt}],data_file_fd,-1)
 
-        #print('-1-',main_data)
+        print('-1-',main_data)
 
         if images[0] is not None and images[1] is not None:
             fmt_cnt_l=image_enc_dec.decode(images[0])

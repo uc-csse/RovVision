@@ -31,3 +31,8 @@ tmux send-keys "sudo pppd -detach noipx  10.0.0.2:10.0.0.1 /dev/ttyUSB0 1000000"
 tmux send-keys "sleep 4" ENTER
 tmux send-keys "done" ENTER
 
+
+#tests videos
+gst-launch-1.0 tcpclientsrc port=6760 ! h264parse ! decodebin ! videoconvert ! autovideosink sync=false
+gst-launch-1.0 tcpclientsrc port=6761 ! h264parse ! decodebin ! videoconvert ! autovideosink sync=false
+

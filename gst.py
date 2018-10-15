@@ -102,14 +102,16 @@ def get_imgs():
 ############ gst from files #################
 import glob
 def read_image_from_pipe(p):
-    data=os.read(p,sx*sy*3)
-    if data:
-        img=np.fromstring(data,'uint8').reshape([sy,sx,3])
-        fmt_cnt=image_enc_dec.decode(img)
-    else:
-        print('Error no data')
-        sys.exit(0)
-    return img,fmt_cnt
+    if len(select.select([p],[],[],0.1)[0])>0:
+        data=os.read(p,sx*sy*3)
+        if data:
+            img=np.fromstring(data,'uint8').reshape([sy,sx,3])
+            fmt_cnt=image_enc_dec.decode(img)
+        else:
+            print('Error no data')
+            sys.exit(0)
+        return img,fmt_cnt
+    return None,-1
 
 def gst_file_reader(path, nosync):
     global images

@@ -21,7 +21,10 @@ parser.add_argument("--nosync", help="dont sync videos", action='store_true')
 parser.add_argument("--path",help="dir path")
 args = parser.parse_args()
 
+file_path_fmt=args.path+'/{}{:08d}.ppm'
 
+
+imbuff=[None for i in range(50)]
 
 if __name__=='__main__':
     print('nosync',args.nosync)
@@ -32,27 +35,50 @@ if __name__=='__main__':
     join=np.zeros((sy,sx*2,3),'uint8')
     vis_data = {}
     main_data  ={}
+    fcnt=-1
+    from_buff=False
     while 1:
-        images,fcnt=reader.__next__()
-        print('fnum in image',fcnt)
-        while 1:
-            ret=pickle.load(fd)
-            print('topic=',ret[0])
-            if ret[0]==config.topic_comp_vis:
-                vis_data=ret[1]
-                print('fnum in vis',vis_data['fnum'])
-                if vis_data['fnum']>=fcnt:
-                    break
-            if ret[0]==config.topic_mav_telem:
-                #data=pickle.loads(ret[1])
-                data=ret[1]
-            if ret[0]==config.topic_main_telem:
-                #main_data.update(pickle.loads(ret[1]))
-                main_data.update(ret[1])
-                #if 'mavpackettype' not in data:
-                #    print(data)
+        hist_buff_ind=fcnt%len(imbuff)
+        if imbuff[hist_buff_ind]!=None and imbuff[hist_buff_ind][0]==fcnt:
+            fcnt,images,vis_data,main_data=imbuff[hist_buff_ind]
+            from_buff=True
+        else:
+            images,fcnt=reader.__next__()
+            from_buff=False
+            print('fnum in image',fcnt)
+            while 1:
+                ret=pickle.load(fd)
+                print('topic=',ret[0])
+                if ret[0]==config.topic_comp_vis:
+                    vis_data=ret[1]
+                    print('fnum in vis',vis_data['fnum'])
+                    if vis_data['fnum']>=fcnt:
+                        break
+                if ret[0]==config.topic_mav_telem:
+                    #data=pickle.loads(ret[1])
+                    data=ret[1]
+                if ret[0]==config.topic_main_telem:
+                    #main_data.update(pickle.loads(ret[1]))
+                    main_data.update(ret[1])
+                    #if 'mavpackettype' not in data:
+                    #    print(data)
+            if fcnt>0:
+                hist_buff_ind=fcnt%len(imbuff)
+                imbuff[hist_buff_ind]=(fcnt,images,vis_data,main_data)
 
         if images[0] is not None and images[1] is not None:
+            if not from_buff:
+                for i in [0,1]:
+                    fname=file_path_fmt.format('lr'[i],fcnt)
+                    if os.path.isfile(fname):
+                        images[i]=cv2.imread(fname)[::2,::2,::-1].copy()
+                        #images[i]=cv2.imread(fname)[:,:,::-1].copy()
+                    else:
+                        images[i]=images[i][:,:,::-1].copy()
+                
+                
+
+
             if 'draw_rectsl' in vis_data:
                 for rectp in vis_data['draw_rectsr']:
                     cv2.rectangle(images[1],*rectp)
@@ -68,7 +94,10 @@ if __name__=='__main__':
         k=cv2.waitKey(0)
         if k==ord('q'):
             break
-
+        if k%256==8:
+            fcnt-=1 
+        else:
+            fcnt+=1
 
 ### fmt_cnt_l,imgl,imgr=imgget.__next__()
 ###                fmt_cnt_r=fmt_cnt_l

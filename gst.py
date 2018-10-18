@@ -102,6 +102,8 @@ def get_imgs():
 ############ gst from files #################
 import glob
 def read_image_from_pipe(p):
+    if len(select.select([p],[],[],0.1)[0])==0:
+        return
     data=os.read(p,sx*sy*3)
     if data:
         img=np.fromstring(data,'uint8').reshape([sy,sx,3])

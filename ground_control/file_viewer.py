@@ -10,6 +10,7 @@ import struct
 import cv2,os
 import argparse
 import numpy as np
+import matplotlib.pyplot as plt
 import config
 from gst import gst_file_reader
 from annotations import draw_txt
@@ -66,16 +67,18 @@ if __name__=='__main__':
                 hist_buff_ind=fcnt%len(imbuff)
                 imbuff[hist_buff_ind]=(fcnt,images,vis_data,main_data)
 
+        imgs_raw=[None,None]
         if images[0] is not None and images[1] is not None:
-            if not from_buff:
-                for i in [0,1]:
-                    fname=file_path_fmt.format('lr'[i],fcnt)
-                    if os.path.isfile(fname):
-                        images[i]=cv2.imread(fname)[::2,::2,::-1].copy()
-                        #images[i]=cv2.imread(fname)[:,:,::-1].copy()
-                    else:
-                        images[i]=images[i][:,:,::-1].copy()
-                
+            #if 1 or not  from_buff:
+            for i in [0,1]:
+                fname=file_path_fmt.format('lr'[i],fcnt)
+                if os.path.isfile(fname):
+                    imgs_raw[i]=cv2.imread(fname)
+                    images[i]=imgs_raw[i][::2,::2,:].copy()
+                    #images[i]=cv2.imread(fname)[:,:,::-1].copy()
+                else:
+                    imgs_raw[i]=images[i].copy()#[:,:,::-1].copy()
+            
                 
 
 
@@ -85,15 +88,22 @@ if __name__=='__main__':
                 for rectp in vis_data['draw_rectsl']:
                     cv2.rectangle(images[0],*rectp)
             #print(images[0].shape,join.shape)
-            join[:,0:sx,:]=images[0]
-            join[:,sx:,:]=images[1]
+            join[:,0:sx,:]=images[0][:,:,::-1]
+            join[:,sx:,:]=images[1][:,:,::-1]
             draw_txt(join,vis_data,main_data)
             cv2.imshow('3dviewer',join)
             #cv2.imshow('left',images[0])
             #cv2.imshow('right',images[1])
         k=cv2.waitKey(0)
-        if k==ord('q'):
+        if k%256==ord('q'):
             break
+        if k%256==ord('i'):
+            plt.figure()
+            plt.subplot(1,2,1)
+            plt.imshow(imgs_raw[0])
+            plt.subplot(1,2,2)
+            plt.imshow(imgs_raw[1])
+            plt.show()
         if k%256==8:
             fcnt-=1 
         else:

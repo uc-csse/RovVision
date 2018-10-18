@@ -25,6 +25,19 @@ args = parser.parse_args()
 file_path_fmt=args.path+'/{}{:08d}.ppm'
 
 
+#def equalize(img):
+#    img_yuv=cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
+#    img_yuv[:,:,2]=cv2.equalizeHist(img_yuv[:,:,2])
+#    return cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
+
+
+def equalize(img):
+    b, g, r = cv2.split(img)
+    red = cv2.equalizeHist(r)
+    green = cv2.equalizeHist(g)
+    blue = cv2.equalizeHist(b)
+    return cv2.merge((blue, green, red))
+
 imbuff=[None for i in range(50)]
 
 if __name__=='__main__':
@@ -90,6 +103,7 @@ if __name__=='__main__':
             #print(images[0].shape,join.shape)
             join[:,0:sx,:]=images[0][:,:,::-1]
             join[:,sx:,:]=images[1][:,:,::-1]
+
             draw_txt(join,vis_data,main_data)
             cv2.imshow('3dviewer',join)
             #cv2.imshow('left',images[0])

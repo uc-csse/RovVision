@@ -22,7 +22,7 @@ parser.add_argument("--nosync", help="dont sync videos", action='store_true')
 parser.add_argument("--path",help="dir path")
 args = parser.parse_args()
 
-file_path_fmt=args.path+'/{}{:08d}.ppm'
+file_path_fmt=args.path+'/{}{:08d}'#.ppm'
 
 
 #def equalize(img):
@@ -84,12 +84,15 @@ if __name__=='__main__':
         if images[0] is not None and images[1] is not None:
             #if 1 or not  from_buff:
             for i in [0,1]:
-                fname=file_path_fmt.format('lr'[i],fcnt)
-                if os.path.isfile(fname):
-                    imgs_raw[i]=cv2.imread(fname)
-                    images[i]=imgs_raw[i][::2,::2,:].copy()
+                for ext in ['.ppm','.png','.webp']:
+                    fname=file_path_fmt.format('lr'[i],fcnt)+ext
+                    if os.path.isfile(fname):
+                        imgs_raw[i]=cv2.imread(fname)
+                        images[i]=imgs_raw[i][::2,::2,:].copy()
+                        break
+
                     #images[i]=cv2.imread(fname)[:,:,::-1].copy()
-                else:
+                if imgs_raw[i] is None:
                     imgs_raw[i]=images[i].copy()#[:,:,::-1].copy()
             
                 

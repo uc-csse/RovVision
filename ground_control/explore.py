@@ -5,12 +5,18 @@ from matplotlib.path import Path
 import numpy as np
 import pickle,os
 
+def fname_format(path,fnum):
+    return '{}/{:08d}.pkl'.format(path,fnum)
+
+def is_data_file(path,fnum):
+    return os.path.isfile(fname_format(path,fnum))
+
 class Polygon:
     def __init__(self,imgs_raw,path,fnum):
         self.imgs_raw=imgs_raw
         self.path=path
         self.fnum=fnum
-        self.data_fname='{}/{:08d}.pkl'.format(path,fnum)
+        self.data_fname=fname_format(path,fnum)
         fig=plt.figure(str(fnum))
         self.sfigs=[]
         self.sfigs+=[plt.subplot(1,2,1)]

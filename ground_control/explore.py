@@ -1,6 +1,6 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Button,LassoSelector
+from matplotlib.widgets import Button,LassoSelector,TextBox
 from matplotlib.path import Path
 import numpy as np
 
@@ -22,6 +22,10 @@ class Polygon:
         bsave = Button(axsave, 'Save')
         bsave.on_clicked(self.save)
         cid = fig.canvas.mpl_connect('button_press_event', self.onclick)
+
+        axbox = plt.axes([0.1, 0.05, 0.6, 0.075])
+        self.text_box = TextBox(axbox, '', initial='what am I?')
+        #text_box.on_submit(submit)
 
         self.object_list=[]
         self.objects_hdls=None
@@ -65,12 +69,14 @@ class Polygon:
         return max_ind
 
     def save(self,event):
-        obj = {}
-        obj['pts'] = self.verts_list.copy() 
-        self.object_list.append(obj)
-        self.draw_objs() 
-        plt.draw()
-        self.verts_list=[None]*len(self.verts_list)
+        if any(self.verts_list):
+            obj = {}
+            obj['pts'] = self.verts_list.copy()
+            obj['desc'] = self.text_box.text
+            self.object_list.append(obj)
+            self.draw_objs() 
+            plt.draw()
+            self.verts_list=[None]*len(self.verts_list)
 
     def onclick(self,event):
         #print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
@@ -85,6 +91,7 @@ class Polygon:
             cind=self.get_closest(x,y,ind)
             if cind>-1:
                 self.draw_objs(cind)
+                self.text_box.set_val(self.object_list[cind]['desc'])
                 plt.draw()
             
         #plt.draw()

@@ -3,11 +3,15 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button,LassoSelector,TextBox
 from matplotlib.path import Path
 import numpy as np
+import pickle,os
 
 class Polygon:
-    def __init__(self,imgs_raw):
+    def __init__(self,imgs_raw,path,fnum):
         self.imgs_raw=imgs_raw
-        fig=plt.figure()
+        self.path=path
+        self.fnum=fnum
+        self.data_fname='{}/{:08d}.pkl'.format(path,fnum)
+        fig=plt.figure(str(fnum))
         self.sfigs=[]
         self.sfigs+=[plt.subplot(1,2,1)]
 
@@ -24,11 +28,16 @@ class Polygon:
         cid = fig.canvas.mpl_connect('button_press_event', self.onclick)
 
         axbox = plt.axes([0.1, 0.05, 0.6, 0.075])
-        self.text_box = TextBox(axbox, '', initial='what am I?')
+        self.text_box = TextBox(axbox, '', initial='?')
         #text_box.on_submit(submit)
 
-        self.object_list=[]
+        try:
+            self.object_list=pickle.load(open(self.data_fname,'rb'))
+        except:
+            print('no data file for fnum=',fnum)
+            self.object_list=[]
         self.objects_hdls=None
+        self.draw_objs()
 
         plt.show()
 
@@ -77,6 +86,9 @@ class Polygon:
             self.draw_objs() 
             plt.draw()
             self.verts_list=[None]*len(self.verts_list)
+            with open(self.data_fname,'wb') as fd:
+                pickle.dump(self.object_list,fd)
+
 
     def onclick(self,event):
         #print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
@@ -97,7 +109,5 @@ class Polygon:
         #plt.draw()
         
 
-
-
-def plot_raw_images(imgs_raw):
-    Polygon(imgs_raw)
+def plot_raw_images(imgs_raw,path,fnum):
+    Polygon(imgs_raw,path,fnum)

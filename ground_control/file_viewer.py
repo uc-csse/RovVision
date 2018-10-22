@@ -115,7 +115,7 @@ if __name__=='__main__':
         if k%256==ord('q'):
             break
         if k%256==ord('i'):
-            explore.plot_raw_images(imgs_raw)
+            explore.plot_raw_images(imgs_raw,args.path,fcnt)
         if k%256==8:
             fcnt-=1 
         else:

@@ -28,12 +28,21 @@ class Polygon:
         self.lasssos = [ LassoSelector(ax, self.on_select, button=3 ) for ax in self.sfigs ]
         
         
-        axsave = plt.axes([0.81, 0.05, 0.1, 0.075])
+        axsave = plt.axes([0.8, 0.05, 0.1, 0.075])
         bsave = Button(axsave, 'Save')
         bsave.on_clicked(self.save)
+        
+        axadd = plt.axes([0.7, 0.05, 0.1, 0.075])
+        badd = Button(axadd, 'Add')
+        badd.on_clicked(self.add)
+
+        axdel = plt.axes([0.6, 0.05, 0.1, 0.075])
+        bdel = Button(axdel, 'Del')
+        bdel.on_clicked(self.delete)
+
         cid = fig.canvas.mpl_connect('button_press_event', self.onclick)
 
-        axbox = plt.axes([0.1, 0.05, 0.6, 0.075])
+        axbox = plt.axes([0.1, 0.05, 0.45, 0.075])
         self.text_box = TextBox(axbox, '', initial='?')
         #text_box.on_submit(submit)
 
@@ -44,6 +53,8 @@ class Polygon:
             self.object_list=[]
         self.objects_hdls=None
         self.draw_objs()
+
+        self.selected_obj_ind=-1
 
         plt.show()
 
@@ -69,7 +80,7 @@ class Polygon:
                 if data is not None:
                     xs,ys=np.array(data).T
                     h.append(subp.plot(xs,ys,'y'))
-                    h.append(subp.plot(xs[0],ys[0],'or' if selected==ind else 'oy'))
+                    h.append(subp.plot(xs[0],ys[0],'or' if selected==ind else 'oy',alpha=0.5))
 
     def get_closest(self,x,y,ax_ind):
         max_ind=-1
@@ -83,17 +94,31 @@ class Polygon:
                     max_ind=ind
         return max_ind
 
+    def delete(self,event):
+        if self.selected_obj_ind != -1:
+            self.object_list.pop(self.selected_obj_ind)
+            self.selected_obj_ind=-1
+            self.verts_list=[None]*len(self.verts_list)
+            self.draw_objs()
+            plt.draw()
+    
     def save(self,event):
+        with open(self.data_fname,'wb') as fd:
+            pickle.dump(self.object_list,fd)
+
+
+
+    def add(self,event):
+        #import pdb;pdb.set_trace()
         if any(self.verts_list):
             obj = {}
             obj['pts'] = self.verts_list.copy()
             obj['desc'] = self.text_box.text
             self.object_list.append(obj)
+            print('len of object_list',len(self.object_list))
             self.draw_objs() 
             plt.draw()
             self.verts_list=[None]*len(self.verts_list)
-            with open(self.data_fname,'wb') as fd:
-                pickle.dump(self.object_list,fd)
 
 
     def onclick(self,event):
@@ -107,6 +132,7 @@ class Polygon:
         if ind >= 0:
             self.last_ind_ax=ind
             cind=self.get_closest(x,y,ind)
+            self.selected_obj_ind=cind
             if cind>-1:
                 self.draw_objs(cind)
                 self.text_box.set_val(self.object_list[cind]['desc'])

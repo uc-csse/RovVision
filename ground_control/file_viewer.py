@@ -10,11 +10,11 @@ import struct
 import cv2,os
 import argparse
 import numpy as np
-import matplotlib.pyplot as plt
 import config
 from gst import gst_file_reader
 from annotations import draw_txt
 import utils
+import explore
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gst",help="stream with gst", action='store_true')
@@ -115,12 +115,7 @@ if __name__=='__main__':
         if k%256==ord('q'):
             break
         if k%256==ord('i'):
-            plt.figure()
-            plt.subplot(1,2,1)
-            plt.imshow(imgs_raw[0])
-            plt.subplot(1,2,2)
-            plt.imshow(imgs_raw[1])
-            plt.show()
+            explore.plot_raw_images(imgs_raw)
         if k%256==8:
             fcnt-=1 
         else:

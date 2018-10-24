@@ -76,7 +76,7 @@ if __name__=='__main__':
                 pickle.dump([topic,data],data_file_fd,-1)
                 pickle.dump(['viewer_data',{'rcv_cnt':rcv_cnt}],data_file_fd,-1)
 
-        print('-1-',main_data)
+        #print('-1-',main_data)
 
         if images[0] is not None and images[1] is not None:
             fmt_cnt_l=image_enc_dec.decode(images[0])

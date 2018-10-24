@@ -67,6 +67,7 @@ async def get_zmq_events():
             ret  = sock.recv_multipart()
             if ret[0]==config.topic_button:
                 data=pickle.loads(ret[1])
+                print('git button',data)
                 if data[5]==1:
                     #while track_info is None:
                     #    asyncio.sleep(0)
@@ -80,6 +81,7 @@ async def get_zmq_events():
                     #    lock_range = track_info['range']
                 controller.update_joy_buttons(data)
             if ret[0]==config.topic_hat:
+                print('git hat')
                 data=pickle.loads(ret[1])
                 controller.update_joy_hat(data)
 

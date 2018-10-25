@@ -99,6 +99,12 @@ def get_imgs():
     return images
 
 
+def save_main_camera_stream(fname):
+    cmd='''gst-launch-1.0 -e udpsrc port=6753 ! application/x-rtp, encoding-name=H264, payload=96 ! rtph264depay ! h264parse ! mp4mux ! filesink location={} sync=false'''.format(fname)
+    #return Popen(cmd, shell=True)
+    cmdp=cmd.split()
+    return Popen(cmdp)
+
 ############ gst from files #################
 import glob
 def read_image_from_pipe(p):

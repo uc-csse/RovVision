@@ -3,7 +3,7 @@ import socket
 
 UDP_IP = "192.168.2.1"
 UDP_SRC_PORT = 6600
-UDP_DST_PORTS = [5600,6750]
+UDP_DST_PORTS = [5600,6753]
 
 sock = socket.socket(socket.AF_INET, # Internet
                      socket.SOCK_DGRAM) # UDP
@@ -14,7 +14,7 @@ sock.bind((UDP_IP, UDP_SRC_PORT))
 
 #to save
 #gst-launch-1.0 -e -v udpsrc port=6600 ! application/x-rtp, encoding-name=H264, payload=96 ! rtph264depay ! h264parse ! mp4mux ! filesink location=test.mp4
-
+import time
 save=True
 if save:
     fd=open('test.mp4','wb')
@@ -24,5 +24,6 @@ while True:
         if save:
             fd.write(data)
         for p in UDP_DST_PORTS:
-            sock.sendto(data,(UDP_IP,p))
+            #time.sleep(0)
+            sock.sendto(data,('127.1',p))
 

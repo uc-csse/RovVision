@@ -57,8 +57,8 @@ focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 #disparity=x-x'=baseline*focal_length/Z
 #=>> Z = baseline*focal_length/disparity 
 
-
-track_params = (30,30,40,40) 
-stereo_corr_params = {'ws':(80,80),'sxl':200,'sxr':0}
+track_offx=100
+track_params = (30,30,40,40,track_offx,0) 
+stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':150}
 
 

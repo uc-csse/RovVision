@@ -24,7 +24,7 @@ def disp2range(x):
 
 debug_im=None
 do_plot=False
-def track_correlator(img,wx,wy,sx,sy,tx=None,ty=None):
+def track_correlator(img,wx,wy,sx,sy,ofx,ofy,tx=None,ty=None):
     global debug_im,do_plot
     if tx is None:
         tx=sx//2*8
@@ -34,8 +34,8 @@ def track_correlator(img,wx,wy,sx,sy,tx=None,ty=None):
     corr_scale_map=None
 
     while True: 
-        cx=img.shape[1]//2
-        cy=img.shape[0]//2
+        cx=img.shape[1]//2+ofx
+        cy=img.shape[0]//2+ofy
         l1,r1=cx-wx//2,cx+wx//2
         u1,d1=cy-wy//2,cy+wy//2
         patern=img[u1:d1,l1:r1]
@@ -98,11 +98,12 @@ def track_correlator(img,wx,wy,sx,sy,tx=None,ty=None):
             img2=yield rx,ry,0
 
 
-def line_correlator(img1,img2,wx,wy,sxl,sxr):
+def line_correlator(img1,img2,wx,wy,sxl,sxr,ofx):
     global debug
     cx=img1.shape[1]//2
+    cx_off=cx+ofx
     cy=img1.shape[0]//2
-    l1,r1=cx-wx//2,cx+wx//2
+    l1,r1=cx_off-wx//2,cx_off+wx//2
     u1,d1=cy-wy//2,cy+wy//2
     patern=img1[u1:d1,l1:r1]
     #corr_pat=preprep_corr(patern)
@@ -135,7 +136,7 @@ def line_correlator(img1,img2,wx,wy,sxl,sxr):
         y+=dy
         #:print(x,y)  
 
-    nx=x-sxl
+    nx=x-sxl-ofx
     if 0 and x>sz:
         z=4
         sz=3 #zoom search
@@ -221,7 +222,7 @@ def run_Trackers():
         res={}
         res['img_shp']=imgl.shape
         res['line_corr_parr']=stereo_corr_params
-        cret = line_correlator(imgl1r,imgr1r,sp['ws'][0],sp['ws'][1],sp['sxl'],sp['sxr'])
+        cret = line_correlator(imgl1r,imgr1r,sp['ws'][0],sp['ws'][1],sp['sxl'],sp['sxr'],sp['ofx'])
         ox,oy,new_ref_flag = tc.send(imgl1b)
         res['offx']=ox
         res['offy']=oy

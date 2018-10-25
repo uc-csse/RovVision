@@ -133,10 +133,13 @@ def listener():
                 
                 ###################################################################### 
                 wx,wy=config.stereo_corr_params['ws']
+                stereo_offx=config.stereo_corr_params['ofx'] #correct search position onright image
                 cx = img.shape[1]//2
+                cx_off_t = cx+config.track_offx
                 cy = img.shape[0]//2
-                draw_rectsr=[((cx-wx//2,cy-wy//2) , (cx+wx//2,cy+wy//2) , (0,255,255))]
-                draw_rectsl=[((cx-wx//2,cy-wy//2) , (cx+wx//2,cy+wy//2) , (0,0,255))]
+                #draw_rectsr=[((cx-wx//2,cy-wy//2) , (cx+wx//2,cy+wy//2) , (0,255,255))]
+                draw_rectsr=[] 
+                draw_rectsl=[((cx+stereo_offx-wx//2,cy-wy//2) , (cx+stereo_offx+wx//2,cy+wy//2) , (0,0,255))]
                 if track is None:
                     track = tracker.run_Trackers()
                     track.__next__()
@@ -155,9 +158,9 @@ def listener():
                     ret['send_cnt']=gst.send_cnt.copy()
 
                     ox=int(ret['disp'])                    
-                    draw_rectsr.append(((cx-wx//2+ox,cy-wy//2) , (cx+wx//2+ox,cy+wy//2) , (0,0,255)))
+                    draw_rectsr.append(((cx+stereo_offx-wx//2+ox,cy-wy//2) , (cx+stereo_offx+wx//2+ox,cy+wy//2) , (0,0,255)))
                     ox,oy=int(ret['offx']),int(ret['offy'])
-                    draw_rectsl.append(((cx-wx//2+ox,cy-wy//2+oy) , (cx+wx//2+ox,cy+wy//2+oy) , (255,0,255)))
+                    draw_rectsl.append(((cx_off_t-wx//2+ox,cy-wy//2+oy) , (cx_off_t+wx//2+ox,cy+wy//2+oy) , (255,0,255)))
                     socket_pub.send_multipart([config.topic_comp_vis,pickle.dumps(ret,-1)])
                     if record_state:
                         pickle.dump([config.topic_comp_vis,ret],data_fd,-1)

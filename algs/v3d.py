@@ -115,8 +115,8 @@ def listener():
                     imgr=data
 
             if ret[0] in [topicl,topicr] and fmt_cnt_r == fmt_cnt_l:
-                imgl=np.fromstring(imgl,'uint8').reshape(shape)
-                imgr=np.fromstring(imgr,'uint8').reshape(shape)
+                imgl=np.fromstring(imgl,'uint8').reshape(shape)[:,:,::-1]
+                imgr=np.fromstring(imgr,'uint8').reshape(shape)[:,:,::-1]
                 if save and record_state and (info[3]%10==0): #save every 1 sec
                     cv2.imwrite(save+'/l{:08d}.{}'.format(info[3],image_fmt),imgl)
                     cv2.imwrite(save+'/r{:08d}.{}'.format(info[3],image_fmt),imgr)

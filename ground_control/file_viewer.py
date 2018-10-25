@@ -104,8 +104,8 @@ if __name__=='__main__':
                 for rectp in vis_data['draw_rectsl']:
                     cv2.rectangle(images[0],*rectp)
             #print(images[0].shape,join.shape)
-            join[:,0:sx,:]=images[0][:,:,::-1]
-            join[:,sx:,:]=images[1][:,:,::-1]
+            join[:,0:sx,:]=images[0]#[:,:,::-1]
+            join[:,sx:,:]=images[1]#[:,:,::-1]
 
             draw_txt(join,vis_data,main_data)
             if explore.is_data_file(args.path,fcnt):

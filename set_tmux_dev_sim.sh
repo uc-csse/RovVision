@@ -17,7 +17,7 @@ tmux select-pane -t 1
 tmux send-keys "python main.py --sim" ENTER
 
 tmux select-pane -t 2
-tmux send-keys "cd algs && python v3d.py --gst --save" ENTER
+tmux send-keys "cd algs && SIMROV= python v3d.py --gst --save" ENTER
 #tmux send-keys "cd algs && python v3d.py --cvshow" ENTER
 
 tmux select-pane -t 3

@@ -1,5 +1,6 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import numpy as np
+import os
 #pubsub
 #zmq_pub_drone_fdm=('127.0.0.1',5566)
 #zmq_pub_drone_fdm=('127.0.0.1',12466)
@@ -56,9 +57,12 @@ baseline = 0.14 # (240-100)*.1scale in cm from unreal engine
 focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 #disparity=x-x'=baseline*focal_length/Z
 #=>> Z = baseline*focal_length/disparity 
-
-track_offx=100
-track_params = (30,30,40,40,track_offx,0) 
-stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':150}
-
+if 'SIMROV' in os.environ:
+    track_offx=30
+    track_params = (30,30,40,40,track_offx,0) 
+    stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':50}
+else:
+    track_offx=100
+    track_params = (30,30,40,40,track_offx,0) 
+    stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':150}
 

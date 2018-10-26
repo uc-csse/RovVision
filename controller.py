@@ -39,7 +39,7 @@ def get_pos():
 def to_pwm(val):
     return int(val*300)+1500
 
-def set_rcs(ud, yaw, fb, lr):
+def ___set_rcs(ud, yaw, fb, lr):
     global mav1
     values = [ 1500 ] * 9
     #values[8]=1100
@@ -50,6 +50,18 @@ def set_rcs(ud, yaw, fb, lr):
     values[R.lights1] = lights1
     #print(values) 
     mav1.mav.rc_channels_override_send(mav1.target_system, mav1.target_component, *values)
+
+def set_rcs(ud, yaw, fb, lr):
+    global lights1
+    buttons=0
+    if lights1!=0:
+        if lights1>0:
+            buttons+=(1<<14)
+        else:
+            buttons+=(1<<13)
+    mav1.mav.manual_control_send(mav1.target_system,
+            int(fb*1000),int(lr*1000),int(ud*1000),int(yaw*1000),buttons)
+
 
 def set_rcs_diff(ud, yaw, fb, lr, idle_val):
     out_values = [ idle_val for i in range(8)] 
@@ -68,11 +80,18 @@ def set_rcs_diff(ud, yaw, fb, lr, idle_val):
         out_values[2]=in_values[2]+(ud-1500) 
     mav1.mav.rc_channels_override_send(mav1.target_system, mav1.target_component, *out_values)
 
-lights1=1100
-def update_joy_hat(hat):
+#lights1=1100
+def ___update_joy_hat(hat):
     global lights1
     lights1+=hat[1]*100
     lights1=max(1100,min(2000,lights1))
+    print('got hat',hat,lights1) 
+
+lights1=0
+def update_joy_hat(hat):
+    global lights1
+    lights1=hat[0]
+    #lights1=max(1100,min(2000,lights1))
     print('got hat',hat,lights1) 
 
 def update_joy_buttons(data):

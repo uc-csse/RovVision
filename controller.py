@@ -150,6 +150,7 @@ def init():
 
     print("Waiting for HEARTBEAT")
     mav1.wait_heartbeat()
+    print('Version: WIRE_PROTOCOL_VERSION',str(mav1.mav))
     print("Heartbeat from APM (system %u component %u)" % (mav1.target_system, mav1.target_system))
     #set_rcs(1510,1510,1510,1510)
 
@@ -169,10 +170,25 @@ async def run(socket_pub=None):
             #print('X:%(posx).1f\tY:%(posy).1f\tZ:%(posz).1f\tYW:%(yaw).0f\tPI:%(pitch).1f\tRL:%(roll).1f'%__pos)
         await asyncio.sleep(0.001) 
 
+async def test_lights():
+    global lights1
+    await asyncio.sleep(1)
+    lights1=1600
+    set_rcs(0,0,0,0)
+    print('lights on?')
+    import inspect
+    print(inspect.getfile(mav1.mav.rc_channels_override_send)) 
+    await asyncio.sleep(3)
+    lights1=1100
+    set_rcs(0,0,0,0)
+    print('lights off?')
+
+
+
 if __name__=='__main__':
     init()
     loop = asyncio.get_event_loop()
     loop.run_until_complete(asyncio.gather(
-        run(),
+        run(),test_lights()
         ))
     loop.close()

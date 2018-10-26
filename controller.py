@@ -59,26 +59,19 @@ def set_rcs(ud, yaw, fb, lr):
             buttons+=(1<<14)
         else:
             buttons+=(1<<13)
+        lights1=0
+    #revers engineer the code in:
+    #https://github.com/bluerobotics/ardusub/blob/master/ArduSub/joystick.cpp
+    #function Sub::transform_manual_control_to_rc_override
+    # had to use mav1.mav.manual_control_send to be able to control the lights 
+
+    #throttleScale = 0.8*gain*g.throttle_gain
+    throttleBase = 500#/throttleScale
+    tr=ud*1000+throttleBase
+    #print(tr)
     mav1.mav.manual_control_send(mav1.target_system,
-            int(fb*1000),int(lr*1000),int(ud*1000),int(yaw*1000),buttons)
+            int(fb*js_gain*1000),int(lr*js_gain*1000),int(tr),int(yaw*1000),buttons)
 
-
-def set_rcs_diff(ud, yaw, fb, lr, idle_val):
-    out_values = [ idle_val for i in range(8)] 
-    in_values=get_rcs()
-
-    if in_values is None:
-        print('Warning no in_values from rcs')
-        in_values=out_values.copy()
-    if yaw != idle_val:
-        out_values[3]=in_values[3]+(yaw-1500)
-    if fb != idle_val:
-        out_values[4]=in_values[4]+(fb-1500) 
-    if lr != idle_val:
-        out_values[5]=in_values[5]+(lr-1500) 
-    if ud != idle_val:
-        out_values[2]=in_values[2]+(ud-1500) 
-    mav1.mav.rc_channels_override_send(mav1.target_system, mav1.target_component, *out_values)
 
 #lights1=1100
 def ___update_joy_hat(hat):
@@ -88,11 +81,15 @@ def ___update_joy_hat(hat):
     print('got hat',hat,lights1) 
 
 lights1=0
+js_gain=1.0
 def update_joy_hat(hat):
-    global lights1
+    global lights1,js_gain
     lights1=hat[0]
     #lights1=max(1100,min(2000,lights1))
-    print('got hat',hat,lights1) 
+    #print('got hat',hat,lights1) 
+    js_gain+=hat[1]*0.05
+    js_gain=min(max(js_gain,0.1),2.0)
+    print('*'*10+'GAIN {:.1f}'.format(js_gain))
 
 def update_joy_buttons(data):
     if data[config.joy_arm]==1:
@@ -104,10 +101,10 @@ def update_joy_buttons(data):
 
     if data[config.joy_disarm]==1:
         mav1.mav.command_long_send(
-	    mav1.target_system,
-	    mav1.target_component,
-	    mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
-	    0, 0, 0, 0, 0, 0, 0, 0)
+            mav1.target_system,
+            mav1.target_component,
+            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+            0, 0, 0, 0, 0, 0, 0, 0)
 
     if data[config.joy_depth_hold]==1:
         mode_id = mav1.mode_mapping()['ALT_HOLD']
@@ -172,7 +169,28 @@ def init():
     print('Version: WIRE_PROTOCOL_VERSION',str(mav1.mav))
     print("Heartbeat from APM (system %u component %u)" % (mav1.target_system, mav1.target_system))
     #set_rcs(1510,1510,1510,1510)
+    #print(mav1.param_fetch_one(b'JS_GAIN_DEFAULT'))
 
+    mav1.mav.param_request_read_send(
+       mav1.target_system, mav1.target_component,
+           b'JS_GAIN_DEFAULT',
+               -1,
+               mavutil.mavlink.MAV_PARAM_TYPE_REAL32
+               )
+    # Print new value in RAM
+    message = mav1.recv_match(type='PARAM_VALUE', blocking=True).to_dict()
+
+    js_gain_default=message['param_value']
+
+    
+    mav1.mav.param_set_send( mav1.target_system, mav1.target_component,
+        b'JS_THR_GAIN',
+        1.0,
+        mavutil.mavlink.MAV_PARAM_TYPE_REAL32
+    )
+    message = mav1.recv_match(type='PARAM_VALUE', blocking=True).to_dict()
+    js_th_gain=message['param_value']
+    print('JS_THR_GAIN={} JS_GAIN_DEFAULT={}'.format(js_th_gain,js_gain_default))
 
 async def run(socket_pub=None):
     global mav1,event,__pos

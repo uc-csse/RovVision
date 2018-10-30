@@ -67,7 +67,7 @@ def set_rcs(ud, yaw, fb, lr):
 
     #throttleScale = 0.8*gain*g.throttle_gain
     throttleBase = 500#/throttleScale
-    tr=ud*1000+throttleBase
+    tr=ud*tr_gain*1000+throttleBase
     #print(tr)
     mav1.mav.manual_control_send(mav1.target_system,
             int(fb*js_gain*1000),int(lr*js_gain*1000),int(tr),int(yaw*1000),buttons)
@@ -82,6 +82,7 @@ def ___update_joy_hat(hat):
 
 lights1=0
 js_gain=1.0
+tr_gain=0.5
 def update_joy_hat(hat):
     global lights1,js_gain
     lights1=hat[0]

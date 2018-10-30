@@ -56,8 +56,11 @@ def track_correlator(img,wx,wy,sx,sy,ofx,ofy,tx=None,ty=None):
                 #cv2.rectangle(debug_im,*rectp)
             #corr=scipy.signal.correlate2d(corr_search, corr_pat, mode='valid', boundary='fill', fillvalue=0)
             #corr = scipy.signal.convolve2d(corr,np.ones((3,3)),'same')
-    
-            corr = cv2.matchTemplate(corr_search,corr_pat,cv2.TM_CCOEFF_NORMED)    
+            try: 
+                corr = cv2.matchTemplate(corr_search,corr_pat,cv2.TM_CCOEFF_NORMED) 
+            except:
+                print('error in match template')
+                break 
             if corr_scale_map is None:
                 corr_scale_map=np.zeros(corr.shape)
                 crx=corr.shape[0]
@@ -66,7 +69,11 @@ def track_correlator(img,wx,wy,sx,sy,ofx,ofy,tx=None,ty=None):
                 corr_scale_map[:,:]=diag
                 corr_scale_map[:,:]*=diag.T
                 print('doing scale map')
-            corr2=corr*corr_scale_map #prioritizing center
+            try:
+                corr2=corr*corr_scale_map #prioritizing center
+            except:
+                print('Error in shape match')
+                break
             min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(corr2)
             x,y = max_loc
             if 1<=x<corr.shape[1]-1 and 1<=y<corr.shape[0]-1:

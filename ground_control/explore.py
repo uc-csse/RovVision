@@ -148,15 +148,21 @@ def plot_raw_images(imgs_raw,path,fnum):
 def plot_graphs(md_hist):
     fnums=[md['fnum'] for md in md_hist]
     fb_cmd=[md['fb_cmd'] for md in md_hist]
+    fb_pid=np.array([md['fb_pid'] for md in md_hist])*1000
     lr_cmd=[md['lr_cmd'] for md in md_hist]
+    lr_pid=np.array([md['lr_pid'] for md in md_hist])*1000
 
     plt.figure('commands')
     ax=plt.subplot(2,1,1)
     plt.title('fb')
-    plt.plot(fnums,fb_cmd)
+    plt.plot(fnums,fb_cmd,'-.')
+    plt.plot(fnums,-fb_pid) #- since the direction is -
+    plt.legend(list('cpid'))
     plt.subplot(2,1,2,sharex=ax)
     plt.title('lr')
-    plt.plot(fnums,lr_cmd)
+    plt.plot(fnums,lr_cmd,'-.')
+    plt.plot(fnums,-lr_pid)
+    plt.legend(list('cpid'))
     plt.show()
 
 

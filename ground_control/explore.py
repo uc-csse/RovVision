@@ -145,24 +145,42 @@ def plot_raw_images(imgs_raw,path,fnum):
     Polygon(imgs_raw,path,fnum)
 
 
-def plot_graphs(md_hist):
+def plot_graphs(md_hist,vis_hist):
     fnums=[md['fnum'] for md in md_hist]
     fb_cmd=[md['fb_cmd'] for md in md_hist]
-    fb_pid=np.array([md['fb_pid'] for md in md_hist])*1000
+    js_gain=np.array([md['js_gain'] for md in md_hist]).reshape((-1,1))
+    fb_pid=np.array([md['fb_pid'] for md in md_hist])*1000*js_gain
     lr_cmd=[md['lr_cmd'] for md in md_hist]
-    lr_pid=np.array([md['lr_pid'] for md in md_hist])*1000
+    lr_pid=np.array([md['lr_pid'] for md in md_hist])*1000*js_gain
+
+    ranges=np.array([(vs['fnum'],vs['range']) for vs in vis_hist])
+    avg_ranges=np.array([(vs['fnum'],vs['range_avg']) for vs in vis_hist])
+    dxs=np.array([(vs['fnum'],vs['dx']) for vs in vis_hist])
+    
 
     plt.figure('commands')
-    ax=plt.subplot(2,1,1)
+    ax=plt.subplot(3,2,1)
     plt.title('fb')
     plt.plot(fnums,fb_cmd,'-.')
     plt.plot(fnums,-fb_pid) #- since the direction is -
     plt.legend(list('cpid'))
-    plt.subplot(2,1,2,sharex=ax)
+    plt.subplot(3,2,3,sharex=ax)
     plt.title('lr')
     plt.plot(fnums,lr_cmd,'-.')
     plt.plot(fnums,-lr_pid)
     plt.legend(list('cpid'))
+    plt.subplot(3,2,5,sharex=ax)
+    plt.title('horizontal gain')
+    plt.plot(fnums,js_gain)
+    
+    plt.subplot(3,2,2,sharex=ax)
+    plt.title('ranges')
+    plt.plot(ranges[:,0],ranges[:,1])
+    plt.plot(avg_ranges[:,0],avg_ranges[:,1])
+
+    plt.subplot(3,2,4,sharex=ax)
+    plt.title('dx')
+    plt.plot(dxs[:,0],dxs[:,1])
+
+
     plt.show()
-
-

@@ -18,6 +18,7 @@ import explore
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gst",help="stream with gst", action='store_true')
+parser.add_argument("--nosingle",help="dont use the single files only the stream", action='store_true')
 parser.add_argument("--nosync", help="dont sync videos", action='store_true')
 parser.add_argument("--path",help="dir path")
 args = parser.parse_args()
@@ -50,6 +51,7 @@ if __name__=='__main__':
     vis_data = {}
     main_data  ={}
     main_data_hist = []
+    vis_data_hist = []
     fcnt=-1
     from_buff=False
     while 1:
@@ -67,6 +69,9 @@ if __name__=='__main__':
                 if ret[0]==config.topic_comp_vis:
                     vis_data=ret[1]
                     print('fnum in vis',vis_data['fnum'])
+                    vis_data_hist.append(vis_data)
+                    if len(vis_data_hist)>1000:
+                        vis_data_hist.pop(0)
                     if vis_data['fnum']>=fcnt:
                         break
                 if ret[0]==config.topic_mav_telem:
@@ -88,12 +93,13 @@ if __name__=='__main__':
         if images[0] is not None and images[1] is not None:
             #if 1 or not  from_buff:
             for i in [0,1]:
-                for ext in ['.ppm','.png','.webp']:
-                    fname=file_path_fmt.format('lr'[i],fcnt)+ext
-                    if os.path.isfile(fname):
-                        imgs_raw[i]=cv2.imread(fname)
-                        images[i]=imgs_raw[i][::2,::2,:].copy()
-                        break
+                if not args.nosingle:
+                    for ext in ['.ppm','.png','.webp']:
+                        fname=file_path_fmt.format('lr'[i],fcnt)+ext
+                        if os.path.isfile(fname):
+                            imgs_raw[i]=cv2.imread(fname)
+                            images[i]=imgs_raw[i][::2,::2,:].copy()
+                            break
 
                     #images[i]=cv2.imread(fname)[:,:,::-1].copy()
                 if imgs_raw[i] is None:
@@ -125,7 +131,7 @@ if __name__=='__main__':
         if k%256==ord('i'):
             explore.plot_raw_images(imgs_raw,args.path,fcnt)
         if k%256==ord('p'):
-            explore.plot_graphs(main_data_hist)
+            explore.plot_graphs(main_data_hist,vis_data_hist)
         if k%256==8:
             fcnt-=1 
         else:

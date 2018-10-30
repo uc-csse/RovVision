@@ -104,12 +104,15 @@ async def control():
     
     ### x
     scl=6
-    lr_params=(0.52*scl,0.4*scl,1.6*scl,0.4*scl)
+    #lr_params=(0.52*scl,0.4*scl,1.6*scl,0.4*scl)
+    lr_params=(0.42*scl,0.004*scl,0.6*scl,0.4*scl)
     lr_pid=pid.PID(*lr_params)
+    #lr_filt=utils.avg_win_filt(5)
     
     ### range
     scl=12
-    fb_params=(0.24*scl,0.02*scl,2.2*scl,0.4*scl)
+    #fb_params=(0.24*scl,0.02*scl,2.2*scl,0.4*scl)
+    fb_params=(0.24*scl,0.002*scl,0.8*scl,0.4*scl)
     fb_pid=pid.PID(*fb_params)
 
     ud_cmd,lr_cmd,fb_cmd = 0,0,0 
@@ -128,12 +131,16 @@ async def control():
                 #ud_cmd=1500
             
             if 'dx' in track_info: 
-                lr_cmd = lr_dir*lr_pid(track_info['dx'],0)
+                val=track_info['dx']
+                if val is not None:
+                    lr_cmd = lr_dir*lr_pid(val,0)
                 #lr_cmd=int(-lr_cmd*300+1500)
                 #print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(lr_cmd,lr_pid.p,lr_pid.i,lr_pid.d))
+                telem['lr_pid']=(lr_pid.p,lr_pid.i,lr_pid.d)
             else:
                 #print('rest lr loop')
                 lr_pid=pid.PID(*lr_params)
+                #lr_filt=utils.avg_win_filt(5)
                 #lr_cmd=1500
 
             range_key = 'range_avg'
@@ -142,6 +149,7 @@ async def control():
                 fb_cmd = fb_dir*fb_pid(track_info[range_key],lock_range)
                 #print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(fb_cmd,fb_pid.p,fb_pid.i,fb_pid.d))
                 #fb_cmd=int(fb_dir*fb_cmd*300+1500)
+                telem['fb_pid']=(fb_pid.p,fb_pid.i,fb_pid.d)
             else:
                 fb_pid=pid.PID(*fb_params)
             #print('-----------',ud_cmd,lr_cmd,fb_cmd,lock_range)
@@ -151,7 +159,9 @@ async def control():
                 ud_cmd=0
             to_pwm=controller.to_pwm
             telem.update({\
-                    'ud_cmd':to_pwm(ud_cmd),'lr_cmd':to_pwm(lr_cmd),'fb_cmd':to_pwm(fb_cmd),'lock_range':lock_range})
+                    'ud_cmd':to_pwm(ud_cmd),'lr_cmd':to_pwm(lr_cmd*controller.js_gain),
+                    'fb_cmd':to_pwm(fb_cmd*controller.js_gain),'lock_range':lock_range,'fnum':track_info['fnum'],
+                    'js_gain':controller.js_gain})
             track_info = None
             #controller.set_rcs_diff(ud_cmd,idle_cmd,fb_cmd,lr_cmd,idle_val=idle_cmd)
             #controller.set_rcs(ud_cmd,idle_cmd,fb_cmd,lr_cmd)

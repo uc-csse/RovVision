@@ -118,7 +118,7 @@ def line_correlator(img1,img2,wx,wy,sxl,sxr,ofx):
 
     #patern=np.log(patern)
     #search=img2[cy-sy//2:cy+sy//2,cx-sx//2:cx+sx//2].copy()
-    l2,r2=cx-wx//2-sxl,cx+wx//2+sxr
+    l2,r2=cx_off-wx//2-sxl,cx_off+wx//2+sxr
     #search up and down incase of inacurate camera model
     sy=12
     u2,d2=cy-wy//2-sy,cy+wy//2+sy
@@ -143,7 +143,8 @@ def line_correlator(img1,img2,wx,wy,sxl,sxr,ofx):
         y+=dy
         #:print(x,y)  
 
-    nx=x-sxl-ofx
+    #nx=x-sxl-ofx
+    nx=x+(l2-l1)
     if 0 and x>sz:
         z=4
         sz=3 #zoom search

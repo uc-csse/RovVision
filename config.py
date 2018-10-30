@@ -60,11 +60,12 @@ focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 if 'SIMROV' in os.environ:
     track_offx=30
     track_params = (30,30,40,40,track_offx,0) 
-    stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':50}
+    stereo_corr_params = {'ws':(80,80),'sxl':250+50,'sxr':0,'ofx':50}
 else:
     track_offx=0#100
     track_offx=70
     track_params = (30,30,40,40,track_offx,0) 
     #stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':150}
-    stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':70}
+    #stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':70}
+    stereo_corr_params = {'ws':(80,80),'sxl':250+50,'sxr':0,'ofx':70}
 

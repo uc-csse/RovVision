@@ -64,7 +64,8 @@ if __name__=='__main__':
                     fds=[]
                     datestr=vis_data['record_date_str']
                     save_path=args.data_path+'/'+datestr
-                    os.mkdir(save_path)
+                    if not os.path.isdir(save_path):
+                        os.mkdir(save_path)
                     for i in [0,1]:
                         #datestr=datetime.now().strftime('%y%m%d-%H%M%S')
                         fds.append(open(save_path+'/vid_{}.mp4'.format('lr'[i]),'wb'))

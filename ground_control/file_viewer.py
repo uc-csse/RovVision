@@ -49,7 +49,7 @@ if __name__=='__main__':
     join=np.zeros((sy,sx*2,3),'uint8')
     vis_data = {}
     main_data  ={}
-    history_vis_data = {}
+    main_data_hist = []
     fcnt=-1
     from_buff=False
     while 1:
@@ -75,7 +75,10 @@ if __name__=='__main__':
                 if ret[0]==config.topic_main_telem:
                     #main_data.update(pickle.loads(ret[1]))
                     main_data.update(ret[1])
+                    main_data_hist.append(main_data.copy())
                     #if 'mavpackettype' not in data:
+                    if len(main_data_hist)>1000:
+                        main_data_hist=main_data_hist[1:]
                     #    print(data)
             if fcnt>0:
                 hist_buff_ind=fcnt%len(imbuff)
@@ -122,7 +125,7 @@ if __name__=='__main__':
         if k%256==ord('i'):
             explore.plot_raw_images(imgs_raw,args.path,fcnt)
         if k%256==ord('p'):
-            explore.plot_graphs()
+            explore.plot_graphs(main_data_hist)
         if k%256==8:
             fcnt-=1 
         else:

@@ -36,7 +36,10 @@ class R:
 def get_pos():
     return __pos
 
-def to_pwm(val):
+def to_pwm(val): #pwm for manual control
+    return int(val*1000)
+
+def __to_pwm(val): #pwm for rc_channels
     return int(val*300)+1500
 
 def ___set_rcs(ud, yaw, fb, lr):
@@ -50,6 +53,7 @@ def ___set_rcs(ud, yaw, fb, lr):
     values[R.lights1] = lights1
     #print(values) 
     mav1.mav.rc_channels_override_send(mav1.target_system, mav1.target_component, *values)
+
 
 def set_rcs(ud, yaw, fb, lr):
     global lights1

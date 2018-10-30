@@ -143,3 +143,20 @@ class Polygon:
 
 def plot_raw_images(imgs_raw,path,fnum):
     Polygon(imgs_raw,path,fnum)
+
+
+def plot_graphs(md_hist):
+    fnums=[md['fnum'] for md in md_hist]
+    fb_cmd=[md['fb_cmd'] for md in md_hist]
+    lr_cmd=[md['lr_cmd'] for md in md_hist]
+
+    plt.figure('commands')
+    ax=plt.subplot(2,1,1)
+    plt.title('fb')
+    plt.plot(fnums,fb_cmd)
+    plt.subplot(2,1,2,sharex=ax)
+    plt.title('lr')
+    plt.plot(fnums,lr_cmd)
+    plt.show()
+
+

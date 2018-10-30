@@ -67,7 +67,7 @@ def set_rcs(ud, yaw, fb, lr):
 
     #throttleScale = 0.8*gain*g.throttle_gain
     throttleBase = 500#/throttleScale
-    tr=ud*1000+throttleBase
+    tr=ud*tr_gain*1000+throttleBase
     #print(tr)
     mav1.mav.manual_control_send(mav1.target_system,
             int(fb*js_gain*1000),int(lr*js_gain*1000),int(tr),int(yaw*1000),buttons)
@@ -82,6 +82,7 @@ def ___update_joy_hat(hat):
 
 lights1=0
 js_gain=1.0
+tr_gain=0.5
 def update_joy_hat(hat):
     global lights1,js_gain
     lights1=hat[0]
@@ -166,6 +167,7 @@ def init():
 
     print("Waiting for HEARTBEAT")
     mav1.wait_heartbeat()
+    print('Version: WIRE_PROTOCOL_VERSION',str(mav1.mav))
     print("Heartbeat from APM (system %u component %u)" % (mav1.target_system, mav1.target_system))
     #set_rcs(1510,1510,1510,1510)
     #print(mav1.param_fetch_one(b'JS_GAIN_DEFAULT'))
@@ -206,10 +208,25 @@ async def run(socket_pub=None):
             #print('X:%(posx).1f\tY:%(posy).1f\tZ:%(posz).1f\tYW:%(yaw).0f\tPI:%(pitch).1f\tRL:%(roll).1f'%__pos)
         await asyncio.sleep(0.001) 
 
+async def test_lights():
+    global lights1
+    await asyncio.sleep(1)
+    lights1=1600
+    set_rcs(0,0,0,0)
+    print('lights on?')
+    import inspect
+    print(inspect.getfile(mav1.mav.rc_channels_override_send)) 
+    await asyncio.sleep(3)
+    lights1=1100
+    set_rcs(0,0,0,0)
+    print('lights off?')
+
+
+
 if __name__=='__main__':
     init()
     loop = asyncio.get_event_loop()
     loop.run_until_complete(asyncio.gather(
-        run(),
+        run(),test_lights()
         ))
     loop.close()

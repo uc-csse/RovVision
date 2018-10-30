@@ -159,7 +159,8 @@ async def control():
             to_pwm=controller.to_pwm
             telem.update({\
                     'ud_cmd':to_pwm(ud_cmd),'lr_cmd':to_pwm(lr_cmd*controller.js_gain),
-                    'fb_cmd':to_pwm(fb_cmd*controller.js_gain),'lock_range':lock_range,'fnum':track_info['fnum']})
+                    'fb_cmd':to_pwm(fb_cmd*controller.js_gain),'lock_range':lock_range,'fnum':track_info['fnum'],
+                    'js_gain':controller.js_gain})
             track_info = None
             #controller.set_rcs_diff(ud_cmd,idle_cmd,fb_cmd,lr_cmd,idle_val=idle_cmd)
             #controller.set_rcs(ud_cmd,idle_cmd,fb_cmd,lr_cmd)

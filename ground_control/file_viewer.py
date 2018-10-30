@@ -49,6 +49,7 @@ if __name__=='__main__':
     join=np.zeros((sy,sx*2,3),'uint8')
     vis_data = {}
     main_data  ={}
+    history_vis_data = {}
     fcnt=-1
     from_buff=False
     while 1:
@@ -103,6 +104,8 @@ if __name__=='__main__':
                     cv2.rectangle(images[1],*rectp)
                 for rectp in vis_data['draw_rectsl']:
                     cv2.rectangle(images[0],*rectp)
+            
+
             #print(images[0].shape,join.shape)
             join[:,0:sx,:]=images[0]#[:,:,::-1]
             join[:,sx:,:]=images[1]#[:,:,::-1]
@@ -118,6 +121,8 @@ if __name__=='__main__':
             break
         if k%256==ord('i'):
             explore.plot_raw_images(imgs_raw,args.path,fcnt)
+        if k%256==ord('p'):
+            explore.plot_graphs()
         if k%256==8:
             fcnt-=1 
         else:

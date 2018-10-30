@@ -105,14 +105,14 @@ async def control():
     ### x
     scl=6
     #lr_params=(0.52*scl,0.4*scl,1.6*scl,0.4*scl)
-    lr_params=(0.42*scl,0.004*scl,0.6*scl,0.4*scl)
+    lr_params=(2.02*scl,0.10*scl,4.6*scl,6.4*scl)
     lr_pid=pid.PID(*lr_params)
     #lr_filt=utils.avg_win_filt(5)
     
     ### range
     scl=12
     #fb_params=(0.24*scl,0.02*scl,2.2*scl,0.4*scl)
-    fb_params=(0.24*scl,0.002*scl,0.8*scl,0.4*scl)
+    fb_params=(0.52*scl,0.02*scl,6.0*scl,6.4*scl)
     fb_pid=pid.PID(*fb_params)
 
     ud_cmd,lr_cmd,fb_cmd = 0,0,0 

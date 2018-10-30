@@ -11,6 +11,7 @@ class PID(object):
         self.prev_state=None
         self.limit=limit
         self.target=None
+        self.d=0
 
     def __call__(self,state,target):
         if self.prev_state is None:
@@ -20,7 +21,9 @@ class PID(object):
         self.target=target
         self.err=target-state
         self.p=self.err*self.P
-        self.d=-(self.current_state-self.prev_state)*self.D
+        #self.d=-(self.current_state-self.prev_state)*self.D
+        d=-(self.current_state-self.prev_state)*self.D
+        self.d=self.d*0.7+d*0.3
         self.i+=self.err*self.I
         self.command=self.p+self.d+self.i
         self.command=np.clip(self.command,-self.limit,self.limit)

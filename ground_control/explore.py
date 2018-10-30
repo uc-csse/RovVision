@@ -155,7 +155,7 @@ def plot_graphs(md_hist,vis_hist):
 
     ranges=np.array([(vs['fnum'],vs['range']) for vs in vis_hist])
     avg_ranges=np.array([(vs['fnum'],vs['range_avg']) for vs in vis_hist])
-    dxs=np.array([(vs['fnum'],vs['dx']) for vs in vis_hist])
+    dxs=np.array([(vs['fnum'],vs['dx']) for vs in vis_hist if 'dx' in vs])
     
 
     plt.figure('commands')
@@ -178,9 +178,10 @@ def plot_graphs(md_hist,vis_hist):
     plt.plot(ranges[:,0],ranges[:,1])
     plt.plot(avg_ranges[:,0],avg_ranges[:,1])
 
-    plt.subplot(3,2,4,sharex=ax)
-    plt.title('dx')
-    plt.plot(dxs[:,0],dxs[:,1])
+    if len(dxs)>0:
+        plt.subplot(3,2,4,sharex=ax)
+        plt.title('dx')
+        plt.plot(dxs[:,0],dxs[:,1])
 
 
     plt.show()

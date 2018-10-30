@@ -33,7 +33,6 @@ socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_main )
 fb_dir=-1.0
 lr_dir=-1.0
 
-
 class J:
     ud=4
     yaw=3
@@ -105,12 +104,12 @@ async def control():
     
     ### x
     scl=6
-    lr_params=(0.42*scl,0.004*scl,1.6*scl,0.4*scl)
+    lr_params=(0.52*scl,0.4*scl,1.6*scl,0.4*scl)
     lr_pid=pid.PID(*lr_params)
     
     ### range
     scl=12
-    fb_params=(0.24*scl,0.002*scl,2.2*scl,0.4*scl)
+    fb_params=(0.24*scl,0.02*scl,2.2*scl,0.4*scl)
     fb_pid=pid.PID(*fb_params)
 
     ud_cmd,lr_cmd,fb_cmd = 0,0,0 

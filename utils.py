@@ -25,5 +25,8 @@ class  avg_win_filt():
         self.buf.append(val)
         if len(self.buf)>self.size:
             self.buf.pop(0)
-        return np.average(self.buf)
+        return np.mean(self.buf)
+
+    def reset(self):
+        self.buf=[]
 

@@ -160,6 +160,7 @@ def listener():
                     ox=int(ret['disp'])                    
                     draw_rectsr.append(((cx+stereo_offx-wx//2+ox,cy-wy//2) , (cx+stereo_offx+wx//2+ox,cy+wy//2) , (0,0,255)))
                     ox,oy=int(ret['offx']),int(ret['offy'])
+                    draw_rectsl.append(((cx_off_t-wx//2+1,cy-wy//2+1) , (cx_off_t+wx//2-1,cy+wy//2-1) , (255,255,0)))
                     draw_rectsl.append(((cx_off_t-wx//2+ox,cy-wy//2+oy) , (cx_off_t+wx//2+ox,cy+wy//2+oy) , (255,0,255)))
                     socket_pub.send_multipart([config.topic_comp_vis,pickle.dumps(ret,-1)])
                     if record_state:

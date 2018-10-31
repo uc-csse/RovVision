@@ -7,7 +7,7 @@ import pickle
 import time,os
 import argparse
 from algs import pid
-
+import utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--sim",help="run in simulation", action='store_true')
@@ -105,20 +105,22 @@ async def control():
     ### x
     scl=6
     #lr_params=(0.52*scl,0.4*scl,1.6*scl,0.4*scl)
-    lr_params=(2.02*scl,0.10*scl,4.6*scl,6.4*scl)
+    #lr_params=(2.02*scl,0.10*scl,4.6*scl,6.4*scl) end of day 31.10
+    lr_params=(1.02*scl,0.10*scl,6.6*scl,6.4*scl)
     lr_pid=pid.PID(*lr_params)
     #lr_filt=utils.avg_win_filt(5)
     
     ### range
     scl=12
     #fb_params=(0.24*scl,0.02*scl,2.2*scl,0.4*scl)
-    fb_params=(0.52*scl,0.02*scl,6.0*scl,6.4*scl)
+    #fb_params=(0.52*scl,0.02*scl,6.0*scl,6.4*scl) end of day 31.10
+    fb_params=(0.12*scl,0.002*scl,1.0*scl,6.4*scl)
     fb_pid=pid.PID(*fb_params)
 
     ud_cmd,lr_cmd,fb_cmd = 0,0,0 
     yaw_cmd=0
 
-
+    lr_filt = utils.avg_win_filt(4)
     telem={}
     cnt=0
     while 1:
@@ -133,6 +135,7 @@ async def control():
             if 'dx' in track_info: 
                 val=track_info['dx']
                 if val is not None:
+                    val=lr_filt(val)
                     lr_cmd = lr_dir*lr_pid(val,0)
                 #lr_cmd=int(-lr_cmd*300+1500)
                 #print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(lr_cmd,lr_pid.p,lr_pid.i,lr_pid.d))
@@ -140,6 +143,7 @@ async def control():
             else:
                 #print('rest lr loop')
                 lr_pid=pid.PID(*lr_params)
+                lr_filt.reset()
                 #lr_filt=utils.avg_win_filt(5)
                 #lr_cmd=1500
 

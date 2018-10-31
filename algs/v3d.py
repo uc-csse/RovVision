@@ -5,6 +5,7 @@ sys.path.append('../')
 import zmq
 import struct
 import cv2,os
+import shutil
 import numpy as np
 import pickle
 import select
@@ -14,6 +15,7 @@ import gst
 import config
 import utils
 import image_enc_dec
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--cvshow",help="show opencv mode", action='store_true')
@@ -98,6 +100,8 @@ def listener():
                         save = '../data/'+date_str
                         os.mkdir(save)
                         data_fd=open(save+'/data.pkl','wb')
+                        shutil.copy('../config.py',save+'/')
+                        os.popen('git log -n 10 > '+save+'/git.log')
             
             if record_state and ret[0] not in [topicl,topicr]:
                 #save only data not images

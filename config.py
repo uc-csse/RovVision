@@ -61,6 +61,9 @@ if 'SIMROV' in os.environ:
     track_offx=30
     track_params = (30,30,40,40,track_offx,0) 
     stereo_corr_params = {'ws':(80,80),'sxl':250+50,'sxr':0,'ofx':50}
+
+    scl=20
+    ud_params=(0.5*scl,0.005*scl,0.5*scl,0.3*scl)
 else:
     track_offx=0#100
     track_offx=70
@@ -68,4 +71,22 @@ else:
     #stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':150}
     #stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':70}
     stereo_corr_params = {'ws':(80,80),'sxl':250+50,'sxr':0,'ofx':70}
+
+
+default_js_gain=0.6
+## pids
+if 'SIMROV' in os.environ:
+    scl=20
+    ud_params=(0.5*scl,0.005*scl,0.5*scl,0.3*scl)
+    scl=6
+    lr_params=(1.02*scl,0.10*scl,6.6*scl,6.4*scl,0, default_js_gain/1000 * 100) 
+    scl=12
+    fb_params=(0.12*scl,0.002*scl,1.0*scl,6.4*scl,0, default_js_gain/1000 * 100)
+else:
+    scl=20
+    ud_params=(0.5*scl,0.005*scl,0.5*scl,0.3*scl)
+    scl=6
+    lr_params=(2.02*scl,0.10*scl,4.6*scl,6.4*scl) #end of day 31.10 
+    scl=12
+    fb_params=(0.12*scl,0.002*scl,1.0*scl,6.4*scl) #end of day 31.10
 

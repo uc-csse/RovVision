@@ -97,25 +97,9 @@ start = time.time()
 async def control():
     global lock_state,track_info,joy_axes
 
-    ### y
-    scl=20
-    ud_params=(0.5*scl,0.005*scl,0.5*scl,0.3*scl)
-    ud_pid=pid.PID(*ud_params)
-    
-    ### x
-    scl=6
-    #lr_params=(0.52*scl,0.4*scl,1.6*scl,0.4*scl)
-    #lr_params=(2.02*scl,0.10*scl,4.6*scl,6.4*scl) end of day 31.10
-    lr_params=(1.02*scl,0.10*scl,6.6*scl,6.4*scl)
-    lr_pid=pid.PID(*lr_params)
-    #lr_filt=utils.avg_win_filt(5)
-    
-    ### range
-    scl=12
-    #fb_params=(0.24*scl,0.02*scl,2.2*scl,0.4*scl)
-    #fb_params=(0.52*scl,0.02*scl,6.0*scl,6.4*scl) end of day 31.10
-    fb_params=(0.12*scl,0.002*scl,1.0*scl,6.4*scl)
-    fb_pid=pid.PID(*fb_params)
+    ud_pid=pid.PID(*config.ud_params)
+    lr_pid=pid.PID(*config.lr_params)
+    fb_pid=pid.PID(*config.fb_params)
 
     ud_cmd,lr_cmd,fb_cmd = 0,0,0 
     yaw_cmd=0
@@ -129,7 +113,7 @@ async def control():
                 ud_cmd = ud_pid(track_info['dy'],0)
                 #ud_cmd=int(ud_cmd*2000+1500)
             else:
-                ud_pid=pid.PID(*ud_params)
+                ud_pid.reset()
                 #ud_cmd=1500
             
             if 'dx' in track_info: 
@@ -142,7 +126,7 @@ async def control():
                 telem['lr_pid']=(lr_pid.p,lr_pid.i,lr_pid.d)
             else:
                 #print('rest lr loop')
-                lr_pid=pid.PID(*lr_params)
+                lr_pid.reset()
                 lr_filt.reset()
                 #lr_filt=utils.avg_win_filt(5)
                 #lr_cmd=1500
@@ -155,7 +139,7 @@ async def control():
                 #fb_cmd=int(fb_dir*fb_cmd*300+1500)
                 telem['fb_pid']=(fb_pid.p,fb_pid.i,fb_pid.d)
             else:
-                fb_pid=pid.PID(*fb_params)
+                fb_pid.reset()
             #print('-----------',ud_cmd,lr_cmd,fb_cmd,lock_range)
             
 

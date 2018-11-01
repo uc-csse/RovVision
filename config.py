@@ -72,7 +72,8 @@ else:
     #stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':70}
     stereo_corr_params = {'ws':(80,80),'sxl':250+50,'sxr':0,'ofx':70}
 
-
+############## control
+lr_filt_size = 1
 default_js_gain=0.6
 ## pids
 _gs=1.0/1000/default_js_gain #convert back to pwm factor

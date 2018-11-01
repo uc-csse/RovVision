@@ -104,7 +104,7 @@ async def control():
     ud_cmd,lr_cmd,fb_cmd = 0,0,0 
     yaw_cmd=0
 
-    lr_filt = utils.avg_win_filt(4)
+    lr_filt = utils.avg_win_filt(config.lr_filt_size)
     telem={}
     cnt=0
     while 1:
@@ -132,7 +132,7 @@ async def control():
                     #lr_filt=utils.avg_win_filt(5)
                     #lr_cmd=1500
 
-                range_key = 'range_avg'
+                range_key = 'range'
 
                 if range_key in track_info: 
                     fb_cmd = fb_dir*fb_pid(track_info[range_key],lock_range)

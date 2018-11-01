@@ -167,7 +167,7 @@ def plot_graphs(md_hist,vis_hist):
     plt.subplot(3,2,3,sharex=ax)
     plt.title('lr')
     plt.plot(fnums,lr_cmd,'-.')
-    plt.plot(fnums,-lr_pid)
+    plt.plot(fnums,-lr_pid) #- since the direction is -
     plt.legend(list('cpid'))
     plt.subplot(3,2,5,sharex=ax)
     plt.title('horizontal gain')

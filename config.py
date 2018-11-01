@@ -59,7 +59,7 @@ focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 #=>> Z = baseline*focal_length/disparity 
 if 'SIMROV' in os.environ:
     track_offx=30
-    track_params = (30,30,40,40,track_offx,0) 
+    track_params = (30,30,60,60,track_offx,0) 
     stereo_corr_params = {'ws':(80,80),'sxl':250+50,'sxr':0,'ofx':50}
 
     scl=20
@@ -75,18 +75,19 @@ else:
 
 default_js_gain=0.6
 ## pids
+_gs=1.0/1000/default_js_gain #convert back to pwm factor
 if 'SIMROV' in os.environ:
     scl=20
-    ud_params=(0.5*scl,0.005*scl,0.5*scl,0.3*scl)
+    ud_params=(0.5*scl,0.005*scl,0.5*scl, _gs*500 ,0.0, _gs * 150)
     scl=6
-    lr_params=(1.02*scl,0.10*scl,6.6*scl,6.4*scl,0, default_js_gain/1000 * 100) 
-    scl=12
-    fb_params=(0.12*scl,0.002*scl,1.0*scl,6.4*scl,0, default_js_gain/1000 * 100)
+    lr_params=(1.02*scl,0.002*scl,4.6*scl, _gs*400 , 0 , _gs * 150) 
+    scl=6
+    fb_params=(0.42*scl,0.002*scl,1.0*scl, _gs*400 ,0.0, _gs * 100)
 else:
     scl=20
     ud_params=(0.5*scl,0.005*scl,0.5*scl,0.3*scl)
     scl=6
-    lr_params=(2.02*scl,0.10*scl,4.6*scl,6.4*scl) #end of day 31.10 
+    lr_params=(2.02*scl,0.10*scl,4.6*scl,6.4*scl, 0, _gs * 150) 
     scl=12
-    fb_params=(0.12*scl,0.002*scl,1.0*scl,6.4*scl) #end of day 31.10
+    fb_params=(0.12*scl,0.002*scl,1.0*scl,6.4*scl, 0, _gs * 150)
 

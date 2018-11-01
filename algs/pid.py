@@ -33,6 +33,8 @@ class PID(object):
         self.i+=self.err*self.I
         step=self.p+self.d+self.i
         step_diff=step-self.command
+        #if self.d_iir==0:
+        #    print('sd',step_diff,self.step_limit,step, np.clip(step_diff,-self.step_limit,self.step_limit))
         if self.step_limit is not None:
             step_diff=np.clip(step_diff,-self.step_limit,self.step_limit)
         self.command+=step_diff

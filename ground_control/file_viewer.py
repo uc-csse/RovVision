@@ -63,8 +63,12 @@ if __name__=='__main__':
             images,fcnt=reader.__next__()
             from_buff=False
             print('fnum in image',fcnt)
-            while 1:
-                ret=pickle.load(fd)
+            while images is not None:
+                try:
+                    ret=pickle.load(fd)
+                except EOFError:
+                    print('No more data')
+                    break
                 print('topic=',ret[0])
                 if ret[0]==config.topic_comp_vis:
                     vis_data=ret[1]

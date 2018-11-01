@@ -37,7 +37,7 @@ def get_pos():
     return __pos
 
 def to_pwm(val): #pwm for manual control
-    val=min(1.0,max(-1.0,val)) #cliping to -1,1
+    val=np.clip(val,-1,1) #cliping to -1,1
     return int(val*1000)
 
 def __to_pwm(val): #pwm for rc_channels

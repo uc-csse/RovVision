@@ -116,7 +116,7 @@ def read_image_from_pipe(p):
         fmt_cnt=image_enc_dec.decode(img)
     else:
         print('Error no data')
-        sys.exit(0)
+        return None,-1 
     return img,fmt_cnt
 
 def gst_file_reader(path, nosync):

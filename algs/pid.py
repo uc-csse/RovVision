@@ -2,12 +2,13 @@ import numpy as np
 import time
 
 class PID(object):
-    def __init__(self,P,I,D,limit=0,d_iir=0.0,step_limit=None):
+    def __init__(self,P,I,D,limit,step_limit,i_limit,d_iir=0):
         self.P=P
         self.I=I
         self.D=D
         self.step_limit=step_limit
         self.limit=limit
+        self.i_limit=i_limit
         self.d_iir=d_iir
         self.reset()
 
@@ -31,12 +32,12 @@ class PID(object):
         d=-(self.current_state-self.prev_state)*self.D
         self.d=self.d*self.d_iir+d*(1-self.d_iir)
         self.i+=self.err*self.I
+        self.i=np.clip(self.i,-self.i_limit,self.i_limit)
         step=self.p+self.d+self.i
         step_diff=step-self.command
         #if self.d_iir==0:
         #    print('sd',step_diff,self.step_limit,step, np.clip(step_diff,-self.step_limit,self.step_limit))
-        if self.step_limit is not None:
-            step_diff=np.clip(step_diff,-self.step_limit,self.step_limit)
+        step_diff=np.clip(step_diff,-self.step_limit,self.step_limit)
         self.command+=step_diff
         self.command=np.clip(self.command,-self.limit,self.limit)
         return self.command 

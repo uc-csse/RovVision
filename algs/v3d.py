@@ -5,6 +5,7 @@ sys.path.append('../')
 import zmq
 import struct
 import cv2,os
+import shutil
 import numpy as np
 import pickle
 import select
@@ -14,6 +15,7 @@ import gst
 import config
 import utils
 import image_enc_dec
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--cvshow",help="show opencv mode", action='store_true')
@@ -98,6 +100,8 @@ def listener():
                         save = '../data/'+date_str
                         os.mkdir(save)
                         data_fd=open(save+'/data.pkl','wb')
+                        shutil.copy('../config.py',save+'/')
+                        os.popen('git log -n 10 > '+save+'/git.log')
             
             if record_state and ret[0] not in [topicl,topicr]:
                 #save only data not images
@@ -160,6 +164,7 @@ def listener():
                     ox=int(ret['disp'])                    
                     draw_rectsr.append(((cx+stereo_offx-wx//2+ox,cy-wy//2) , (cx+stereo_offx+wx//2+ox,cy+wy//2) , (0,0,255)))
                     ox,oy=int(ret['offx']),int(ret['offy'])
+                    draw_rectsl.append(((cx_off_t-wx//2+1,cy-wy//2+1) , (cx_off_t+wx//2-1,cy+wy//2-1) , (255,255,0)))
                     draw_rectsl.append(((cx_off_t-wx//2+ox,cy-wy//2+oy) , (cx_off_t+wx//2+ox,cy+wy//2+oy) , (255,0,255)))
                     socket_pub.send_multipart([config.topic_comp_vis,pickle.dumps(ret,-1)])
                     if record_state:

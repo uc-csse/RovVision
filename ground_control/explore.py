@@ -4,6 +4,7 @@ from matplotlib.widgets import Button,LassoSelector,TextBox
 from matplotlib.path import Path
 import numpy as np
 import pickle,os
+from config import Joy_map as J
 
 def fname_format(path,fnum):
     return '{}/{:08d}.pkl'.format(path,fnum)
@@ -167,11 +168,19 @@ def plot_graphs(md_hist,vis_hist):
     plt.subplot(3,2,3,sharex=ax)
     plt.title('lr')
     plt.plot(fnums,lr_cmd,'-.')
-    plt.plot(fnums,-lr_pid)
+    plt.plot(fnums,-lr_pid) #- since the direction is -
     plt.legend(list('cpid'))
     plt.subplot(3,2,5,sharex=ax)
-    plt.title('horizontal gain')
-    plt.plot(fnums,js_gain)
+    
+    for jax in [J.ud,J.lr,J.fb]:
+        joy_ax=np.array([(md['fnum'],md['joy_axes'][jax]) for md in md_hist \
+                if 'joy_axes' in md and md['joy_axes'] is not None])
+        if len(joy_ax)>0:
+            plt.plot(joy_ax[:,0],joy_ax[:,1])
+    plt.legend(['ud','lr','fb'])
+    
+    plt.title('joy axis')
+    #plt.plot(fnums,js_gain)
     
     plt.subplot(3,2,2,sharex=ax)
     plt.title('ranges')

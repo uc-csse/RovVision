@@ -37,6 +37,7 @@ def get_pos():
     return __pos
 
 def to_pwm(val): #pwm for manual control
+    val=np.clip(val,-1,1) #cliping to -1,1
     return int(val*1000)
 
 def __to_pwm(val): #pwm for rc_channels
@@ -74,7 +75,7 @@ def set_rcs(ud, yaw, fb, lr):
     tr=ud*tr_gain*1000+throttleBase
     #print(tr)
     mav1.mav.manual_control_send(mav1.target_system,
-            int(fb*js_gain*1000),int(lr*js_gain*1000),int(tr),int(yaw*1000),buttons)
+            to_pwm(fb*js_gain),to_pwm(lr*js_gain),int(tr),to_pwm(yaw),buttons)
 
 
 #lights1=1100
@@ -85,7 +86,7 @@ def ___update_joy_hat(hat):
     print('got hat',hat,lights1) 
 
 lights1=0
-js_gain=1.0
+js_gain=config.default_js_gain
 tr_gain=0.5
 def update_joy_hat(hat):
     global lights1,js_gain

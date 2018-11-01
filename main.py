@@ -33,11 +33,8 @@ socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_main )
 fb_dir=-1.0
 lr_dir=-1.0
 
-class J:
-    ud=4
-    yaw=3
-    fb=1
-    lr=0
+from config import Joy_map as J
+
 
 #if args.sim:
 #    idle_cmd=1500
@@ -166,7 +163,7 @@ async def control():
 
         if cnt%100==0: #every 10 sec
             telem['temp']=get_temp()
-        telem.update({'ts':time.time()-start, 'lock':lock_state}) 
+        telem.update({'ts':time.time()-start, 'lock':lock_state, 'joy_axes':joy_axes}) 
         socket_pub.send_multipart([config.topic_main_telem,pickle.dumps(telem,-1)]) 
         cnt+=1
         await asyncio.sleep(0.05)#~20hz control 

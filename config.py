@@ -46,6 +46,11 @@ joy_disarm = 6
 joy_manual = 0
 joy_depth_hold = 3
 
+class Joy_map:
+    ud=4
+    yaw=3
+    fb=1
+    lr=0
 #camera params
 fps = 10
 

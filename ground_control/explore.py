@@ -146,15 +146,15 @@ def plot_raw_images(imgs_raw,path,fnum):
 
 
 def plot_graphs(md_hist,vis_hist):
-    fnums=[md['fnum'] for md in md_hist]
-    fb_cmd=[md['fb_cmd'] for md in md_hist]
-    js_gain=np.array([md['js_gain'] for md in md_hist]).reshape((-1,1))
-    fb_pid=np.array([md['fb_pid'] for md in md_hist])*1000*js_gain
-    lr_cmd=[md['lr_cmd'] for md in md_hist]
-    lr_pid=np.array([md['lr_pid'] for md in md_hist])*1000*js_gain
+    fnums=[md['fnum'] for md in md_hist if 'fnum' in md]
+    fb_cmd=[md['fb_cmd'] for md in md_hist if 'fnum' in md]
+    js_gain=np.array([md['js_gain'] for md in md_hist if 'fnum' in md]).reshape((-1,1))
+    fb_pid=np.array([md['fb_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
+    lr_cmd=[md['lr_cmd'] for md in md_hist if 'fnum' in md]
+    lr_pid=np.array([md['lr_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
 
     ranges=np.array([(vs['fnum'],vs['range']) for vs in vis_hist])
-    avg_ranges=np.array([(vs['fnum'],vs['range_avg']) for vs in vis_hist])
+    avg_ranges=np.array([(vs['fnum'],vs['range_avg']) for vs in vis_hist if 'range_avg' in vs])
     dxs=np.array([(vs['fnum'],vs['dx']) for vs in vis_hist if 'dx' in vs])
     
 

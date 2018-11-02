@@ -145,6 +145,9 @@ class Polygon:
 def plot_raw_images(imgs_raw,path,fnum):
     Polygon(imgs_raw,path,fnum)
 
+def get_arr(hist,label):
+    return np.array([(d['fnum'],d[label]) for d in hist if label in d])
+
 
 def plot_graphs(md_hist,vis_hist):
     fnums=[md['fnum'] for md in md_hist if 'fnum' in md]
@@ -159,16 +162,18 @@ def plot_graphs(md_hist,vis_hist):
     dxs=np.array([(vs['fnum'],vs['dx']) for vs in vis_hist if 'dx' in vs])
     
 
+    lock_state = get_arr(md_hist,'lock')
+
     plt.figure('commands')
     ax=plt.subplot(3,2,1)
     plt.title('fb')
-    plt.plot(fnums,fb_cmd,'-.')
-    plt.plot(fnums,-fb_pid) #- since the direction is -
+    plt.plot(fnums,fb_cmd,'-.+')
+    plt.plot(fnums,-fb_pid) # the direction is - 
     plt.legend(list('cpid'))
     plt.subplot(3,2,3,sharex=ax)
     plt.title('lr')
-    plt.plot(fnums,lr_cmd,'-.')
-    plt.plot(fnums,-lr_pid) #- since the direction is -
+    plt.plot(fnums,lr_cmd,'-.+')
+    plt.plot(fnums,-lr_pid) #
     plt.legend(list('cpid'))
     plt.subplot(3,2,5,sharex=ax)
     
@@ -177,7 +182,8 @@ def plot_graphs(md_hist,vis_hist):
                 if 'joy_axes' in md and md['joy_axes'] is not None])
         if len(joy_ax)>0:
             plt.plot(joy_ax[:,0],joy_ax[:,1])
-    plt.legend(['ud','lr','fb'])
+    plt.plot(lock_state[:,0],lock_state[:,1],'-.')
+    plt.legend(['ud','lr','fb','lock'])
     
     plt.title('joy axis')
     #plt.plot(fnums,js_gain)

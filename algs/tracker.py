@@ -217,10 +217,10 @@ def run_Trackers():
     print('-------------------- init trackers -------------')
     tc = None
     imgl,imgr,cmd = yield
-    imgl1b=imgl[:,:,2].copy()
-    imgr1b=imgr[:,:,2].copy()
     imgl1r=imgl[:,:,0].copy()
     imgr1r=imgr[:,:,0].copy()
+    imgl1b=imgl[:,:,2].copy()
+    imgr1b=imgr[:,:,2].copy()
     tc=track_correlator(imgl1b,*track_params)
     tc.__next__()
     sp = stereo_corr_params
@@ -240,23 +240,29 @@ def run_Trackers():
         range_win.append(res['range'])
         if len(range_win) > 10:
             range_win=range_win[1:]
-        if np.std(range_win)/np.mean(range_win)<0.10: #<5cm means reliable range
+
+        range_relaible_cond1 = np.std(range_win)/np.mean(range_win)<0.10 #10cm means reliable range
+        range_reliable_cond2 = abs(res['range']-np.mean(range_win))<0.20 #range jumps more then 2m per sec (0.2/0.1)
+        if range_relaible_cond1 and range_reliable_cond2:
             res['range_avg']=np.mean(range_win)
             dx = res['range_avg'] * ox/config.focal_length
             dy = res['range_avg'] * oy/config.focal_length
             if not new_ref_flag:
                 res['dx']=dx
                 res['dy']=dy
+            else:
+                print('new ref flag')
+
         else:
             tc=track_correlator(imgl1b,*track_params)
             tc.__next__()
             
 
         imgl,imgr,cmd = yield res 
-        imgl1b=imgl[:,:,2].copy()
-        imgr1b=imgr[:,:,2].copy()
         imgl1r=imgl[:,:,0].copy()
         imgr1r=imgr[:,:,0].copy()
+        imgl1b=imgl[:,:,2].copy()
+        imgr1b=imgr[:,:,2].copy()
         if cmd=='lock':
             tc=track_correlator(imgl1b,*track_params)
             tc.__next__()

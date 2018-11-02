@@ -103,10 +103,15 @@ async def control():
 
     lr_filt = utils.avg_win_filt(config.lr_filt_size)
     telem={}
+    telem['lr_pid']=(0,0,0)
+    telem['fb_pid']=(0,0,0)
+    telem['ud_pid']=(0,0,0)
     cnt=0
+    fnum=-1
     while 1:
-        if lock_state:
-            if track_info is not None:
+        if track_info is not None and track_info['fnum']>fnum: #new frame to proccess
+            fnum=track_info['fnum']
+            if lock_state:
                 if 'dy' in track_info: 
                     ud_cmd = ud_pid(track_info['dy'],0)
                     #ud_cmd=int(ud_cmd*2000+1500)
@@ -119,38 +124,30 @@ async def control():
                     if val is not None:
                         val=lr_filt(val)
                         lr_cmd = lr_dir*lr_pid(val,0)
-                    #lr_cmd=int(-lr_cmd*300+1500)
                     #print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(lr_cmd,lr_pid.p,lr_pid.i,lr_pid.d))
                     telem['lr_pid']=(lr_pid.p,lr_pid.i,lr_pid.d)
                 else:
-                    #print('rest lr loop')
                     lr_pid.reset()
                     lr_filt.reset()
-                    #lr_filt=utils.avg_win_filt(5)
-                    #lr_cmd=1500
+                    print('reset lr')
 
-                range_key = 'range'
-
-                if range_key in track_info: 
-                    fb_cmd = fb_dir*fb_pid(track_info[range_key],lock_range)
+                if 'range_avg' in track_info: #range is relaible 
+                    fb_cmd = fb_dir*fb_pid(track_info['range'],lock_range)
                     #print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(fb_cmd,fb_pid.p,fb_pid.i,fb_pid.d))
-                    #fb_cmd=int(fb_dir*fb_cmd*300+1500)
                     telem['fb_pid']=(fb_pid.p,fb_pid.i,fb_pid.d)
+                    telem['lock_range']=lock_range
                 else:
-                    fb_pid.reset()
-                #print('-----------',ud_cmd,lr_cmd,fb_cmd,lock_range)
-                
+                    lock_state=False
 
                 if not args.sim:
                     ud_cmd=0
-                to_pwm=controller.to_pwm
-                telem.update({\
-                        'ud_cmd':to_pwm(ud_cmd),'lr_cmd':to_pwm(lr_cmd*controller.js_gain),
-                        'fb_cmd':to_pwm(fb_cmd*controller.js_gain),'lock_range':lock_range,'fnum':track_info['fnum'],
-                        'js_gain':controller.js_gain})
-                track_info = None
-                #controller.set_rcs_diff(ud_cmd,idle_cmd,fb_cmd,lr_cmd,idle_val=idle_cmd)
-                #controller.set_rcs(ud_cmd,idle_cmd,fb_cmd,lr_cmd)
+            else:
+                fb_pid.reset()
+                lr_pid.reset()
+                ud_pid.reset()
+                lr_filt.reset()
+
+                
         if not lock_state or is_joy_override(joy_axes):
             if joy_axes is None:
                 #print('Error joy_axes None',time.time())
@@ -160,11 +157,21 @@ async def control():
                 ud_cmd,fb_cmd,lr_cmd,yaw_cmd=\
                         -joy_axes[J.ud],-joy_axes[J.fb],joy_axes[J.lr],joy_axes[J.yaw]
         controller.set_rcs(ud_cmd,yaw_cmd,fb_cmd,lr_cmd)
+        
+        to_pwm=controller.to_pwm
+
+        telem.update({
+            'ud_cmd':to_pwm(ud_cmd),
+            'lr_cmd':to_pwm(lr_cmd*controller.js_gain),
+            'fb_cmd':to_pwm(fb_cmd*controller.js_gain),
+            'fnum':fnum,
+            'js_gain':controller.js_gain})
 
         if cnt%100==0: #every 10 sec
             telem['temp']=get_temp()
         telem.update({'ts':time.time()-start, 'lock':lock_state, 'joy_axes':joy_axes}) 
-        socket_pub.send_multipart([config.topic_main_telem,pickle.dumps(telem,-1)]) 
+        if fnum>-1:
+            socket_pub.send_multipart([config.topic_main_telem,pickle.dumps(telem,-1)]) 
         cnt+=1
         await asyncio.sleep(0.05)#~20hz control 
 

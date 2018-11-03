@@ -227,6 +227,8 @@ def run_Trackers():
     sp = stereo_corr_params
 
     range_filt=None
+    dx_filt = kal_filt((0,0)) 
+    dy_filt = kal_filt((0,0)) 
 
     while True:
         res={}
@@ -239,7 +241,7 @@ def run_Trackers():
         res['snr_corr']=cret[1]
         res['disp']=cret[0]
         res['range']=disp2range(cret[0])
-       
+          
         if range_filt is None:
             range_filt = kal_filt((res['range'],0))
         else:
@@ -251,8 +253,12 @@ def run_Trackers():
                 if not new_ref_flag:
                     res['dx']=dx
                     res['dy']=dy
+                    res['dx_f']=dx_filt(dx)
+                    res['dy_f']=dy_filt(dy)
                 else:
                     print('new ref flag')
+                    dx_filt.reset((0,0))
+                    dy_filt.reset((0,0))
             else:
                 print('new range filt')
                 range_filt = kal_filt((res['range'],0))
@@ -263,6 +269,7 @@ def run_Trackers():
         imgl1b=imgl[:,:,2].copy()
         imgr1b=imgr[:,:,2].copy()
         if cmd=='lock':
+            print('tracker got lock')
             tc=track_correlator(imgl1b,*track_params)
             tc.__next__()
 

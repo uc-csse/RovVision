@@ -101,7 +101,7 @@ async def control():
     ud_cmd,lr_cmd,fb_cmd = 0,0,0 
     yaw_cmd=0
 
-    lr_filt = utils.avg_win_filt(config.lr_filt_size)
+    #lr_filt = utils.avg_win_filt(config.lr_filt_size)
     telem={}
     telem['lr_pid']=(0,0,0)
     telem['fb_pid']=(0,0,0)
@@ -114,22 +114,23 @@ async def control():
             #print('---',fnum,track_info['range_f'],lock_state)
             if lock_state:
                 if 'dy' in track_info: 
-                    ud_cmd = ud_pid(track_info['dy'],0)
+                    dy_f=track_info['dy_f']
+                    ud_cmd = ud_pid(dy_f[0],0,dy_f[1])
                     #ud_cmd=int(ud_cmd*2000+1500)
                 else:
                     ud_pid.reset()
                     #ud_cmd=1500
                 
                 if 'dx' in track_info: 
-                    val=track_info['dx']
-                    if val is not None:
-                        val=lr_filt(val)
-                        lr_cmd = lr_dir*lr_pid(val,0)
+                    dx_f=track_info['dx_f']
+                    #val=track_info['dx']
+                        #val=lr_filt(val)
+                    lr_cmd = lr_dir*lr_pid(dx_f[0],0,dx_f[1])
                     #print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(lr_cmd,lr_pid.p,lr_pid.i,lr_pid.d))
                     telem['lr_pid']=(lr_pid.p,lr_pid.i,lr_pid.d)
                 else:
                     lr_pid.reset()
-                    lr_filt.reset()
+                    #lr_filt.reset()
                     print('reset lr')
 
                 if 'range_f' in track_info: #range is relaible 
@@ -147,7 +148,7 @@ async def control():
                 fb_pid.reset()
                 lr_pid.reset()
                 ud_pid.reset()
-                lr_filt.reset()
+                #lr_filt.reset()
 
                 
         if not lock_state or is_joy_override(joy_axes):

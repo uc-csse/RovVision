@@ -149,7 +149,7 @@ def listener():
                     track.__next__()
                 else:
                     tic=time.time()
-                    ret=track.send((imgl,imgr,lock))
+                    ret=track.send((imgl,imgr,'lock' if lock else None))
                     if lock:
                         lock=False
                     toc=time.time()

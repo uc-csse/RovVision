@@ -21,6 +21,7 @@ parser.add_argument("--gst",help="stream with gst", action='store_true')
 parser.add_argument("--nosingle",help="dont use the single files only the stream", action='store_true')
 parser.add_argument("--nosync", help="dont sync videos", action='store_true')
 parser.add_argument("--path",help="dir path")
+parser.add_argument("--bs",help="history buff size",type=int ,default=1000)
 args = parser.parse_args()
 
 file_path_fmt=args.path+'/{}{:08d}'#.ppm'
@@ -74,7 +75,7 @@ if __name__=='__main__':
                     vis_data=ret[1]
                     print('fnum in vis',vis_data['fnum'])
                     vis_data_hist.append(vis_data)
-                    if len(vis_data_hist)>1000:
+                    if len(vis_data_hist)>args.bs:
                         vis_data_hist.pop(0)
                     if vis_data['fnum']>=fcnt:
                         break
@@ -86,7 +87,7 @@ if __name__=='__main__':
                     main_data.update(ret[1])
                     main_data_hist.append(main_data.copy())
                     #if 'mavpackettype' not in data:
-                    if len(main_data_hist)>1000:
+                    if len(main_data_hist)>args.bs:
                         main_data_hist=main_data_hist[1:]
                     #    print(data)
             if fcnt>0:

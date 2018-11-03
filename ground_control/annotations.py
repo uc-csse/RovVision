@@ -5,7 +5,7 @@ def draw_txt(img,vd,md):
     font = cv2.FONT_HERSHEY_SIMPLEX
     #print('-2-',md)
     if 'ts' in md and 'range' in vd and 'temp' in md:
-        rng = vd.get('range_avg',vd['range']) 
+        rng = vd.get('range_f',vd['range']) 
         if rng >20 or rng<0:
             rng=-1
         line1='{:4.1f}s R{:3.2f}m {:3.1f}C'.format(md['ts'],rng,md['temp'])

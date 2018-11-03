@@ -158,11 +158,12 @@ def plot_graphs(md_hist,vis_hist):
     lr_pid=np.array([md['lr_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
 
     ranges=np.array([(vs['fnum'],vs['range']) for vs in vis_hist])
-    avg_ranges=np.array([(vs['fnum'],vs['range_avg']) for vs in vis_hist if 'range_avg' in vs])
+    avg_ranges=np.array([(vs['fnum'],vs['range_f']) for vs in vis_hist if 'range_f' in vs])
     dxs=np.array([(vs['fnum'],vs['dx']) for vs in vis_hist if 'dx' in vs])
     
 
     lock_state = get_arr(md_hist,'lock')
+    lock_range = get_arr(md_hist,'lock_range')
 
     plt.figure('commands')
     ax=plt.subplot(3,2,1)
@@ -192,6 +193,8 @@ def plot_graphs(md_hist,vis_hist):
     plt.title('ranges')
     plt.plot(ranges[:,0],ranges[:,1])
     plt.plot(avg_ranges[:,0],avg_ranges[:,1])
+    plt.plot(lock_range[:,0],lock_range[:,1])
+    plt.legend(['r','rf','lr'])
 
     if len(dxs)>0:
         plt.subplot(3,2,4,sharex=ax)

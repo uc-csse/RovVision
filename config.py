@@ -90,7 +90,7 @@ if 'SIMROV' in os.environ:
     scl=6
     lr_params=(1.02*scl,0.002*scl,4.6*scl, _gs*400 , _gs * 150, _gs*200) 
     scl=6
-    fb_params=(0.82*scl,0.002*scl,2.0*scl, _gs*400 , _gs * 100, _gs*200)
+    fb_params=(0.42*scl,0.002*scl,2.0*scl, _gs*400 , _gs * 100, _gs*200)
 else:
     scl=20
     ud_params=(0.5*scl,0.005*scl,0.5*scl, _gs*500 , _gs * 150, _gs*200)

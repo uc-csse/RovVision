@@ -69,9 +69,9 @@ async def get_zmq_events():
                     #    asyncio.sleep(0)
                    if lock_state:
                        lock_state = False
-                   elif not lock_state and 'range_avg' in track_info:
+                   elif not lock_state and 'range_f' in track_info:
                         lock_state = True
-                        lock_range = track_info['range_avg']
+                        lock_range = track_info['range_f']
                         print('lock range is',lock_range)
                     #else:
                     #    lock_range = track_info['range']
@@ -111,6 +111,7 @@ async def control():
     while 1:
         if track_info is not None and track_info['fnum']>fnum: #new frame to proccess
             fnum=track_info['fnum']
+            #print('---',fnum,track_info['range_f'],lock_state)
             if lock_state:
                 if 'dy' in track_info: 
                     ud_cmd = ud_pid(track_info['dy'],0)
@@ -131,13 +132,14 @@ async def control():
                     lr_filt.reset()
                     print('reset lr')
 
-                if 'range_avg' in track_info: #range is relaible 
-                    fb_cmd = fb_dir*fb_pid(track_info['range'],lock_range)
+                if 'range_f' in track_info: #range is relaible 
+                    fb_cmd = fb_dir*fb_pid(track_info['range_f'],lock_range, track_info['d_range_f'])
                     #print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(fb_cmd,fb_pid.p,fb_pid.i,fb_pid.d))
                     telem['fb_pid']=(fb_pid.p,fb_pid.i,fb_pid.d)
                     telem['lock_range']=lock_range
                 else:
                     lock_state=False
+                    print('lost lock')
 
                 if not args.sim:
                     ud_cmd=0

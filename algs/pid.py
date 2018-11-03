@@ -1,3 +1,4 @@
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import numpy as np
 import time
 
@@ -20,7 +21,7 @@ class PID(object):
         self.d=0 
         self.command=0
 
-    def __call__(self,state,target):
+    def __call__(self,state,target,dstate=None):
         if self.prev_state is None:
             self.current_state=self.prev_state=state
         self.prev_state=self.current_state
@@ -29,7 +30,9 @@ class PID(object):
         self.err=target-state
         self.p=self.err*self.P
         #self.d=-(self.current_state-self.prev_state)*self.D
-        d=-(self.current_state-self.prev_state)*self.D
+        if dstate is None:
+            dstate=self.current_state-self.prev_state	
+        d=-dstate*self.D
         self.d=self.d*self.d_iir+d*(1-self.d_iir)
         self.i+=self.err*self.I
         self.i=np.clip(self.i,-self.i_limit,self.i_limit)

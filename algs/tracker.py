@@ -213,6 +213,7 @@ def line_correlator(img1,img2,wx,wy,sxl,sxr,ofx):
     #print('--->',x,nx,zx)
     return nx,snr
 
+from utils import kal_filt
 def run_Trackers():
     print('-------------------- init trackers -------------')
     tc = None
@@ -224,8 +225,69 @@ def run_Trackers():
     tc=track_correlator(imgl1b,*track_params)
     tc.__next__()
     sp = stereo_corr_params
-    range_win=[]
 
+    range_filt=None
+    dx_filt = kal_filt((0,0)) 
+    dy_filt = kal_filt((0,0)) 
+
+    while True:
+        res={}
+        res['img_shp']=imgl.shape
+        res['line_corr_parr']=stereo_corr_params
+        cret = line_correlator(imgl1r,imgr1r,sp['ws'][0],sp['ws'][1],sp['sxl'],sp['sxr'],sp['ofx'])
+        ox,oy,new_ref_flag = tc.send(imgl1b)
+        res['offx']=ox
+        res['offy']=oy
+        res['snr_corr']=cret[1]
+        res['disp']=cret[0]
+        res['range']=disp2range(cret[0])
+          
+        if range_filt is None:
+            range_filt = kal_filt((res['range'],0))
+        else:
+            range_f , d_range_f = range_filt(res['range'])
+            if abs(range_f-res['range']) < 0.20:  #range jumps less then 2m per sec (0.2/0.1)
+                res['range_f'], res['d_range_f'] = range_f , d_range_f 
+                dx = res['range_f'] * ox/config.focal_length
+                dy = res['range_f'] * oy/config.focal_length
+                if not new_ref_flag:
+                    res['dx']=dx
+                    res['dy']=dy
+                    res['dx_f']=dx_filt(dx)
+                    res['dy_f']=dy_filt(dy)
+                else:
+                    print('new ref flag')
+                    dx_filt.reset((0,0))
+                    dy_filt.reset((0,0))
+            else:
+                print('new range filt')
+                range_filt = kal_filt((res['range'],0))
+
+        imgl,imgr,cmd = yield res 
+        imgl1r=imgl[:,:,0].copy()
+        imgr1r=imgr[:,:,0].copy()
+        imgl1b=imgl[:,:,2].copy()
+        imgr1b=imgr[:,:,2].copy()
+        if cmd=='lock':
+            print('tracker got lock')
+            tc=track_correlator(imgl1b,*track_params)
+            tc.__next__()
+
+
+
+def __run_Trackers():
+    print('-------------------- init trackers -------------')
+    tc = None
+    imgl,imgr,cmd = yield
+    imgl1r=imgl[:,:,0].copy()
+    imgr1r=imgr[:,:,0].copy()
+    imgl1b=imgl[:,:,2].copy()
+    imgr1b=imgr[:,:,2].copy()
+    tc=track_correlator(imgl1b,*track_params)
+    tc.__next__()
+    sp = stereo_corr_params
+    range_win=[]
+   
     while True:
         res={}
         res['img_shp']=imgl.shape

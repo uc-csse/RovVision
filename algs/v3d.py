@@ -73,11 +73,10 @@ def listener():
     fmt_cnt_r=-2
     keep_running=True
     track=None
-    
+    lock=False
     last_usage_test=time.time()
     disk_usage=get_disk_usage()
     fd=None
-
     #send initial trigger
     print('start trig')
     socket_pub.send_multipart([config.topic_comp_vis_cmd,b'start_trig'])
@@ -89,9 +88,10 @@ def listener():
             if ret[0]==config.topic_button:
                 data=pickle.loads(ret[1])
                 if data[config.joy_init_track]==1:
-                    print('init tracker')
-                    track = tracker.run_Trackers()
-                    track.__next__()
+                    #print('init tracker')
+                    #track = tracker.run_Trackers()
+                    #track.__next__()
+                    lock=True
                 if data[config.joy_save]==1 and args.save:
                     record_state = not record_state
                     print('recording ',record_state)
@@ -149,7 +149,9 @@ def listener():
                     track.__next__()
                 else:
                     tic=time.time()
-                    ret=track.send((imgl,imgr,None))
+                    ret=track.send((imgl,imgr,'lock' if lock else None))
+                    if lock:
+                        lock=False
                     toc=time.time()
                     ret['ts']=toc 
                     ret['draw_rectsl']=draw_rectsl

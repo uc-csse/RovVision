@@ -213,7 +213,7 @@ def line_correlator(img1,img2,wx,wy,sxl,sxr,ofx):
     #print('--->',x,nx,zx)
     return nx,snr
 
-from utils import kal_filt
+from utils import ab_filt
 def run_Trackers():
     print('-------------------- init trackers -------------')
     tc = None
@@ -227,8 +227,8 @@ def run_Trackers():
     sp = stereo_corr_params
 
     range_filt=None
-    dx_filt = kal_filt((0,0)) 
-    dy_filt = kal_filt((0,0)) 
+    dx_filt = ab_filt((0,0)) 
+    dy_filt = ab_filt((0,0)) 
 
     while True:
         res={}
@@ -243,7 +243,7 @@ def run_Trackers():
         res['range']=disp2range(cret[0])
           
         if range_filt is None:
-            range_filt = kal_filt((res['range'],0))
+            range_filt = ab_filt((res['range'],0))
         else:
             range_f , d_range_f = range_filt(res['range'])
             if abs(range_f-res['range']) < 0.20:  #range jumps less then 2m per sec (0.2/0.1)
@@ -261,7 +261,7 @@ def run_Trackers():
                     dy_filt.reset((0,0))
             else:
                 print('new range filt')
-                range_filt = kal_filt((res['range'],0))
+                range_filt = ab_filt((res['range'],0))
 
         imgl,imgr,cmd = yield res 
         imgl1r=imgl[:,:,0].copy()

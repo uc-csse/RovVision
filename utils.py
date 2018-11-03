@@ -30,8 +30,8 @@ class  avg_win_filt():
     def reset(self):
         self.buf=[]
 
-from filterpy.kalman import KalmanFilter
-from filterpy.common import Q_discrete_white_noise
+#from filterpy.kalman import KalmanFilter
+#from filterpy.common import Q_discrete_white_noise
 
 
 class kal_filt():
@@ -53,6 +53,23 @@ class kal_filt():
         self.f.update(val)
         return self.f.x[0][0],self.f.x[1][0]
 
+class ab_filt():
+    def __init__(self,xv=[0,0],alpha=0.5,beta=0.1):
+        self.alpha = alpha
+        self.beta = beta
+        self.reset(xv)
+        
+    def reset(self,xv):
+        self.x,self.v=xv
+    
+    def __call__(self,xm,dt=1.0):
+        self.x += self.v*dt
+
+        rk = xm - self.x;
+
+        self.x += self.alpha * rk;
+        self.v += ( self.beta * rk ) / dt;
+        return (self.x,self.v)
 
 if __name__=='__main__':
     kf=kal_filt()

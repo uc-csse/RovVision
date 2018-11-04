@@ -17,9 +17,10 @@ import utils
 import explore
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--gst",help="stream with gst", action='store_true')
+parser.add_argument("--nowait",help="run all not wait for keyboard", action='store_true')
 parser.add_argument("--nosingle",help="dont use the single files only the stream", action='store_true')
 parser.add_argument("--nosync", help="dont sync videos", action='store_true')
+parser.add_argument("--novid", help="ignore video", action='store_true')
 parser.add_argument("--path",help="dir path")
 parser.add_argument("--bs",help="history buff size",type=int ,default=1000)
 args = parser.parse_args()
@@ -44,7 +45,8 @@ imbuff=[None for i in range(50)]
 
 if __name__=='__main__':
     print('nosync',args.nosync)
-    reader = gst_file_reader(args.path,nosync = args.nosync)
+    if not args.novid:
+        reader = gst_file_reader(args.path,nosync = args.nosync)
     #fd = open(args.path+'/data.pkl','rb')
     fd = open(args.path+'/viewer_data.pkl','rb')
     sx,sy=config.pixelwidthx,config.pixelwidthy
@@ -61,14 +63,21 @@ if __name__=='__main__':
             fcnt,images,vis_data,main_data=imbuff[hist_buff_ind]
             from_buff=True
         else:
-            images,fcnt=reader.__next__()
+            if not args.novid:
+                images,fcnt=reader.__next__()
+            else:
+                fcnt+=1
+                images=[None,None]
             from_buff=False
             print('fnum in image',fcnt)
-            while images is not None:
+            while fcnt>-1:
                 try:
                     ret=pickle.load(fd)
                 except EOFError:
                     print('No more data')
+                    if args.novid:
+                        explore.plot_graphs(main_data_hist,vis_data_hist)
+                        sys.exit(0)
                     break
                 print('topic=',ret[0])
                 if ret[0]==config.topic_comp_vis:
@@ -95,7 +104,7 @@ if __name__=='__main__':
                 imbuff[hist_buff_ind]=(fcnt,images,vis_data,main_data)
 
         imgs_raw=[None,None]
-        if images[0] is not None and images[1] is not None:
+        if fcnt >0 and images[0] is not None and images[1] is not None:
             #if 1 or not  from_buff:
             for i in [0,1]:
                 if not args.nosingle:
@@ -130,7 +139,10 @@ if __name__=='__main__':
             cv2.imshow('3dviewer',join)
             #cv2.imshow('left',images[0])
             #cv2.imshow('right',images[1])
-        k=cv2.waitKey(0)
+        if args.nowait and fcnt>0:
+            k=cv2.waitKey(1)
+        else:
+            k=cv2.waitKey(0)
         if k%256==ord('q'):
             break
         if k%256==ord('i'):

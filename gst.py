@@ -115,7 +115,7 @@ def read_image_from_pipe(p):
         img=np.fromstring(data,'uint8').reshape([sy,sx,3])
         fmt_cnt=image_enc_dec.decode(img)
     else:
-        print('Error no data')
+        #print('Error no data')
         return None,-1 
     return img,fmt_cnt
 
@@ -143,7 +143,7 @@ def gst_file_reader(path, nosync):
             im2,cnt2=read_image_from_pipe(gst_pipes[1])
             #syncing frame numbers
             if not nosync:
-                if cnt1 is not None and cnt2 is not None:
+                if cnt1 > 0  and cnt2 > 0:
                     while cnt2>cnt1:
                         im1,cnt1=read_image_from_pipe(gst_pipes[0])
                     while cnt1>cnt2:
@@ -152,6 +152,7 @@ def gst_file_reader(path, nosync):
             yield images,cnt1
         else:
             time.sleep(0.001)
+            yield None,-1
 
 
 

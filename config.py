@@ -86,7 +86,7 @@ _gs=1.0/1000/default_js_gain #convert back to pwm factor
 ### args: P,I,D,limit,step_limit,i_limit,d_iir=0
 if 'SIMROV' in os.environ:
     scl=2
-    ud_params=(0.8*scl,0.005*scl,2.0*scl, _gs*500 , _gs * 150, _gs*200)
+    ud_params=(0.8*scl,0.009*scl,3.0*scl, _gs*500 , _gs * 150, _gs*200)
     scl=2
     lr_params=(0.62*scl,0.002*scl,3.0*scl, _gs*400 , _gs * 150, _gs*200) 
     scl=2

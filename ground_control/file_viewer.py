@@ -1,4 +1,9 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+#
+# to copy data.pkl
+# sim:
+# cd into data dir and then
+# > scp -P 2222 oga13@localhost:projects/bluerov/data/$(basename $( pwd ))/data.pkl .
 
 import sys,os,time
 from datetime import datetime
@@ -48,7 +53,10 @@ if __name__=='__main__':
     if not args.novid:
         reader = gst_file_reader(args.path,nosync = args.nosync)
     #fd = open(args.path+'/data.pkl','rb')
-    fd = open(args.path+'/viewer_data.pkl','rb')
+    if os.path.isfile(args.path+'/data.pkl'):
+        fd = open(args.path+'/data.pkl','rb')
+    else:
+        fd = open(args.path+'/viewer_data.pkl','rb')
     sx,sy=config.pixelwidthx,config.pixelwidthy
     join=np.zeros((sy,sx*2,3),'uint8')
     vis_data = {}
@@ -79,7 +87,7 @@ if __name__=='__main__':
                         explore.plot_graphs(main_data_hist,vis_data_hist)
                         sys.exit(0)
                     break
-                print('topic=',ret[0])
+                #print('topic=',ret[0])
                 if ret[0]==config.topic_comp_vis:
                     vis_data=ret[1]
                     print('fnum in vis',vis_data['fnum'])
@@ -91,6 +99,9 @@ if __name__=='__main__':
                 if ret[0]==config.topic_mav_telem:
                     #data=pickle.loads(ret[1])
                     data=ret[1]
+                    #'mavpackettype': 'VFR_HUD'
+                    if data['mavpackettype'] in { 'VFR_HUD' , 'SERVO_OUTPUT_RAW' }:
+                        print('mav telem',data)
                 if ret[0]==config.topic_main_telem:
                     #main_data.update(pickle.loads(ret[1]))
                     main_data.update(ret[1])

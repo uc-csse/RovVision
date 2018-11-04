@@ -109,7 +109,7 @@ if __name__=='__main__':
 
             draw_txt(join,vis_data,main_data)
             if explore.is_data_file(args.path,fcnt):
-                cv2.cv2.circle(join,(0,0), 15, (0,0,255), -1)
+                cv2.circle(join,(0,0), 15, (0,0,255), -1)
             cv2.imshow('3dviewer',join)
             #cv2.imshow('left',images[0])
             #cv2.imshow('right',images[1])

@@ -4,6 +4,7 @@ from matplotlib.widgets import Button,LassoSelector,TextBox
 from matplotlib.path import Path
 import numpy as np
 import pickle,os
+from config import Joy_map as J
 
 def fname_format(path,fnum):
     return '{}/{:08d}.pkl'.format(path,fnum)
@@ -143,3 +144,62 @@ class Polygon:
 
 def plot_raw_images(imgs_raw,path,fnum):
     Polygon(imgs_raw,path,fnum)
+
+def get_arr(hist,label):
+    return np.array([(d['fnum'],d[label]) for d in hist if label in d])
+
+
+def plot_graphs(md_hist,vis_hist):
+    fnums=[md['fnum'] for md in md_hist if 'fnum' in md]
+    fb_cmd=[md['fb_cmd'] for md in md_hist if 'fnum' in md]
+    js_gain=np.array([md['js_gain'] for md in md_hist if 'fnum' in md]).reshape((-1,1))
+    fb_pid=np.array([md['fb_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
+    lr_cmd=[md['lr_cmd'] for md in md_hist if 'fnum' in md]
+    lr_pid=np.array([md['lr_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
+
+    ranges=np.array([(vs['fnum'],vs['range']) for vs in vis_hist])
+    avg_ranges=np.array([(vs['fnum'],vs['range_f']) for vs in vis_hist if 'range_f' in vs])
+    dxs=np.array([(vs['fnum'],vs['dx']) for vs in vis_hist if 'dx' in vs])
+    
+
+    lock_state = get_arr(md_hist,'lock')
+    lock_range = get_arr(md_hist,'lock_range')
+
+    plt.figure('commands')
+    ax=plt.subplot(3,2,1)
+    plt.title('fb')
+    plt.plot(fnums,fb_cmd,'-.+')
+    plt.plot(fnums,-fb_pid) # the direction is - 
+    plt.legend(list('cpid'))
+    plt.subplot(3,2,3,sharex=ax)
+    plt.title('lr')
+    plt.plot(fnums,lr_cmd,'-.+')
+    plt.plot(fnums,-lr_pid) #
+    plt.legend(list('cpid'))
+    plt.subplot(3,2,5,sharex=ax)
+    
+    for jax in [J.ud,J.lr,J.fb]:
+        joy_ax=np.array([(md['fnum'],md['joy_axes'][jax]) for md in md_hist \
+                if 'joy_axes' in md and md['joy_axes'] is not None])
+        if len(joy_ax)>0:
+            plt.plot(joy_ax[:,0],joy_ax[:,1])
+    plt.plot(lock_state[:,0],lock_state[:,1],'-.')
+    plt.legend(['ud','lr','fb','lock'])
+    
+    plt.title('joy axis')
+    #plt.plot(fnums,js_gain)
+    
+    plt.subplot(3,2,2,sharex=ax)
+    plt.title('ranges')
+    plt.plot(ranges[:,0],ranges[:,1])
+    plt.plot(avg_ranges[:,0],avg_ranges[:,1])
+    plt.plot(lock_range[:,0],lock_range[:,1])
+    plt.legend(['r','rf','lr'])
+
+    if len(dxs)>0:
+        plt.subplot(3,2,4,sharex=ax)
+        plt.title('dx')
+        plt.plot(dxs[:,0],dxs[:,1])
+
+
+    plt.show()

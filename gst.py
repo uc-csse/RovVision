@@ -20,7 +20,7 @@ def init_gst(sx,sy,npipes):
     
     if 1:
         #cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=15 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
-        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=600 key-int-max=50 ! tcpserversink port={}"
+        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=50 ! tcpserversink port={}"
         gstsrc = 'fdsrc ! videoparse width={} height={} format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
     if 0:
         gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
@@ -99,6 +99,12 @@ def get_imgs():
     return images
 
 
+def save_main_camera_stream(fname):
+    cmd='''gst-launch-1.0 -e udpsrc port=6753 ! application/x-rtp, encoding-name=H264, payload=96 ! rtph264depay ! h264parse ! mp4mux ! filesink location={} sync=false'''.format(fname)
+    #return Popen(cmd, shell=True)
+    cmdp=cmd.split()
+    return Popen(cmdp)
+
 ############ gst from files #################
 import glob
 def read_image_from_pipe(p):
@@ -109,8 +115,8 @@ def read_image_from_pipe(p):
         img=np.fromstring(data,'uint8').reshape([sy,sx,3])
         fmt_cnt=image_enc_dec.decode(img)
     else:
-        print('Error no data')
-        sys.exit(0)
+        #print('Error no data')
+        return None,-1 
     return img,fmt_cnt
 
 def gst_file_reader(path, nosync):
@@ -137,7 +143,7 @@ def gst_file_reader(path, nosync):
             im2,cnt2=read_image_from_pipe(gst_pipes[1])
             #syncing frame numbers
             if not nosync:
-                if cnt1 is not None and cnt2 is not None:
+                if cnt1 > 0  and cnt2 > 0:
                     while cnt2>cnt1:
                         im1,cnt1=read_image_from_pipe(gst_pipes[0])
                     while cnt1>cnt2:
@@ -146,6 +152,7 @@ def gst_file_reader(path, nosync):
             yield images,cnt1
         else:
             time.sleep(0.001)
+            yield None,-1
 
 
 

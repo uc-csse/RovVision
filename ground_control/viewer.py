@@ -7,10 +7,11 @@ import pickle
 import select
 import struct
 import cv2,os
+import signal
 import argparse
 import numpy as np
 import config
-from gst import init_gst_reader,get_imgs,set_files_fds,get_files_fds
+from gst import init_gst_reader,get_imgs,set_files_fds,get_files_fds,save_main_camera_stream
 from annotations import draw_txt
 import utils
 import image_enc_dec
@@ -38,6 +39,7 @@ if __name__=='__main__':
     vis_data = {}
     main_data  ={}
     data_file_fd=None
+    main_camera_fd=None
     rcv_cnt=0
     while 1:
         images=get_imgs()
@@ -62,13 +64,21 @@ if __name__=='__main__':
                     fds=[]
                     datestr=vis_data['record_date_str']
                     save_path=args.data_path+'/'+datestr
-                    os.mkdir(save_path)
+                    if not os.path.isdir(save_path):
+                        os.mkdir(save_path)
                     for i in [0,1]:
                         #datestr=datetime.now().strftime('%y%m%d-%H%M%S')
                         fds.append(open(save_path+'/vid_{}.mp4'.format('lr'[i]),'wb'))
                     set_files_fds(fds)
                     data_file_fd=open(save_path+'/viewer_data.pkl','wb')
+                    main_camera_fd=save_main_camera_stream(save_path+'/vid_main.mp4')
             else:
+                if main_camera_fd is not None:
+                    #main_camera_fd.termi nate()
+                    main_camera_fd.send_signal(signal.SIGINT)
+                    main_camera_fd.wait()
+                    main_camera_fd=None
+
                 set_files_fds([None,None])
                 data_file_fd=None
 

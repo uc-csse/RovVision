@@ -5,6 +5,7 @@ sys.path.append('../')
 import zmq
 import struct
 import cv2,os
+import shutil
 import numpy as np
 import pickle
 import select
@@ -14,6 +15,7 @@ import gst
 import config
 import utils
 import image_enc_dec
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--cvshow",help="show opencv mode", action='store_true')
@@ -71,11 +73,10 @@ def listener():
     fmt_cnt_r=-2
     keep_running=True
     track=None
-    
+    lock=False
     last_usage_test=time.time()
     disk_usage=get_disk_usage()
     fd=None
-
     #send initial trigger
     print('start trig')
     socket_pub.send_multipart([config.topic_comp_vis_cmd,b'start_trig'])
@@ -87,9 +88,10 @@ def listener():
             if ret[0]==config.topic_button:
                 data=pickle.loads(ret[1])
                 if data[config.joy_init_track]==1:
-                    print('init tracker')
-                    track = tracker.run_Trackers()
-                    track.__next__()
+                    #print('init tracker')
+                    #track = tracker.run_Trackers()
+                    #track.__next__()
+                    lock=True
                 if data[config.joy_save]==1 and args.save:
                     record_state = not record_state
                     print('recording ',record_state)
@@ -98,6 +100,8 @@ def listener():
                         save = '../data/'+date_str
                         os.mkdir(save)
                         data_fd=open(save+'/data.pkl','wb')
+                        shutil.copy('../config.py',save+'/')
+                        os.popen('git log -n 10 > '+save+'/git.log')
             
             if record_state and ret[0] not in [topicl,topicr]:
                 #save only data not images
@@ -115,8 +119,8 @@ def listener():
                     imgr=data
 
             if ret[0] in [topicl,topicr] and fmt_cnt_r == fmt_cnt_l:
-                imgl=np.fromstring(imgl,'uint8').reshape(shape)
-                imgr=np.fromstring(imgr,'uint8').reshape(shape)
+                imgl=np.fromstring(imgl,'uint8').reshape(shape)[:,:,::-1]
+                imgr=np.fromstring(imgr,'uint8').reshape(shape)[:,:,::-1]
                 if save and record_state and (info[3]%10==0): #save every 1 sec
                     cv2.imwrite(save+'/l{:08d}.{}'.format(info[3],image_fmt),imgl)
                     cv2.imwrite(save+'/r{:08d}.{}'.format(info[3],image_fmt),imgr)
@@ -133,16 +137,21 @@ def listener():
                 
                 ###################################################################### 
                 wx,wy=config.stereo_corr_params['ws']
+                stereo_offx=config.stereo_corr_params['ofx'] #correct search position onright image
                 cx = img.shape[1]//2
+                cx_off_t = cx+config.track_offx
                 cy = img.shape[0]//2
-                draw_rectsr=[((cx-wx//2,cy-wy//2) , (cx+wx//2,cy+wy//2) , (0,255,255))]
-                draw_rectsl=[((cx-wx//2,cy-wy//2) , (cx+wx//2,cy+wy//2) , (0,0,255))]
+                #draw_rectsr=[((cx-wx//2,cy-wy//2) , (cx+wx//2,cy+wy//2) , (0,255,255))]
+                draw_rectsr=[] 
+                draw_rectsl=[((cx+stereo_offx-wx//2,cy-wy//2) , (cx+stereo_offx+wx//2,cy+wy//2) , (0,0,255))]
                 if track is None:
                     track = tracker.run_Trackers()
                     track.__next__()
                 else:
                     tic=time.time()
-                    ret=track.send((imgl,imgr,None))
+                    ret=track.send((imgl,imgr,'lock' if lock else None))
+                    if lock:
+                        lock=False
                     toc=time.time()
                     ret['ts']=toc 
                     ret['draw_rectsl']=draw_rectsl
@@ -155,9 +164,10 @@ def listener():
                     ret['send_cnt']=gst.send_cnt.copy()
 
                     ox=int(ret['disp'])                    
-                    draw_rectsr.append(((cx-wx//2+ox,cy-wy//2) , (cx+wx//2+ox,cy+wy//2) , (0,0,255)))
+                    draw_rectsr.append(((cx+stereo_offx-wx//2+ox,cy-wy//2) , (cx+stereo_offx+wx//2+ox,cy+wy//2) , (0,0,255)))
                     ox,oy=int(ret['offx']),int(ret['offy'])
-                    draw_rectsl.append(((cx-wx//2+ox,cy-wy//2+oy) , (cx+wx//2+ox,cy+wy//2+oy) , (255,0,255)))
+                    draw_rectsl.append(((cx_off_t-wx//2+1,cy-wy//2+1) , (cx_off_t+wx//2-1,cy+wy//2-1) , (255,255,0)))
+                    draw_rectsl.append(((cx_off_t-wx//2+ox,cy-wy//2+oy) , (cx_off_t+wx//2+ox,cy+wy//2+oy) , (255,0,255)))
                     socket_pub.send_multipart([config.topic_comp_vis,pickle.dumps(ret,-1)])
                     if record_state:
                         pickle.dump([config.topic_comp_vis,ret],data_fd,-1)

@@ -9,6 +9,7 @@ tmux split-window -h
 tmux split-window -v
 tmux select-pane -t 0
 tmux split-window -v
+tmux split-window -v
 
 tmux select-pane -t 0
 tmux set -g pane-border-format "#{pane_index} #T"
@@ -18,9 +19,9 @@ tmux send-keys "cd ground_control && ./QGroundControl.AppImage" ENTER
 tmux select-pane -t 1
 tmux send-keys "cd ground_control && python joy_rov.py" ENTER
 
-tmux select-pane -t 2
+tmux select-pane -t 4
 tmux send-keys "cd ground_control && python viewer.py" ENTER
 
 tmux select-pane -t 2
-
+tmux send-keys "cd ground_control && python udp_route.py" ENTER
 tmux att

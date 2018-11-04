@@ -5,13 +5,13 @@ def draw_txt(img,vd,md):
     font = cv2.FONT_HERSHEY_SIMPLEX
     #print('-2-',md)
     if 'ts' in md and 'range' in vd and 'temp' in md:
-        rng = vd.get('range_avg',vd['range']) 
+        rng = vd.get('range_f',vd['range']) 
         if rng >20 or rng<0:
             rng=-1
         line1='{:4.1f}s R{:3.2f}m {:3.1f}C'.format(md['ts'],rng,md['temp'])
         cv2.putText(img,line1,(10,50), font, 0.5,(0,0,255),1,cv2.LINE_AA)
 
-    if 'lock' in md and md['lock']: 
+    if 'lock' in md and md['lock'] and 'lock_range' in md: 
         line2='{:>4}bf {:4.2f}LR'.format(md['fb_cmd'],md['lock_range'])
         if 'ud_cmd' in md:
             line2+=' {:>4}ud {:>4}lr'.format(md['ud_cmd'],md['lr_cmd'])

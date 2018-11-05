@@ -107,7 +107,7 @@ def save_main_camera_stream(fname):
 
 ############ gst from files #################
 import glob
-def read_image_from_pipe(p):
+def read_image_from_pipe(p, prevcnt=-1):
     if len(select.select([p],[],[],5.9)[0])==0:
         print('got None!!')
         return None,-1
@@ -115,6 +115,8 @@ def read_image_from_pipe(p):
     if data:
         img=np.fromstring(data,'uint8').reshape([sy,sx,3])
         fmt_cnt=image_enc_dec.decode(img)
+        if fmt_cnt is None:
+            fmt_cnt = prevcnt+1
     else:
         #print('Error no data')
         return None,-1 
@@ -137,19 +139,20 @@ def gst_file_reader(path, nosync):
         gst_pipes.append(r1)
         Popen(gcmd, shell=True)
     
-    fcnt=[-1,-1]
+    prevcnt=-1 
     while 1:
         if len(select.select(gst_pipes,[],[],0.1)[0])==len(gst_pipes):
-            im1,cnt1=read_image_from_pipe(gst_pipes[0])
-            im2,cnt2=read_image_from_pipe(gst_pipes[1])
+            im1,cnt1=read_image_from_pipe(gst_pipes[0],prevcnt)
+            im2,cnt2=read_image_from_pipe(gst_pipes[1],prevcnt)
             #syncing frame numbers
             if not nosync:
                 if cnt1 > 0  and cnt2 > 0:
                     while cnt2>cnt1:
-                        im1,cnt1=read_image_from_pipe(gst_pipes[0])
+                        im1,cnt1=read_image_from_pipe(gst_pipes[0],prevcnt)
                     while cnt1>cnt2:
-                        im2,cnt2=read_image_from_pipe(gst_pipes[1])
+                        im2,cnt2=read_image_from_pipe(gst_pipes[1],prevcnt)
             images=[im1,im2] 
+            prevcnt = cnt1
             yield images,cnt1
         else:
             time.sleep(0.001)

@@ -171,11 +171,13 @@ def plot_graphs(md_hist,vis_hist):
     plt.plot(fnums,fb_cmd,'-.+')
     plt.plot(fnums,-fb_pid) # the direction is - 
     plt.legend(list('cpid'))
+    plt.ylim(-500,500)
     plt.subplot(3,2,3,sharex=ax)
     plt.title('lr')
     plt.plot(fnums,lr_cmd,'-.+')
     plt.plot(fnums,-lr_pid) #
     plt.legend(list('cpid'))
+    plt.ylim(-500,500)
     plt.subplot(3,2,5,sharex=ax)
     
     for jax in [J.ud,J.lr,J.fb]:
@@ -194,12 +196,14 @@ def plot_graphs(md_hist,vis_hist):
     plt.plot(ranges[:,0],ranges[:,1])
     plt.plot(avg_ranges[:,0],avg_ranges[:,1])
     plt.plot(lock_range[:,0],lock_range[:,1])
+    plt.ylim(-2,2)
     plt.legend(['r','rf','lr'])
 
     if len(dxs)>0:
         plt.subplot(3,2,4,sharex=ax)
         plt.title('dx')
         plt.plot(dxs[:,0],dxs[:,1])
+    plt.ylim(-0.3,3)
 
 
     plt.show()

@@ -150,20 +150,20 @@ if __name__=='__main__':
             cv2.imshow('3dviewer',join)
             #cv2.imshow('left',images[0])
             #cv2.imshow('right',images[1])
-        if args.nowait and fcnt>0:
-            k=cv2.waitKey(1)
-        else:
-            k=cv2.waitKey(0)
-        if k%256==ord('q'):
-            break
-        if k%256==ord('i'):
-            explore.plot_raw_images(imgs_raw,args.path,fcnt)
-        if k%256==ord('p'):
-            explore.plot_graphs(main_data_hist,vis_data_hist)
-        if k%256==8:
-            fcnt-=1 
-        else:
-            fcnt+=1
+            if args.nowait:
+                k=cv2.waitKey(1)
+            else:
+                k=cv2.waitKey(0)
+            if k%256==ord('q'):
+                break
+            if k%256==ord('i'):
+                explore.plot_raw_images(imgs_raw,args.path,fcnt)
+            if k%256==ord('p'):
+                explore.plot_graphs(main_data_hist,vis_data_hist)
+            if k%256==8:
+                fcnt-=1 
+            else:
+                fcnt+=1
 
 ### fmt_cnt_l,imgl,imgr=imgget.__next__()
 ###                fmt_cnt_r=fmt_cnt_l

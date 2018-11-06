@@ -22,7 +22,7 @@ import utils
 import explore
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--nowait",help="run all not wait for keyboard", action='store_true')
+parser.add_argument("--nowait",help="run all not wait for keyboard untill framenum or 0 till the end", default=-1, type=int)
 parser.add_argument("--nosingle",help="dont use the single files only the stream", action='store_true')
 parser.add_argument("--nosync", help="dont sync videos", action='store_true')
 parser.add_argument("--novid", help="ignore video", action='store_true')
@@ -67,7 +67,7 @@ if __name__=='__main__':
     from_buff=False
     while 1:
         hist_buff_ind=fcnt%len(imbuff)
-        if imbuff[hist_buff_ind]!=None and imbuff[hist_buff_ind][0]==fcnt:
+        if not args.novid and imbuff[hist_buff_ind]!=None and imbuff[hist_buff_ind][0]==fcnt:
             fcnt,images,vis_data,main_data=imbuff[hist_buff_ind]
             from_buff=True
         else:
@@ -87,7 +87,7 @@ if __name__=='__main__':
                         explore.plot_graphs(main_data_hist,vis_data_hist)
                         sys.exit(0)
                     break
-                #print('topic=',ret[0])
+                print('topic=',ret[0])
                 if ret[0]==config.topic_comp_vis:
                     vis_data=ret[1]
                     print('fnum in vis',vis_data['fnum'])
@@ -110,7 +110,7 @@ if __name__=='__main__':
                     if len(main_data_hist)>args.bs:
                         main_data_hist=main_data_hist[1:]
                     #    print(data)
-            if fcnt>0:
+            if not args.novid and fcnt>0:
                 hist_buff_ind=fcnt%len(imbuff)
                 imbuff[hist_buff_ind]=(fcnt,images,vis_data,main_data)
 
@@ -150,7 +150,7 @@ if __name__=='__main__':
             cv2.imshow('3dviewer',join)
             #cv2.imshow('left',images[0])
             #cv2.imshow('right',images[1])
-            if args.nowait:
+            if args.nowait > fcnt:
                 k=cv2.waitKey(1)
             else:
                 k=cv2.waitKey(0)
@@ -164,6 +164,7 @@ if __name__=='__main__':
                 fcnt-=1 
             else:
                 fcnt+=1
+
 
 ### fmt_cnt_l,imgl,imgr=imgget.__next__()
 ###                fmt_cnt_r=fmt_cnt_l

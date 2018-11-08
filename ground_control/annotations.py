@@ -21,6 +21,9 @@ def draw_txt(img,vd,md):
     if 'fnum' in vd:
         line=' {:>8}'.format(vd['fnum'])
         cv2.putText(img,line,(10,500), font, 0.5,(0,0,255),1,cv2.LINE_AA)
+    if 'heading' in md:
+        line='H {:05.1f} D {:06.2f}'.format(md['heading'],md['depth'])
+        cv2.putText(img,line,(10,480), font, 0.5,(0,0,255),1,cv2.LINE_AA)
 
     #cv2.putText(img,data_lines['last_cmd_str'][1],(10,250), font, 0.4,(0,0,255),1,cv2.LINE_AA)
 

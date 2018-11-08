@@ -111,6 +111,8 @@ if __name__=='__main__':
                     #'mavpackettype': 'VFR_HUD'
                     if data['mavpackettype'] in { 'VFR_HUD' , 'SERVO_OUTPUT_RAW' }:
                         print('mav telem',data)
+                        if 'VFR_HUD' == data['mavpackettype']:
+                            main_data.update({'depth':abs(data['alt']),'heading':data['heading']})
                 if ret[0]==config.topic_main_telem:
                     #main_data.update(pickle.loads(ret[1]))
                     main_data.update(ret[1])

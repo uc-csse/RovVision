@@ -48,6 +48,14 @@ def equalize(img):
 
 imbuff=[None for i in range(50)]
 
+
+def enhance(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+    c=1
+    hsv[:,:,c]=np.clip(hsv[:,:,c].astype('int16')+15,0,255).astype('uint8')
+    #hsv[:,:,1]+=70
+    return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+
 if __name__=='__main__':
     print('nosync',args.nosync)
     if not args.novid:
@@ -123,14 +131,16 @@ if __name__=='__main__':
                     for ext in ['.ppm','.png','.webp']:
                         fname=file_path_fmt.format('lr'[i],fcnt)+ext
                         if os.path.isfile(fname):
-                            imgs_raw[i]=cv2.imread(fname)
+                            frame=cv2.imread(fname)
+                            frame=enhance(frame)
+                            imgs_raw[i]=frame
                             images[i]=imgs_raw[i][::2,::2,:].copy()
                             break
 
                     #images[i]=cv2.imread(fname)[:,:,::-1].copy()
                 if imgs_raw[i] is None:
                     imgs_raw[i]=images[i].copy()#[:,:,::-1].copy()
-            
+                imgs_raw[i]=imgs_raw[i][:,:,::-1] 
                 
 
 

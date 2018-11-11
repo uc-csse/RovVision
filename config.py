@@ -64,7 +64,7 @@ focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 #=>> Z = baseline*focal_length/disparity 
 if 'SIMROV' in os.environ:
     track_offx=80
-    track_params = (30,30,60,60,track_offx,0) 
+    track_params = (60,60,60,60,track_offx,0) 
     stereo_corr_params = {'ws':(80,80),'sxl':250+50,'sxr':0,'ofx':80}
 
     scl=20
@@ -72,7 +72,7 @@ if 'SIMROV' in os.environ:
 else:
     #track_offx=0#100
     track_offx=80
-    track_params = (30,30,40,40,track_offx,0) 
+    track_params = (60,60,60,60,track_offx,0) 
     #stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':150}
     #stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':70}
     stereo_corr_params = {'ws':(80,80),'sxl':250+50,'sxr':0,'ofx':80}

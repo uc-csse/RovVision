@@ -8,6 +8,7 @@
 import sys,os,time
 from datetime import datetime
 sys.path.append('../')
+sys.path.append('../algs')
 import zmq
 import pickle
 import select
@@ -20,17 +21,20 @@ from gst import gst_file_reader
 from annotations import draw_txt
 import utils
 import explore
+import tracker
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--nowait",help="run all not wait for keyboard untill framenum or 0 till the end", default=-1, type=int)
 parser.add_argument("--nosingle",help="dont use the single files only the stream", action='store_true')
 parser.add_argument("--nosync", help="dont sync videos", action='store_true')
 parser.add_argument("--novid", help="ignore video", action='store_true')
+parser.add_argument("--runtracker", help="run tracker on recorded vid", action='store_true')
 parser.add_argument("--path",help="dir path")
 parser.add_argument("--bs",help="history buff size",type=int ,default=1000)
 args = parser.parse_args()
 
 file_path_fmt=args.path+'/{}{:08d}'#.ppm'
+
 
 
 #def equalize(img):
@@ -74,6 +78,10 @@ if __name__=='__main__':
     fcnt=-1
     from_buff=False
     save_avi = None
+
+    track = None 
+    lock = False
+
     while 1:
         hist_buff_ind=fcnt%len(imbuff)
         if not args.novid and imbuff[hist_buff_ind]!=None and imbuff[hist_buff_ind][0]==fcnt:
@@ -86,7 +94,7 @@ if __name__=='__main__':
                 fcnt+=1
                 images=[None,None]
             from_buff=False
-            print('fnum in image',fcnt)
+            #print('fnum in image',fcnt)
             while fcnt>-1:
                 try:
                     ret=pickle.load(fd)
@@ -96,10 +104,10 @@ if __name__=='__main__':
                         explore.plot_graphs(main_data_hist,vis_data_hist)
                         sys.exit(0)
                     break
-                print('topic=',ret[0])
+                #print('topic=',ret[0])
                 if ret[0]==config.topic_comp_vis:
                     vis_data=ret[1]
-                    print('fnum in vis',vis_data['fnum'])
+                    #print('fnum in vis',vis_data['fnum'])
                     vis_data_hist.append(vis_data)
                     if len(vis_data_hist)>args.bs:
                         vis_data_hist.pop(0)
@@ -110,7 +118,7 @@ if __name__=='__main__':
                     data=ret[1]
                     #'mavpackettype': 'VFR_HUD'
                     if data['mavpackettype'] in { 'VFR_HUD' , 'SERVO_OUTPUT_RAW' }:
-                        print('mav telem',data)
+                        #print('mav telem',data)
                         if 'VFR_HUD' == data['mavpackettype']:
                             main_data.update({'depth':abs(data['alt']),'heading':data['heading']})
                 if ret[0]==config.topic_main_telem:
@@ -121,6 +129,8 @@ if __name__=='__main__':
                     if len(main_data_hist)>args.bs:
                         main_data_hist=main_data_hist[1:]
                     #    print(data)
+                if ret[0]==config.topic_button:
+                    print('got bottons',ret[1])
             if not args.novid and fcnt>0:
                 hist_buff_ind=fcnt%len(imbuff)
                 imbuff[hist_buff_ind]=(fcnt,images,vis_data,main_data)
@@ -143,14 +153,26 @@ if __name__=='__main__':
                 if imgs_raw[i] is None:
                     imgs_raw[i]=images[i].copy()#[:,:,::-1].copy()
                 imgs_raw[i]=imgs_raw[i][:,:,::-1] 
-                
+            if args.runtracker:     
+                if track is None:
+                    track = tracker.run_Trackers()
+                    track.__next__()
+                else:
+                    tic=time.time()
+                    ret=track.send((images[0],images[1],'lock' if lock else None))
+                    if lock:
+                        lock=False
+                    toc=time.time()
+                    print('run track took {:4.1f} msec'.format((toc-tic)*1000))
+                    tracker.draw_track_rects(ret,images[0],images[1])
 
-
-            if 'draw_rectsl' in vis_data:
-                for rectp in vis_data['draw_rectsr']:
-                    cv2.rectangle(images[1],*rectp)
-                for rectp in vis_data['draw_rectsl']:
-                    cv2.rectangle(images[0],*rectp)
+            else:
+                tracker.draw_track_rects(vis_data,images[0],images[1])
+            #if 'draw_rectsl' in vis_data:
+            #    for rectp in vis_data['draw_rectsr']:
+            #        cv2.rectangle(images[1],*rectp)
+            #    for rectp in vis_data['draw_rectsl']:
+            #        cv2.rectangle(images[0],*rectp)
             
 
             #print(images[0].shape,join.shape)

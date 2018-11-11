@@ -36,3 +36,6 @@ tmux send-keys "done" ENTER
 gst-launch-1.0 tcpclientsrc port=6760 ! h264parse ! decodebin ! videoconvert ! autovideosink sync=false
 gst-launch-1.0 tcpclientsrc port=6761 ! h264parse ! decodebin ! videoconvert ! autovideosink sync=false
 
+
+#copy linux
+sudo rsync -aAXv / --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} /mnt

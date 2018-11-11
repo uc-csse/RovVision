@@ -21,7 +21,8 @@ from gst import gst_file_reader
 from annotations import draw_txt
 import utils
 import explore
-import tracker
+#import tracker
+import tracker2 as tracker
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--nowait",help="run all not wait for keyboard untill framenum or 0 till the end", default=-1, type=int)
@@ -155,11 +156,14 @@ if __name__=='__main__':
                 imgs_raw[i]=imgs_raw[i][:,:,::-1] 
             if args.runtracker:     
                 if track is None:
-                    track = tracker.run_Trackers()
-                    track.__next__()
+                    #track = tracker.run_Trackers()
+                    #track.__next__()
+                    track = tracker.StereoTrack() 
                 else:
                     tic=time.time()
-                    ret=track.send((images[0],images[1],'lock' if lock else None))
+                    #ret=track.send((images[0],images[1],'lock' if lock else None))
+                    #track.debug=True
+                    ret=track(images[0],images[1])
                     if lock:
                         lock=False
                     toc=time.time()

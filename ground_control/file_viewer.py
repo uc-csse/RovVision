@@ -167,7 +167,7 @@ if __name__=='__main__':
                     if lock:
                         lock=False
                     toc=time.time()
-                    print('run track took {:4.1f} msec'.format((toc-tic)*1000))
+                    print('run track took {} {:4.1f} msec'.format(fcnt,(toc-tic)*1000))
                     tracker.draw_track_rects(ret,images[0],images[1])
 
             else:
@@ -216,7 +216,8 @@ if __name__=='__main__':
                 fourcc = cv2.VideoWriter_fourcc(*'XVID')
                 #fourcc = cv2.VideoWriter_fourcc(
                 save_avi = cv2.VideoWriter('./output.avi', fourcc , 20.0, (save_sx,save_sy))
-
+            if k%256==ord('t'):
+                track.debug=True
     if save_avi is not None:
         save_avi.release()
         print('to convert to webm run:')

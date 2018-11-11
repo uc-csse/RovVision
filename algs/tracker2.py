@@ -33,19 +33,21 @@ class StereoTrack():
         self.reset()
 
     def reset(self):
-        self.ofx,self.ofy=0,0
+        self.ofx,self.ofy=self.disparity_offset,0
         self.corr_ref_pat = None
         self.corr_scale_map = None
         self.new_ref=True
 
-    def __corr_scale(selfi,corr): #prioritizing center
-        if self.corr_scale_map is None or not corr.shape == self.corr_scale_map:
+    def __corr_scale(self,corr): #prioritizing center
+        if corr.shape[0] != corr.shape[1]: #skip incase of not semetric (to complicated :)
+            return corr
+        if self.corr_scale_map is None or not corr.shape == self.corr_scale_map.shape:
             self.corr_scale_map=np.zeros(corr.shape)
             crx=corr.shape[0]
             diag=np.array([[i/crx if i<crx/2 else (crx-i)/crx for i in range(crx)]]) +0.5
             diag=diag*0.2+0.8
-            corr_scale_map[:,:]=diag
-            corr_scale_map[:,:]*=diag.T
+            self.corr_scale_map[:,:]=diag
+            self.corr_scale_map[:,:]*=diag.T
             print('doing scale map')
         return corr*self.corr_scale_map #prioritizing center
  
@@ -54,13 +56,14 @@ class StereoTrack():
         wx,wy = self.wx,self.wy
         sx,sy = self.sx,self.sy
         #search window on the left image
-        self.cx = cx  = shape[1]//2+self.disparity_offset
-        self.cy = cy  = shape[0]//2
+        self.ofx= self.disparity_offset
+        self.ofy=0
+        cx  = shape[1]//2+self.ofx
+        cy  = shape[0]//2
         l1,r1=cx-wx//2,cx+wx//2
         u1,d1=cy-wy//2,cy+wy//2
         patern=imgl[u1:d1,l1:r1]
         self.corr_ref_pat=patern.copy()
-        self.ofx=self.ofy=0
         self.new_ref=True #sending new reference flag
     
 
@@ -68,16 +71,22 @@ class StereoTrack():
     def __track_left_im(self,imgl):
         wx,wy = self.wx,self.wy
         sx,sy = self.sx,self.sy
+        cx,cy = imgl.shape[1]//2,imgl.shape[0]//2 
         if self.corr_ref_pat is None:
             self.__init_left_corr(imgl)
-            return 0,0
+            return cx+self.ofx,cy 
         
-        cx,cy = self.cx,self.cy
 
         #search window on current left image
         l2,r2=cx-wx//2-sx+self.ofx,cx+wx//2+sx+self.ofx
         u2,d2=cy-wy//2-sy+self.ofy,cy+wy//2+sy+self.ofy
         search=imgl[u2:d2,l2:r2]
+
+        if l2<0 or u2<0 or r2>imgl.shape[1] or d2>imgl.shape[1]:
+            print('track break too close to edge')
+            self.__init_left_corr(imgl)
+            return cx+self.ofx,cy
+
         #corr_search=preprep_corr(search)
         corr_search=search.copy()
         corr = cv2.matchTemplate(corr_search,self.corr_ref_pat,cv2.TM_CCOEFF_NORMED) 
@@ -95,15 +104,15 @@ class StereoTrack():
         ry=oy+self.ofy
         self.ofx+=int(ox)
         self.ofy+=int(oy)
-        if abs(ox)>sx/3 or abs(oy)>sy/3 or abs(rx)>tx or abs(ry)>ty : #new reference if translate to much
+        if abs(ox)>sx/3 or abs(oy)>sy/3: # or abs(rx)>tx or abs(ry)>ty : #new reference if translate to much
             self.__init_left_corr(imgl)
-            return 0,0
+            return cx+self.ofx,cy 
         self.new_ref=False
-        return rx,ry
+        return rx+cx,ry+cy
 
 
     def __track_stereo(self,imgl,imgr): 
-        cx,cy=self.cx,self.cy
+        cx,cy = imgl.shape[1]//2,imgl.shape[0]//2 
         wx,wy = self.stereo_wx,self.stereo_wy
         sxl,sxr = self.stereo_sxl, self.stereo_sxr
         cx_off=cx+self.ofx
@@ -115,6 +124,9 @@ class StereoTrack():
         
 
         l2,r2=cx_off-wx//2-sxl,cx_off+wx//2+sxr
+        l2=np.clip(l2,0,imgl.shape[1]-1)
+        r2=np.clip(r2,0,imgl.shape[1]-1)
+        
         #search up and down incase of inacurate camera model
         sy=12
         u2,d2=cy_off-wy//2-sy,cy_off+wy//2+sy
@@ -130,11 +142,10 @@ class StereoTrack():
             y+=dy
 
         nx=x+(l2-l1)
-        ny=y
+        ny=y-sy
 
-        offx = x
-        offy = y
-        
+
+        rx,ry =  nx+cx_off,ny+cy_off 
         if self.debug:
             plt.figure('search')
             plt.subplot(2,2,1)
@@ -158,14 +169,40 @@ class StereoTrack():
             plt.subplot(1,2,2,sharex=ax1,sharey=ax1)
             plt.imshow(imgr,cmap='gray')
             plt.plot([l2,r2,r2,l2,l2],[u2,u2,d2,d2,u2],'b')
-            xx=np.array([l2,l2+wx,l2+wx,l2,l2])+offx
-            yy=np.array([u2,u2,u2+wy,u2+wy,u2])+offy
+            xx=[rx-wx/2,rx+wx/2,rx+wx/2,rx-wx/2,rx-wx/2]
+            yy=[ry-wy/2,ry-wy/2,ry+wy/2,ry+wy/2,ry-wy/2]
             plt.plot(xx,yy,'r')
             plt.show()
             #import ipdb;ipdb.set_trace()
             self.debug=False
         #print('--->',x,nx,zx)
-        return nx,ny
+        return rx,ry
+
+    def __validate(self, pt_r, imgr):
+        #checks that the corr pattern is in the middle of the right image point
+        wx,wy = self.wx,self.wy
+        sx,sy = 30,30
+
+        l,r=int(pt_r[0])-wx//2-sx , int(pt_r[0])+wx//2+sx
+        u,d=int(pt_r[1])-wy//2-sy , int(pt_r[1])+wy//2+sy
+
+        if l<0 or u<0 or r>imgr.shape[1] or d>imgr.shape[0]:
+            print('validate reach limits lurd',l,u,r,d)
+            return False
+
+        spatern=imgr[u:d,l:r].copy()
+        corr = cv2.matchTemplate(spatern,self.corr_ref_pat,cv2.TM_CCOEFF_NORMED) 
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(corr)
+        x,y = max_loc
+        x=x - sx
+        y=y - sy
+        
+        if abs(x) <= 4 and abs(y)<=4:
+            return True
+        print('valid failed ',x,y)
+        return False
+ 
+
 
     def __call__(self,imgl,imgr):
         imgl1r=imgl[:,:,0].copy()
@@ -173,17 +210,20 @@ class StereoTrack():
         imgl1b=imgl[:,:,2].copy()
         imgr1b=imgr[:,:,2].copy()
 
-        pt_l_x,pt_l_r=self.__track_left_im(imgl1b) #tracked point on left image
+        pt_l_x,pt_l_y=self.__track_left_im(imgl1b) #tracked point on left image
         pt_r_x,pt_r_y=self.__track_stereo(imgl1r,imgr1r) #tracked point on right image
-            
-        range_filt=None
         
-        dx,dy=0,0
+        valid = self.__validate((pt_r_x,pt_r_y),imgr1r)    
+        
+        if not valid:
+            self.__init_left_corr(imgl1b)
 
-        res={}
+        res={'valid':valid}
+        res['pt_l']=(pt_l_x,pt_l_y)
+        res['pt_r']=(pt_r_x,pt_r_y)
 
-        t_pt = triangulate(self.proj_cams[0],self.proj_cams[1],pt_l_x,pt_l_r,pt_r_x,pt_r_y) 
-        res['range']=t_pt[2] # the z position
+        t_pt = triangulate(self.proj_cams[0],self.proj_cams[1],pt_l_x,pt_l_y,pt_r_x,pt_r_y) 
+        res['range']=t_pt[0] # range in the x direction 
         
         if self.new_ref:
             self.t_pt = t_pt #save reference point
@@ -204,8 +244,9 @@ class StereoTrack():
                 res['dy']=dy
                 res['dx_f']=self.dx_filt(dx)
                 res['dy_f']=self.dy_filt(dy)
+                print('dx,dy,r,r_F {:03.2f} {:03.2f} {:03.2f} {:03.2f}'.format(dx,dy,range_f , d_range_f))
             else:
-                print('new ref flag')
+                print('new ref flag 1')
         else:
             print('new range filt')
             self.range_filt = ab_filt((res['range'],0))
@@ -215,23 +256,37 @@ class StereoTrack():
 
 def draw_track_rects(ret,imgl,imgr):
     wx,wy=config.stereo_corr_params['ws']
-    stereo_offx=config.stereo_corr_params['ofx'] #correct search position onright image
-    cx = imgl.shape[1]//2
-    cx_off_t = cx+config.track_offx
-    cy = imgl.shape[0]//2
-    draw_rectsr=[] 
-    draw_rectsl=[((cx+stereo_offx-wx//2,cy-wy//2) , (cx+stereo_offx+wx//2,cy+wy//2) , (0,0,255))]
-    ox=int(ret['disp'])                    
-    draw_rectsr.append(((cx+stereo_offx-wx//2+ox,cy-wy//2) , (cx+stereo_offx+wx//2+ox,cy+wy//2) , (0,0,255)))
-    ox,oy=int(ret['offx']),int(ret['offy'])
-    twx,twy = config.track_params[:2]
-    draw_rectsl.append(((cx_off_t-twx//2+1,cy-twy//2+1) , (cx_off_t+twx//2-1,cy+twy//2-1) , (255,255,0)))
-    draw_rectsl.append(((cx_off_t-twx//2+ox,cy-twy//2+oy) , (cx_off_t+twx//2+ox,cy+twy//2+oy) , (255,0,255)))
-    for rectp in draw_rectsl:
-        cv2.rectangle(imgl,*rectp)
-    for rectp in draw_rectsr:
-        cv2.rectangle(imgr,*rectp)
 
-
+    if 'disp' in ret: #old format
+        stereo_offx=config.stereo_corr_params['ofx'] #correct search position onright image
+        cx = imgl.shape[1]//2
+        cx_off_t = cx+config.track_offx
+        cy = imgl.shape[0]//2
+     
+        draw_rectsr=[] 
+        draw_rectsl=[((cx+stereo_offx-wx//2,cy-wy//2) , (cx+stereo_offx+wx//2,cy+wy//2) , (0,0,255))]
+        ox=int(ret['disp'])                    
+        draw_rectsr.append(((cx+stereo_offx-wx//2+ox,cy-wy//2) , (cx+stereo_offx+wx//2+ox,cy+wy//2) , (0,0,255)))
+        ox,oy=int(ret['offx']),int(ret['offy'])
+        twx,twy = config.track_params[:2]
+        draw_rectsl.append(((cx_off_t-twx//2+1,cy-twy//2+1) , (cx_off_t+twx//2-1,cy+twy//2-1) , (255,255,0)))
+        draw_rectsl.append(((cx_off_t-twx//2+ox,cy-twy//2+oy) , (cx_off_t+twx//2+ox,cy+twy//2+oy) , (255,0,255)))
+        for rectp in draw_rectsl:
+            cv2.rectangle(imgl,*rectp)
+        for rectp in draw_rectsr:
+            cv2.rectangle(imgr,*rectp)
+    else:
+        wx_t,wy_t = config.track_params[:2]
+        wx_s,wy_s = config.stereo_corr_params['ws']
+        xl,yl=map(int,ret['pt_l'])
+        xr,yr=map(int,ret['pt_r'])
+        valid = ret.get('valid',False)
+        if valid:
+            col = (0,255,0)
+        else:
+            col = (0,0,255)
+        cv2.rectangle(imgl,(xl-wx_t//2,yl-wy_t//2),(xl+wx_t//2,yl+wy_t//2),col)
+        cv2.rectangle(imgl,(xl-wx_s//2,yl-wy_s//2),(xl+wx_s//2,yl+wy_s//2),col)
+        cv2.rectangle(imgr,(xr-wx_s//2,yr-wy_s//2),(xr+wx_s//2,yr+wy_s//2),col)
 
 

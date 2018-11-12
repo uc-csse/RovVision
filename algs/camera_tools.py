@@ -15,22 +15,32 @@ __TR = np.array([\
 def roty(a):
 	R_y = \
 		np.array([\
-			[np.cos(a),    0,      -np.sin(a)  ],
+			[np.cos(a),    0,      np.sin(a)  ],
             [0,                     1,      0         ],
-            [np.sin(a),   0,      np.cos(a)  ]
+            [-np.sin(a),   0,      np.cos(a)  ]
                     ])
 	return R_y
- 
+def rotx(a):
+        ca = np.cos(a)
+        sa = np.sin(a)
+
+        R_x = \
+            np.array([  [   1,  0,  0   ],
+                        [   0,  ca, -sa ],
+                        [   0,  sa, ca  ],
+                        ])
+        return R_x
+
 
 def get_stereo_cameras(f,sz,base_line,pitch_rad=0):
     M = np.array([\
             [   f, 0,  sz[0]/2   ],
             [   0,  f, sz[1]/2   ],
             [   0,  0,  1,  ]])
-    proj_caml= M @ roty(pitch_rad) @ __TR
-    T = -roty(pitch_rad).T @ np.array([[base_line,0,0]]).T
+    proj_caml= M @ rotx(pitch_rad) @ __TR
+    T = -rotx(pitch_rad).T @ np.array([[base_line,0,0]]).T
     #print(T)
-    proj_camr=M @ roty(pitch_rad) @ np.hstack((roty(pitch_rad),T))
+    proj_camr=M @ np.hstack((rotx(pitch_rad),T))
     #print(proj_caml)
     #print(proj_camr)
     return proj_caml,proj_camr
@@ -58,7 +68,8 @@ if __name__=='__main__':
     import config
     f = config.focal_length
     sz=(640,512)
-    Pl,Pr = get_stereo_cameras(f,sz,0.14,0)
+    Pl,Pr = get_stereo_cameras(f,sz,0.14,np.radians(45))
+
     #x=cv2.triangulatePoints(Pl,Pr,np.array([sz[0]/2,sz[1]/2]),np.array([sz[0]/2+50.0,sz[1]/2]))
 
     print(triangulate(Pl,Pr,320,256,320-40,256))

@@ -32,6 +32,7 @@ socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_main )
 
 fb_dir=-1.0
 lr_dir=-1.0
+ud_dir=-1.0
 
 from config import Joy_map as J
 
@@ -113,19 +114,19 @@ async def control():
             fnum=track_info['fnum']
             #print('---',fnum,track_info['range_f'],lock_state)
             if lock_state:
-                if 'dy' in track_info: 
-                    dy_f=track_info['dy_f']
-                    ud_cmd = ud_pid(dy_f[0],0,dy_f[1])
+                if 'dz' in track_info: 
+                    d_f=track_info['dz_f']
+                    ud_cmd = ud_dir*ud_pid(d_f[0],0,d_f[1])
                     #ud_cmd=int(ud_cmd*2000+1500)
                 else:
                     ud_pid.reset()
                     #ud_cmd=1500
                 
-                if 'dx' in track_info: 
-                    dx_f=track_info['dx_f']
+                if 'dy' in track_info: 
+                    d_f=track_info['dy_f']
                     #val=track_info['dx']
                         #val=lr_filt(val)
-                    lr_cmd = lr_dir*lr_pid(dx_f[0],0,dx_f[1])
+                    lr_cmd = lr_dir*lr_pid(d_f[0],0,d_f[1])
                     #print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(lr_cmd,lr_pid.p,lr_pid.i,lr_pid.d))
                     telem['lr_pid']=(lr_pid.p,lr_pid.i,lr_pid.d)
                 else:
@@ -162,6 +163,8 @@ async def control():
         controller.set_rcs(ud_cmd,yaw_cmd,fb_cmd,lr_cmd)
         
         to_pwm=controller.to_pwm
+
+        telem.update(controller.nav_data)
 
         telem.update({
             'ud_cmd':to_pwm(ud_cmd),

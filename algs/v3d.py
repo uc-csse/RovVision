@@ -10,7 +10,7 @@ import numpy as np
 import pickle
 import select
 
-import tracker
+import tracker2 as tracker
 import gst
 import config
 import utils
@@ -72,8 +72,9 @@ def listener():
     fmt_cnt_l=-1
     fmt_cnt_r=-2
     keep_running=True
-    track=None
-    lock=False
+    #track=None
+    track=tracker.StereoTrack()
+    gotlock=False
     last_usage_test=time.time()
     disk_usage=get_disk_usage()
     fd=None
@@ -91,7 +92,7 @@ def listener():
                     #print('init tracker')
                     #track = tracker.run_Trackers()
                     #track.__next__()
-                    lock=True
+                    gotlock=True
                 if data[config.joy_save]==1 and args.save:
                     record_state = not record_state
                     print('recording ',record_state)
@@ -136,14 +137,17 @@ def listener():
                     img=imgl
                 
                 ###################################################################### 
-                if track is None:
+                if track is None: #old tracker
                     track = tracker.run_Trackers()
                     track.__next__()
                 else:
                     tic=time.time()
-                    ret=track.send((imgl,imgr,'lock' if lock else None))
-                    if lock:
-                        lock=False
+                    if gotlock:
+                        track.reset()
+                        gotlock=False
+                    
+                    ret=track(imgl,imgr)
+                    #ret=track.send((imgl,imgr,'lock' if lock else None))
                     toc=time.time()
                     ret['ts']=toc 
                     ret['record_state']=record_state

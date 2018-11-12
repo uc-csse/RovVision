@@ -16,7 +16,7 @@ from gst import init_gst_reader,get_imgs,set_files_fds,get_files_fds,save_main_c
 from annotations import draw_txt
 import utils
 import image_enc_dec
-import tracker
+import tracker2 as tracker
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gst",help="stream with gst", action='store_true')

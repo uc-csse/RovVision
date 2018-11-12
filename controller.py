@@ -198,15 +198,21 @@ def init():
     js_th_gain=message['param_value']
     print('JS_THR_GAIN={} JS_GAIN_DEFAULT={}'.format(js_th_gain,js_gain_default))
 
+nav_data={}
 async def run(socket_pub=None):
     global mav1,event,__pos
     while True:
         time.sleep(0)
         ret=mav1.recv_msg()
         if ret is not None:
+            data=ret.to_dict()
             if socket_pub is not None:
-                socket_pub.send_multipart([config.topic_mav_telem, pickle.dumps(ret.to_dict(),-1)])
+                socket_pub.send_multipart([config.topic_mav_telem, pickle.dumps(data,-1)])
             __pos=get_position_struct(mav1)
+            
+            if data['mavpackettype'] in { 'VFR_HUD' }:
+                if 'VFR_HUD' == data['mavpackettype']:
+                    nav_data.update({'depth':abs(data['alt']),'heading':data['heading']})
         
         if __pos  and event is not None and event.trigger():
             print(__pos)

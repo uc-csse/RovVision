@@ -104,7 +104,7 @@ class StereoTrack():
         ry=oy+self.ofy
         self.ofx+=int(ox)
         self.ofy+=int(oy)
-        if abs(ox)>sx/3 or abs(oy)>sy/3: # or abs(rx)>tx or abs(ry)>ty : #new reference if translate to much
+        if abs(ox)>(sx*2/3) or abs(oy)>(sy*2/3): # or abs(rx)>tx or abs(ry)>ty : #new reference if translate to much
             self.__init_left_corr(imgl)
             return cx+self.ofx,cy 
         self.new_ref=False
@@ -229,6 +229,7 @@ class StereoTrack():
             self.t_pt = t_pt #save reference point
             self.dx_filt = ab_filt((0,0)) 
             self.dy_filt = ab_filt((0,0)) 
+            self.dz_filt = ab_filt((0,0)) 
             self.range_filt = ab_filt((res['range'],0))
 
               
@@ -237,14 +238,17 @@ class StereoTrack():
             
         if abs(range_f-res['range']) < 0.20:  #range jumps less then 2m per sec (0.2/0.1)
             res['range_f'], res['d_range_f'] = range_f , d_range_f 
-            dx = t_pt[0]-self.t_pt[0]
-            dy = t_pt[1]-self.t_pt[1]
+            dx = (t_pt[0]-self.t_pt[0])
+            dy = (t_pt[1]-self.t_pt[1])
+            dz = (t_pt[2]-self.t_pt[2])
             if not self.new_ref:
                 res['dx']=dx
                 res['dy']=dy
+                res['dz']=dz
                 res['dx_f']=self.dx_filt(dx)
                 res['dy_f']=self.dy_filt(dy)
-                print('dx,dy,r,r_F {:03.2f} {:03.2f} {:03.2f} {:03.2f}'.format(dx,dy,range_f , d_range_f))
+                res['dz_f']=self.dz_filt(dz)
+                #print('dx,dy,r,r_F {:03.2f} {:03.2f} {:03.2f} {:03.2f}'.format(dx,dy,range_f , d_range_f))
             else:
                 print('new ref flag 1')
         else:

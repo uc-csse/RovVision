@@ -15,7 +15,7 @@ __TR = np.array([\
 def roty(a):
 	R_y = \
 		np.array([\
-			[np.cos(a),    0,      np.sin(a)  ],
+			[np.cos(a),    0,      -np.sin(a)  ],
             [0,                     1,      0         ],
             [np.sin(a),   0,      np.cos(a)  ]
                     ])
@@ -27,10 +27,10 @@ def get_stereo_cameras(f,sz,base_line,pitch_rad=0):
             [   f, 0,  sz[0]/2   ],
             [   0,  f, sz[1]/2   ],
             [   0,  0,  1,  ]])
-    proj_caml= M @ __TR
+    proj_caml= M @ roty(pitch_rad) @ __TR
     T = -roty(pitch_rad).T @ np.array([[base_line,0,0]]).T
     #print(T)
-    proj_camr=M @ np.hstack((roty(pitch_rad),T))
+    proj_camr=M @ roty(pitch_rad) @ np.hstack((roty(pitch_rad),T))
     #print(proj_caml)
     #print(proj_camr)
     return proj_caml,proj_camr

@@ -109,6 +109,7 @@ async def control():
     telem['ud_pid']=(0,0,0)
     cnt=0
     fnum=-1
+    
     while 1:
         if track_info is not None and track_info['fnum']>fnum: #new frame to proccess
             fnum=track_info['fnum']

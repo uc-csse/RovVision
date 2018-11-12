@@ -33,6 +33,8 @@ else:
     subs_socks.append( utils.subscribe([ config.topic_main_telem, config.topic_mav_telem ],config.zmq_pub_main) )
 
 
+socket_pub = utils.publisher(config.zmq_local_route)
+
 
 if __name__=='__main__':
     init_gst_reader(2)
@@ -53,6 +55,7 @@ if __name__=='__main__':
             topic , data = ret
             data=pickle.loads(ret[1])
             if ret[0]==config.topic_comp_vis:
+                socket_pub.send_multipart([config.topic_comp_vis,ret[1]])
                 vis_data=data
             if ret[0]==config.topic_mav_telem:
                 #print('-----==config.topic_mav_telem')
@@ -60,6 +63,8 @@ if __name__=='__main__':
             if ret[0]==config.topic_main_telem:
                 #print('-----==config.topic_main_telem')
                 main_data.update(data)
+                  
+                socket_pub.send_multipart([config.topic_main_telem,ret[1]])
 
             if vis_data.get('record_state',False):
                 if get_files_fds()[0] is None:

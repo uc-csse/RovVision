@@ -29,6 +29,7 @@ zmq_pub_main=9921
 topic_main_telem=b'topic_main_telem'
 topic_mav_telem=b'topic_mav_telem'
 
+zmq_local_route=10921
 
 #currently need to be changed also in ssh_route.sh
 gst_ports=[6760,6761]
@@ -60,7 +61,7 @@ pixelwidthx = 640 #after shrink
 pixelwidthy = 512 #after shrink
 baseline = 0.14 # (240-100)*.1scale in cm from unreal engine
 focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
-camera_pitch = 0 # camera installation pitch in rad
+camera_pitch = np.radians(45) # camera installation pitch in rad
 
 #disparity=x-x'=baseline*focal_length/Z
 #=>> Z = baseline*focal_length/disparity 

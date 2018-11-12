@@ -37,6 +37,7 @@ class StereoTrack():
         self.corr_ref_pat = None
         self.corr_scale_map = None
         self.new_ref=True
+        self.last_d=[0,0,0]
 
     def __corr_scale(self,corr): #prioritizing center
         if corr.shape[0] != corr.shape[1]: #skip incase of not semetric (to complicated :)
@@ -65,6 +66,7 @@ class StereoTrack():
         patern=imgl[u1:d1,l1:r1]
         self.corr_ref_pat=patern.copy()
         self.new_ref=True #sending new reference flag
+        self.last_d=[0,0,0]
     
 
 
@@ -248,6 +250,9 @@ class StereoTrack():
                 res['dx_f']=self.dx_filt(dx)
                 res['dy_f']=self.dy_filt(dy)
                 res['dz_f']=self.dz_filt(dz)
+
+                res['trace'] = (res['dx_f'][0]-self.last_d[0],res['dy_f'][0]-self.last_d[1],res['dz_f'][0]-self.last_d[2])
+                self.last_d = (res['dx_f'][0],res['dy_f'][0],res['dz_f'][0])
                 #print('dx,dy,r,r_F {:03.2f} {:03.2f} {:03.2f} {:03.2f}'.format(dx,dy,range_f , d_range_f))
             else:
                 print('new ref flag 1')

@@ -96,33 +96,36 @@ def update_graph(axes):
                         ax1.set_ylim(-rad,rad)
             axes.figure.canvas.draw()
 
-def clear():
+def clear(evt):
     pass
 
-def pause():
+def pause(evt):
     pass
 
 from matplotlib.widgets import Button
 
 fig, ax = plt.subplots()
+plt.subplots_adjust(bottom=0.2)
 axpause = plt.axes([0.7, 0.05, 0.1, 0.075])
 axclear = plt.axes([0.81, 0.05, 0.1, 0.075])
 
 
-bnpause = Button(axpause, 'Pause')
-bnpause.on_clicked(pause)
 
 
 ax1=plt.subplot2grid((3,2), (0,1),rowspan=3)
-hdl_pos = ax1.plot([],[],'.-')
+hdl_pos = ax1.plot([1,2],[1,2],'.-')
 ax2=plt.subplot2grid((3,2), (0,0))
 plt.title('trace not oriented')
 plt.legend(list('xyz'))
-hdl_trace = [ax2.plot([],'-r'),ax2.plot([],'-g'),ax2.plot([],'-b')] 
+hdl_trace = [ax2.plot([1],'-r'),ax2.plot([1],'-g'),ax2.plot([1],'-b')] 
 timer = fig.canvas.new_timer(interval=50)
 timer.add_callback(update_graph, ax)
 timer.start()
 
 
+bnpause = Button(axpause, 'Pause')
+bnpause.on_clicked(pause)
+bnclear = Button(axclear, 'Clear')
+bnclear.on_clicked(clear)
 
 plt.show()

@@ -15,10 +15,11 @@ args = parser.parse_args()
 subs_socks=[]
 subs_socks.append(utils.subscribe([config.topic_main_telem,config.topic_comp_vis],config.zmq_local_route))
 
-
+##### map radious im meters
+rad=20
 
 class CycArr():
-    def __init__(self,size=1000):
+    def __init__(self,size=20000):
         self.buf=[]
         self.size=size
 
@@ -33,16 +34,26 @@ class CycArr():
     def __len__(self):
         return len(self.buf)
 
-curr_pos=None
-pos_hist = CycArr()
-trace_hist = CycArr()
-heading_rot = None
+
+class Data:
+    def reset(self):
+        self.curr_pos=None
+        self.pos_hist = CycArr()
+        self.trace_hist = CycArr()
+        self.heading_rot = None
+        self.map_center = (0,0)
+
+    def __init__(self):
+        self.reset()
+
+gdata=Data()
 
 from utils import ab_filt
 xf,yf,zf=ab_filt(),ab_filt(),ab_filt()
 
+ch,sh=0,0
 def update_graph(axes):
-    global hdl_pos,curr_pos,heading_rot
+    global hdl_pos,hdl_arrow,ch,sh
     while 1:
         socks=zmq.select(subs_socks,[],[],0.001)[0]
         if len(socks)==0:
@@ -58,54 +69,68 @@ def update_graph(axes):
                         h = -np.radians(data['heading']+90)
                         ch = np.cos(h)
                         sh = np.sin(h)
-                        heading_rot = np.array([
+                        gdata.heading_rot = np.array([
                             [   ch,     -sh,    0],
                             [   sh,     ch,     0],
                             [   0,      0,      1]]
                             ) #rotation arround z axis
                 if ret[0]==config.topic_comp_vis:
-                    if 'trace' in data and heading_rot is not None:
+                    if 'trace' in data and gdata.heading_rot is not None:
                         t_arr=np.array(data['trace'])
                         x,y,z=t_arr
                         t_arr = (xf(x)[0],yf(y)[0],zf(z)[0])
-                        trace_hist.add(t_arr)
-                        t_arr_r=(heading_rot @ t_arr).flatten()  
+                        gdata.trace_hist.add(t_arr)
+                        t_arr_r=(gdata.heading_rot @ t_arr).flatten()  
                         #import pdb;pdb.set_trace()
-                        if curr_pos is None:
-                            curr_pos=t_arr_r
+                        if gdata.curr_pos is None:
+                            gdata.curr_pos=t_arr_r
                         else:
-                            curr_pos+=t_arr_r
+                            gdata.curr_pos+=t_arr_r
                         #print('===',data['fnum'],t_arr_r[0])
-                        print('===',data['fnum'],t_arr[1])
-                        pos_hist.add(curr_pos.copy())
-                        pos_arr=pos_hist()
+                        #print('===',data['fnum'],t_arr[1])
+                        gdata.pos_hist.add(gdata.curr_pos.copy())
+                        pos_arr=gdata.pos_hist()
                         
-                        hdl_pos[0].set_ydata(pos_arr[:,1])
-                        hdl_pos[0].set_xdata(pos_arr[:,0])
-                        trace_arr=trace_hist()
+                        trace_arr=gdata.trace_hist()
+                        xs = np.arange(len(gdata.trace_hist)) 
+                        
+                        if not pause_satus:
+                            hdl_pos[0].set_ydata(pos_arr[:,1])
+                            hdl_pos[0].set_xdata(pos_arr[:,0])
+                            #hdl_last_pos
+                            for i in [0,1,2]:
+                                hdl_trace[i][0].set_xdata(xs)
+                                hdl_trace[i][0].set_ydata(gdata.trace_hist()[:,i])
+                            ax2.set_xlim(len(gdata.trace_hist)-100,len(gdata.trace_hist))
+                            ax2.set_ylim(-0.2*1,0.2*1)
+                            hdl_arrow.remove()
+                            hdl_arrow = ax1.arrow(gdata.curr_pos[0],gdata.curr_pos[1],-ch*0.1,-sh*0.1,width=0.1)
+                            
+                            cx,cy = gdata.map_center[:2]
+                            ax1.set_xlim(-rad+cx,rad+cx)
+                            ax1.set_ylim(-rad+cy,rad+cy)
 
-                        xs = np.arange(len(trace_hist)) 
-                        for i in [0,1,2]:
-                            hdl_trace[i][0].set_xdata(xs)
-                            hdl_trace[i][0].set_ydata(trace_hist()[:,i])
-                        ax2.set_xlim(len(trace_hist)-100,len(trace_hist))
-                        ax2.set_ylim(-0.2*1,0.2*1)
-                        
-                        rad=20
-                        ax1.set_xlim(-rad,rad)
-                        ax1.set_ylim(-rad,rad)
-            axes.figure.canvas.draw()
+            if not pause_satus:
+                axes.figure.canvas.draw()
 
 def clear(evt):
-    pass
+    gdata.reset()
+    print('reset data')
 
+pause_satus=False
 def pause(evt):
-    pass
+    global pause_satus
+    pause_satus=not pause_satus
+    print('pause=',pause_satus)
+
+def center(evt):
+    gdata.map_center = gdata.curr_pos.copy()
 
 from matplotlib.widgets import Button
 
 fig, ax = plt.subplots()
 plt.subplots_adjust(bottom=0.2)
+axcenter = plt.axes([0.59, 0.05, 0.1, 0.075])
 axpause = plt.axes([0.7, 0.05, 0.1, 0.075])
 axclear = plt.axes([0.81, 0.05, 0.1, 0.075])
 
@@ -113,7 +138,8 @@ axclear = plt.axes([0.81, 0.05, 0.1, 0.075])
 
 
 ax1=plt.subplot2grid((3,2), (0,1),rowspan=3)
-hdl_pos = ax1.plot([1,2],[1,2],'.-')
+hdl_pos = ax1.plot([1,2],[1,2],'-')
+hdl_arrow = ax1.arrow(1,1,0.5,0.5,width=0.1)
 ax2=plt.subplot2grid((3,2), (0,0))
 plt.title('trace not oriented')
 plt.legend(list('xyz'))
@@ -127,5 +153,7 @@ bnpause = Button(axpause, 'Pause')
 bnpause.on_clicked(pause)
 bnclear = Button(axclear, 'Clear')
 bnclear.on_clicked(clear)
+bncenter = Button(axcenter, 'Center')
+bncenter.on_clicked(center)
 
 plt.show()

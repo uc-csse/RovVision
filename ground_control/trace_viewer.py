@@ -38,6 +38,9 @@ pos_hist = CycArr()
 trace_hist = CycArr()
 heading_rot = None
 
+from utils import ab_filt
+xf,yf,zf=ab_filt(),ab_filt(),ab_filt()
+
 def update_graph(axes):
     global hdl_pos,curr_pos,heading_rot
     while 1:
@@ -52,7 +55,7 @@ def update_graph(axes):
                 if ret[0]==config.topic_main_telem:
                     if 'heading' in data:
                         #print('---',data['heading'])
-                        h = np.radians(data['heading']+90)
+                        h = -np.radians(data['heading']+90)
                         ch = np.cos(h)
                         sh = np.sin(h)
                         heading_rot = np.array([
@@ -63,6 +66,8 @@ def update_graph(axes):
                 if ret[0]==config.topic_comp_vis:
                     if 'trace' in data and heading_rot is not None:
                         t_arr=np.array(data['trace'])
+                        x,y,z=t_arr
+                        t_arr = (xf(x)[0],yf(y)[0],zf(z)[0])
                         trace_hist.add(t_arr)
                         t_arr_r=(heading_rot @ t_arr).flatten()  
                         #import pdb;pdb.set_trace()

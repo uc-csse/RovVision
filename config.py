@@ -61,7 +61,8 @@ pixelwidthx = 640 #after shrink
 pixelwidthy = 512 #after shrink
 baseline = 0.14 # (240-100)*.1scale in cm from unreal engine
 focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
-camera_pitch = np.radians(45) # camera installation pitch in rad
+#camera_pitch = np.radians(45) # camera installation pitch in rad
+camera_pitch = np.radians(0) # camera installation pitch in rad
 
 #disparity=x-x'=baseline*focal_length/Z
 #=>> Z = baseline*focal_length/disparity 

@@ -37,7 +37,7 @@ class StereoTrack():
         self.corr_ref_pat = None
         self.corr_scale_map = None
         self.new_ref=True
-        self.last_d=[0,0,0]
+        self.last_d=None
 
     def __corr_scale(self,corr): #prioritizing center
         if corr.shape[0] != corr.shape[1]: #skip incase of not semetric (to complicated :)
@@ -66,7 +66,8 @@ class StereoTrack():
         patern=imgl[u1:d1,l1:r1]
         self.corr_ref_pat=patern.copy()
         self.new_ref=True #sending new reference flag
-        self.last_d=[0,0,0]
+        self.last_d=None
+        #print('init----leftcorr')
     
 
 
@@ -107,6 +108,7 @@ class StereoTrack():
         self.ofx+=int(ox)
         self.ofy+=int(oy)
         if abs(ox)>(sx*2/3) or abs(oy)>(sy*2/3): # or abs(rx)>tx or abs(ry)>ty : #new reference if translate to much
+            print('track break too big translate')
             self.__init_left_corr(imgl)
             return cx+self.ofx,cy 
         self.new_ref=False
@@ -189,7 +191,7 @@ class StereoTrack():
         u,d=int(pt_r[1])-wy//2-sy , int(pt_r[1])+wy//2+sy
 
         if l<0 or u<0 or r>imgr.shape[1] or d>imgr.shape[0]:
-            print('validate reach limits lurd',l,u,r,d)
+            #print('validate reach limits lurd',l,u,r,d)
             return False
 
         spatern=imgr[u:d,l:r].copy()
@@ -216,49 +218,55 @@ class StereoTrack():
         pt_r_x,pt_r_y=self.__track_stereo(imgl1r,imgr1r) #tracked point on right image
         
         valid = self.__validate((pt_r_x,pt_r_y),imgr1r)    
-        
-        if not valid:
-            self.__init_left_corr(imgl1b)
-
         res={'valid':valid}
         res['pt_l']=(pt_l_x,pt_l_y)
         res['pt_r']=(pt_r_x,pt_r_y)
+        res['range']=-100
+        if not valid:
+            self.__init_left_corr(imgl1b)
+            self.t_pt=None
+        else:
 
-        t_pt = triangulate(self.proj_cams[0],self.proj_cams[1],pt_l_x,pt_l_y,pt_r_x,pt_r_y) 
-        res['range']=t_pt[0] # range in the x direction 
+            t_pt = triangulate(self.proj_cams[0],self.proj_cams[1],pt_l_x,pt_l_y,pt_r_x,pt_r_y) 
         
-        if self.new_ref:
-            self.t_pt = t_pt #save reference point
-            self.dx_filt = ab_filt((0,0)) 
-            self.dy_filt = ab_filt((0,0)) 
-            self.dz_filt = ab_filt((0,0)) 
-            self.range_filt = ab_filt((res['range'],0))
+            res['range']=t_pt[0] # range in the x direction 
 
-              
+        
+        #if valid:#abs(range_f-res['range']) < 0.20:  #range jumps less then 2m per sec (0.2/0.1)
+            #if self.new_ref:
+            if self.new_ref or self.t_pt is None:
+                self.t_pt = t_pt #save reference point
+                #self.dx_filt = ab_filt((0,0)) 
+                self.dx_filt = self.range_filt = ab_filt((res['range'],0))
+                self.dy_filt = ab_filt((0,0)) 
+                self.dz_filt = ab_filt((0,0)) 
+                  
             
-        range_f , d_range_f = self.range_filt(res['range'])
-            
-        if abs(range_f-res['range']) < 0.20:  #range jumps less then 2m per sec (0.2/0.1)
+            range_f , d_range_f = self.range_filt(res['range'])
             res['range_f'], res['d_range_f'] = range_f , d_range_f 
             dx = (t_pt[0]-self.t_pt[0])
             dy = (t_pt[1]-self.t_pt[1])
+            #print('----',dy)            
             dz = (t_pt[2]-self.t_pt[2])
             if not self.new_ref:
                 res['dx']=dx
                 res['dy']=dy
                 res['dz']=dz
-                res['dx_f']=self.dx_filt(dx)
+                res['dx_f']=(range_f , d_range_f)
                 res['dy_f']=self.dy_filt(dy)
                 res['dz_f']=self.dz_filt(dz)
-
-                res['trace'] = (res['dx_f'][0]-self.last_d[0],res['dy_f'][0]-self.last_d[1],res['dz_f'][0]-self.last_d[2])
-                self.last_d = (res['dx_f'][0],res['dy_f'][0],res['dz_f'][0])
+                #if self.last_d is none:
+                #    self.last_d = ( 
+                #if self.last_d is not None:
+                    #res['trace'] = (res['dx_f'][0]-self.last_d[0],res['dy_f'][0]-self.last_d[1],res['dz_f'][0]-self.last_d[2])
+                res['trace'] = (res['dx_f'][1],res['dy_f'][1],res['dz_f'][1])
+                #    self.last_d = (res['dx_f'][0],res['dy_f'][0],res['dz_f'][0])
                 #print('dx,dy,r,r_F {:03.2f} {:03.2f} {:03.2f} {:03.2f}'.format(dx,dy,range_f , d_range_f))
             else:
                 print('new ref flag 1')
-        else:
-            print('new range filt')
-            self.range_filt = ab_filt((res['range'],0))
+        #else:
+        #    print('new range filt')
+        #    self.range_filt = ab_filt((res['range'],0))
 
         return res
 

@@ -39,9 +39,10 @@ class Data:
     def reset(self):
         self.curr_pos=None
         self.pos_hist = CycArr()
-        self.trace_hist = CycArr()
+        self.trace_hist = CycArr(500)
         self.heading_rot = None
         self.map_center = (0,0)
+        self.range_arr = CycArr(500)
 
     def __init__(self):
         self.reset()
@@ -54,8 +55,13 @@ xf,yf,zf=ab_filt(),ab_filt(),ab_filt()
 ch,sh=0,0
 def update_graph(axes):
     global hdl_pos,hdl_arrow,ch,sh
+    tic=time.time()
+    new_data=False
     while 1:
         socks=zmq.select(subs_socks,[],[],0.001)[0]
+        if time.time()-tic>=0.09:
+            print('too much time break',time.time()-tic())
+            break
         if len(socks)==0:
             break
         else:
@@ -75,7 +81,11 @@ def update_graph(axes):
                             [   0,      0,      1]]
                             ) #rotation arround z axis
                 if ret[0]==config.topic_comp_vis:
+                    if 'range_z' in data:
+                        gdata.range_arr.add(-data['range_z'])
+
                     if 'trace' in data and gdata.heading_rot is not None:
+                        new_data=True
                         t_arr=np.array(data['trace'])
                         x,y,z=t_arr
                         t_arr = (xf(x)[0],yf(y)[0],zf(z)[0])
@@ -92,26 +102,32 @@ def update_graph(axes):
                         pos_arr=gdata.pos_hist()
                         
                         trace_arr=gdata.trace_hist()
-                        xs = np.arange(len(gdata.trace_hist)) 
-                        
-                        if not pause_satus:
-                            hdl_pos[0].set_ydata(pos_arr[:,1])
-                            hdl_pos[0].set_xdata(pos_arr[:,0])
-                            #hdl_last_pos
-                            for i in [0,1,2]:
-                                hdl_trace[i][0].set_xdata(xs)
-                                hdl_trace[i][0].set_ydata(gdata.trace_hist()[:,i])
-                            ax2.set_xlim(len(gdata.trace_hist)-100,len(gdata.trace_hist))
-                            ax2.set_ylim(-0.2*1,0.2*1)
-                            hdl_arrow.remove()
-                            hdl_arrow = ax1.arrow(gdata.curr_pos[0],gdata.curr_pos[1],-ch*0.1,-sh*0.1,width=0.1)
-                            
-                            cx,cy = gdata.map_center[:2]
-                            ax1.set_xlim(-rad+cx,rad+cx)
-                            ax1.set_ylim(-rad+cy,rad+cy)
+         
+    if not pause_satus and new_data:
+        xs = np.arange(len(gdata.trace_hist)) 
+        hdl_pos[0].set_ydata(pos_arr[:,1])
+        hdl_pos[0].set_xdata(pos_arr[:,0])
+        #hdl_last_pos
+        for i in [0,1,2]:
+            hdl_trace[i][0].set_xdata(xs)
+            hdl_trace[i][0].set_ydata(gdata.trace_hist()[:,i])
+        ax2.set_xlim(len(gdata.trace_hist)-100,len(gdata.trace_hist))
+        ax2.set_ylim(-0.2*4,0.2*4)
+        hdl_arrow.remove()
+        hdl_arrow = ax1.arrow(gdata.curr_pos[0],gdata.curr_pos[1],-ch*0.1,-sh*0.1,width=0.1)
+        
+        cx,cy = gdata.map_center[:2]
+        ax1.set_xlim(-rad+cx,rad+cx)
+        ax1.set_ylim(-rad+cy,rad+cy)
 
-            if not pause_satus:
-                axes.figure.canvas.draw()
+        xs = np.arange(len(gdata.range_arr)) 
+        hdl_range[0][0].set_xdata(xs)
+        #print(pos_arr[:,2][-3:])
+        hdl_range[0][0].set_ydata(gdata.range_arr.buf)
+        ax3.set_xlim(len(xs)-100,len(xs))
+        ax3.set_ylim(0,2)
+
+        axes.figure.canvas.draw()
 
 def clear(evt):
     gdata.reset()
@@ -140,10 +156,19 @@ axclear = plt.axes([0.81, 0.05, 0.1, 0.075])
 ax1=plt.subplot2grid((3,2), (0,1),rowspan=3)
 hdl_pos = ax1.plot([1,2],[1,2],'-')
 hdl_arrow = ax1.arrow(1,1,0.5,0.5,width=0.1)
+
 ax2=plt.subplot2grid((3,2), (0,0))
 plt.title('trace not oriented')
 plt.legend(list('xyz'))
 hdl_trace = [ax2.plot([1],'-r'),ax2.plot([1],'-g'),ax2.plot([1],'-b')] 
+
+ax3=plt.subplot2grid((3,2), (1,0))
+plt.title('ground range')
+hdl_range  = [ax3.plot([1],'-')] 
+plt.grid('on')
+
+
+
 timer = fig.canvas.new_timer(interval=50)
 timer.add_callback(update_graph, ax)
 timer.start()

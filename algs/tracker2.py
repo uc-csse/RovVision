@@ -229,6 +229,7 @@ class StereoTrack():
             t_pt = triangulate(self.proj_cams[0],self.proj_cams[1],pt_l_x,pt_l_y,pt_r_x,pt_r_y) 
         
             res['range']=t_pt[0] # range in the x direction 
+            res['range_z']=t_pt[2] # range in the z direction 
 
         
         #if valid:#abs(range_f-res['range']) < 0.20:  #range jumps less then 2m per sec (0.2/0.1)

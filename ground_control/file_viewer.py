@@ -54,6 +54,23 @@ def equalize(img):
 imbuff=[None for i in range(50)]
 
 
+def get_first_and_last(pkl_file):
+    fd = open(pkl_file,'rb')
+    start = -1
+    end = -1
+    while 1:
+        try:
+            ret=pickle.load(fd)
+        except EOFError:
+            break
+        if ret[0]==config.topic_comp_vis:
+            vis_data=ret[1]
+            if start==-1:
+                start=vis_data['fnum']
+            end=vis_data['fnum']
+    return start,end
+ 
+
 def enhance(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
     c=1
@@ -66,6 +83,10 @@ if __name__=='__main__':
     if not args.novid:
         reader = gst_file_reader(args.path,nosync = args.nosync)
     #fd = open(args.path+'/data.pkl','rb')
+
+    start_frame,end_frame = get_first_and_last(args.path+'/viewer_data.pkl')
+    print('start_frame,end_frame',start_frame,end_frame)
+
     if os.path.isfile(args.path+'/data.pkl'):
         fd = open(args.path+'/data.pkl','rb')
     else:
@@ -189,6 +210,10 @@ if __name__=='__main__':
 
             if save_avi is not None:
                 save_avi.write(join)
+
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(join,'Play {:.1f} tot {:.1f} sec'.format((fcnt-start_frame)/10 ,(end_frame-start_frame)/10)
+                ,(2,12), font, 0.4,(255,0,255),1,cv2.LINE_AA)
 
             cv2.imshow('3dviewer '+base_name,join)
             #cv2.imshow('left',images[0])

@@ -36,7 +36,7 @@ args = parser.parse_args()
 
 file_path_fmt=args.path+'/{}{:08d}'#.ppm'
 
-
+base_name = os.path.basename(args.path)
 
 #def equalize(img):
 #    img_yuv=cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
@@ -190,34 +190,36 @@ if __name__=='__main__':
             if save_avi is not None:
                 save_avi.write(join)
 
-            cv2.imshow('3dviewer',join)
+            cv2.imshow('3dviewer '+base_name,join)
             #cv2.imshow('left',images[0])
             #cv2.imshow('right',images[1])
-            if args.nowait > fcnt:
-                k=cv2.waitKey(1)
-            else:
-                k=cv2.waitKey(0)
-            if k%256==ord('q'):
-                break
-            if k%256==ord('i'):
-                explore.plot_raw_images(imgs_raw,args.path,fcnt)
-            if k%256==ord('p'):
-                explore.plot_graphs(main_data_hist,vis_data_hist)
-            if k%256==8:
-                fcnt-=1 
-            else:
+        if args.nowait > fcnt:
+            k=cv2.waitKey(1)
+            if images is not None:
                 fcnt+=1
-            if k%258==ord('x'):
-                cv2.imwrite('out{:08d}.png'.format(fcnt),join)
-            if k%256==ord('s'):
-                #import pdb;pdb.set_trace()
-                save_sy,save_sx=images[0].shape[:2]
-                save_sx*=2
-                fourcc = cv2.VideoWriter_fourcc(*'XVID')
-                #fourcc = cv2.VideoWriter_fourcc(
-                save_avi = cv2.VideoWriter('./output.avi', fourcc , 20.0, (save_sx,save_sy))
-            if k%256==ord('t'):
-                track.debug=True
+        else:
+            k=cv2.waitKey(0)
+        if k%256==ord('q'):
+            break
+        if k%256==ord('i'):
+            explore.plot_raw_images(imgs_raw,args.path,fcnt)
+        if k%256==ord('p'):
+            explore.plot_graphs(main_data_hist,vis_data_hist)
+        if k%256==8:
+            fcnt-=1 
+        if k%256==ord(' '):     
+            fcnt+=1
+        if k%258==ord('x'):
+            cv2.imwrite('out{:08d}.png'.format(fcnt),join)
+        if k%256==ord('s'):
+            #import pdb;pdb.set_trace()
+            save_sy,save_sx=images[0].shape[:2]
+            save_sx*=2
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            #fourcc = cv2.VideoWriter_fourcc(
+            save_avi = cv2.VideoWriter('./output.avi', fourcc , 20.0, (save_sx,save_sy))
+        if k%256==ord('t'):
+            track.debug=True
     if save_avi is not None:
         save_avi.release()
         print('to convert to webm run:')

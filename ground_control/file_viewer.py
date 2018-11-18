@@ -139,10 +139,23 @@ if __name__=='__main__':
                     #data=pickle.loads(ret[1])
                     data=ret[1]
                     #'mavpackettype': 'VFR_HUD'
-                    if data['mavpackettype'] in { 'VFR_HUD' , 'SERVO_OUTPUT_RAW' }:
+                    #print('---',data['mavpackettype'])
+                    #print('---',data)
+                    if data['mavpackettype'] in { 'VFR_HUD' , 'SERVO_OUTPUT_RAW' ,'ATTITUDE'}:
                         #print('mav telem',data)
                         if 'VFR_HUD' == data['mavpackettype']:
-                            main_data.update({'depth':abs(data['alt']),'heading':data['heading']})
+                            main_data.update({
+                                'depth':abs(data['alt']),
+                                'heading':data['heading'],
+                                'climb':data['climb'],
+                                })
+                        if 'ATTITUDE' == data['mavpackettype']:
+                            main_data.update(data)
+                            #print('-----  ',data)
+                            #try:
+                            #    print('-----  ',data['yaw']*180/np.pi,main_data['heading'])
+                            #except:
+                            pass
                 if ret[0]==config.topic_main_telem:
                     #main_data.update(pickle.loads(ret[1]))
                     main_data.update(ret[1])
@@ -188,7 +201,7 @@ if __name__=='__main__':
                     if lock:
                         lock=False
                     toc=time.time()
-                    print('run track took {} {:4.1f} msec'.format(fcnt,(toc-tic)*1000))
+                    #print('run track took {} {:4.1f} msec'.format(fcnt,(toc-tic)*1000))
                     tracker.draw_track_rects(ret,images[0],images[1])
 
             else:

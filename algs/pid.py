@@ -2,8 +2,14 @@
 import numpy as np
 import time
 
+def getDiffAng(a, b):
+    r = (a-b) % 360.0
+    if r >= 180.0:
+        r -= 360.0
+    return r
+
 class PID(object):
-    def __init__(self,P,I,D,limit,step_limit,i_limit,d_iir=0):
+    def __init__(self,P,I,D,limit,step_limit,i_limit,d_iir=0,angle_deg_type=False):
         self.P=P
         self.I=I
         self.D=D
@@ -11,6 +17,7 @@ class PID(object):
         self.limit=limit
         self.i_limit=i_limit
         self.d_iir=d_iir
+        self.angle_deg_type=angle_deg_type
         self.reset()
 
     def reset(self):
@@ -18,7 +25,7 @@ class PID(object):
         self.current_state=None
         self.prev_state=None
         self.target=None
-        self.d=0 
+        self.d=0
         self.command=0
 
     def __call__(self,state,target,dstate=None):
@@ -27,11 +34,12 @@ class PID(object):
         self.prev_state=self.current_state
         self.current_state=state
         self.target=target
-        self.err=target-state
+        self.err=getDiffAng(state,target) if self.angle_deg_type else target-state
         self.p=self.err*self.P
         #self.d=-(self.current_state-self.prev_state)*self.D
         if dstate is None:
-            dstate=self.current_state-self.prev_state	
+            dstate=getDiffAng(self.current_state,self.prev_state)\
+                    if self.angle_deg_type else self.current_state-self.prev_state
         d=-dstate*self.D
         self.d=self.d*self.d_iir+d*(1-self.d_iir)
         self.i+=self.err*self.I
@@ -43,15 +51,15 @@ class PID(object):
         step_diff=np.clip(step_diff,-self.step_limit,self.step_limit)
         self.command+=step_diff
         self.command=np.clip(self.command,-self.limit,self.limit)
-        return self.command 
-         
+        return self.command
+
     def __str__(self):
         line='PID:{:.2f},{:.2f},{:.2f} err={:.2f} target={:.2f} pid:{:.2f},{:.2f},{:.2f}'
         return line.format(self.P,self.I,self.D,self.err,self.target,self.p,self.i,self.d)
 
 if __name__=='__main__':
     import pylab
-    state = 0 
+    state = 0
     target = 1.0
     pid=PID(0.2,0.001,0.2,0.1)
     err=[]
@@ -76,7 +84,3 @@ if __name__=='__main__':
     pylab.plot(c)
     pylab.legend(['err','p','i','d','cmd'])
     pylab.show()
-
-
-
-

@@ -52,7 +52,7 @@ def ___set_rcs(ud, yaw, fb, lr):
     values[R.fb] = to_pwm(fb)
     values[R.lr] = to_pwm(lr)
     values[R.lights1] = lights1
-    #print(values) 
+    #print(values)
     mav1.mav.rc_channels_override_send(mav1.target_system, mav1.target_component, *values)
 
 
@@ -68,7 +68,7 @@ def set_rcs(ud, yaw, fb, lr):
     #revers engineer the code in:
     #https://github.com/bluerobotics/ardusub/blob/master/ArduSub/joystick.cpp
     #function Sub::transform_manual_control_to_rc_override
-    # had to use mav1.mav.manual_control_send to be able to control the lights 
+    # had to use mav1.mav.manual_control_send to be able to control the lights
 
     #throttleScale = 0.8*gain*g.throttle_gain
     throttleBase = 500#/throttleScale
@@ -83,7 +83,7 @@ def ___update_joy_hat(hat):
     global lights1
     lights1+=hat[1]*100
     lights1=max(1100,min(2000,lights1))
-    print('got hat',hat,lights1) 
+    print('got hat',hat,lights1)
 
 lights1=0
 js_gain=config.default_js_gain
@@ -92,7 +92,7 @@ def update_joy_hat(hat):
     global lights1,js_gain
     lights1=hat[0]
     #lights1=max(1100,min(2000,lights1))
-    #print('got hat',hat,lights1) 
+    #print('got hat',hat,lights1)
     js_gain+=hat[1]*0.05
     js_gain=min(max(js_gain,0.1),2.0)
     print('*'*10+'GAIN {:.1f}'.format(js_gain))
@@ -188,7 +188,7 @@ def init():
 
     js_gain_default=message['param_value']
 
-    
+
     mav1.mav.param_set_send( mav1.target_system, mav1.target_component,
         b'JS_THR_GAIN',
         1.0,
@@ -209,15 +209,22 @@ async def run(socket_pub=None):
             if socket_pub is not None:
                 socket_pub.send_multipart([config.topic_mav_telem, pickle.dumps(data,-1)])
             __pos=get_position_struct(mav1)
-            
-            if data['mavpackettype'] in { 'VFR_HUD' }:
+
+            if data['mavpackettype'] in { 'VFR_HUD' , 'SERVO_OUTPUT_RAW' ,'ATTITUDE'}:
                 if 'VFR_HUD' == data['mavpackettype']:
-                    nav_data.update({'depth':abs(data['alt']),'heading':data['heading']})
-        
+                    nav_data.update({
+                        'depth':abs(data['alt']),
+                        'heading':data['heading'],
+                        'climb':data['climb'],
+                        })
+                if 'ATTITUDE' == data['mavpackettype']:
+                    nav_data.update(data)
+
+
         if __pos  and event is not None and event.trigger():
             print(__pos)
             #print('X:%(posx).1f\tY:%(posy).1f\tZ:%(posz).1f\tYW:%(yaw).0f\tPI:%(pitch).1f\tRL:%(roll).1f'%__pos)
-        await asyncio.sleep(0.001) 
+        await asyncio.sleep(0.001)
 
 async def test_lights():
     global lights1
@@ -226,7 +233,7 @@ async def test_lights():
     set_rcs(0,0,0,0)
     print('lights on?')
     import inspect
-    print(inspect.getfile(mav1.mav.rc_channels_override_send)) 
+    print(inspect.getfile(mav1.mav.rc_channels_override_send))
     await asyncio.sleep(3)
     lights1=1100
     set_rcs(0,0,0,0)

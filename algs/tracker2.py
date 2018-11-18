@@ -299,15 +299,16 @@ def draw_track_rects(ret,imgl,imgr):
     else:
         wx_t,wy_t = config.track_params[:2]
         wx_s,wy_s = config.stereo_corr_params['ws']
-        xl,yl=map(int,ret['pt_l'])
-        xr,yr=map(int,ret['pt_r'])
-        valid = ret.get('valid',False)
-        if valid:
-            col = (0,255,0)
-        else:
-            col = (0,0,255)
-        cv2.rectangle(imgl,(xl-wx_t//2,yl-wy_t//2),(xl+wx_t//2,yl+wy_t//2),col)
-        cv2.rectangle(imgl,(xl-wx_s//2,yl-wy_s//2),(xl+wx_s//2,yl+wy_s//2),col)
-        cv2.rectangle(imgr,(xr-wx_s//2,yr-wy_s//2),(xr+wx_s//2,yr+wy_s//2),col)
+        if 'pt_r' in ret:
+            xl,yl=map(int,ret['pt_l'])
+            xr,yr=map(int,ret['pt_r'])
+            valid = ret.get('valid',False)
+            if valid:
+                col = (0,255,0)
+            else:
+                col = (0,0,255)
+            cv2.rectangle(imgl,(xl-wx_t//2,yl-wy_t//2),(xl+wx_t//2,yl+wy_t//2),col)
+            cv2.rectangle(imgl,(xl-wx_s//2,yl-wy_s//2),(xl+wx_s//2,yl+wy_s//2),col)
+            cv2.rectangle(imgr,(xr-wx_s//2,yr-wy_s//2),(xr+wx_s//2,yr+wy_s//2),col)
 
 

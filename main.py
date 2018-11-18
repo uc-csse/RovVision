@@ -126,7 +126,7 @@ async def control():
                 print('lock yaw is {:.2f}'.format(lock_yaw_depth[0]))
                 print('-'*50,telem)
 
-            joy_deltas = joy_axes[J.yaw], joy_axes[J.ud]/1000.0
+            joy_deltas = joy_axes[J.yaw]*config.yaw_update_scale, joy_axes[J.ud]/1000.0*config.ud_update_scale
             lock_yaw_depth=((lock_yaw_depth[0]+joy_deltas[0]+360)%360,lock_yaw_depth[1]+joy_deltas[1])
 
             yaw_cmd = yaw_dir*yaw_pid(np.degrees(telem['yaw']),lock_yaw_depth[0], -np.degrees(telem['yawspeed'])/config.fps,-joy_axes[J.yaw])
@@ -181,7 +181,7 @@ async def control():
 
 
 
-        if 0:
+        if 0: #now only for testing purposes
             if is_joy_override(joy_axes):
                 if joy_axes is None:
                     #print('Error joy_axes None',time.time())

@@ -9,16 +9,17 @@ def getDiffAng(a, b):
     return r
 
 class PID(object):
-    def __init__(self,P,I,D,limit,step_limit,i_limit,d_iir=0,angle_deg_type=False):
+    def __init__(self,P,I,D,limit,step_limit,i_limit,FF=0,angle_deg_type=False):
         self.P=P
         self.I=I
         self.D=D
         self.step_limit=step_limit
         self.limit=limit
         self.i_limit=i_limit
-        self.d_iir=d_iir
+        self.FF=FF
         self.angle_deg_type=angle_deg_type
         self.reset()
+        self.d_iir=0.0 # to be removed
 
     def reset(self):
         self.i=0
@@ -28,7 +29,7 @@ class PID(object):
         self.d=0
         self.command=0
 
-    def __call__(self,state,target,dstate=None):
+    def __call__(self,state,target,dstate=None,ff_cmd=0):
         if self.prev_state is None:
             self.current_state=self.prev_state=state
         self.prev_state=self.current_state
@@ -44,7 +45,7 @@ class PID(object):
         self.d=self.d*self.d_iir+d*(1-self.d_iir)
         self.i+=self.err*self.I
         self.i=np.clip(self.i,-self.i_limit,self.i_limit)
-        step=self.p+self.d+self.i
+        step=self.p+self.d+self.i+ff_cmd*self.FF
         step_diff=step-self.command
         #if self.d_iir==0:
         #    print('sd',step_diff,self.step_limit,step, np.clip(step_diff,-self.step_limit,self.step_limit))

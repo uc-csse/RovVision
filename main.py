@@ -125,10 +125,16 @@ async def control():
                 ud_pid.reset()
                 print('lock yaw is {:.2f}'.format(lock_yaw_depth[0]))
                 print('-'*50,telem)
-            yaw_cmd = yaw_dir*yaw_pid(np.degrees(telem['yaw']),lock_yaw_depth[0], -np.degrees(telem['yawspeed'])/config.fps)
+
+            joy_deltas = joy_axes[J.yaw], joy_axes[J.ud]/1000.0
+            lock_yaw_depth=((lock_yaw_depth[0]+joy_deltas[0]+360)%360,lock_yaw_depth[1]+joy_deltas[1])
+
+            yaw_cmd = yaw_dir*yaw_pid(np.degrees(telem['yaw']),lock_yaw_depth[0], -np.degrees(telem['yawspeed'])/config.fps,-joy_axes[J.yaw])
             telem['yaw_pid']=(yaw_pid.p,yaw_pid.i,yaw_pid.d)
-            ud_cmd = ud_dir*ud_pid(telem['depth'],lock_yaw_depth[1],-telem['climb']/config.fps)
+            
+            ud_cmd = ud_dir*ud_pid(telem['depth'],lock_yaw_depth[1],-telem['climb']/config.fps, joy_axes[J.ud])
             telem['ud_pid']=(ud_pid.p,ud_pid.i,ud_pid.d)
+            
             telem['lock_yaw_depth']=lock_yaw_depth
         else:
             telem['lock_yaw_depth']=None
@@ -174,14 +180,18 @@ async def control():
                 #lr_filt.reset()
 
 
-        if is_joy_override(joy_axes):
-            if joy_axes is None:
-                #print('Error joy_axes None',time.time())
-                ud_cmd,fb_cmd,lr_cmd=0,0,0
-            else:
-                #print('joy override',time.time())
-                ud_cmd,fb_cmd,lr_cmd,yaw_cmd=\
-                        -joy_axes[J.ud],-joy_axes[J.fb],joy_axes[J.lr],joy_axes[J.yaw]
+
+        if 0:
+            if is_joy_override(joy_axes):
+                if joy_axes is None:
+                    #print('Error joy_axes None',time.time())
+                    ud_cmd,fb_cmd,lr_cmd=0,0,0
+                else:
+                    #print('joy override',time.time())
+                    ud_cmd,fb_cmd,lr_cmd,yaw_cmd=\
+                            -joy_axes[J.ud],-joy_axes[J.fb],joy_axes[J.lr],joy_axes[J.yaw]
+
+
         if not lock_state and joy_axes is not None:
             fb_cmd,lr_cmd = -joy_axes[J.fb],joy_axes[J.lr]
 

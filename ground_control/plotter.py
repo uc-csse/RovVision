@@ -92,12 +92,13 @@ def center(evt):
 def plot_pid(pid_label,grid_size,grid_pos):
     ax=plt.subplot2grid(grid_size, grid_pos)
     plt.title(pid_label)
-    plt.legend(list('pid'))
-    hdls=[ax.plot([1],'-r'),ax.plot([1],'-g'),ax.plot([1],'-b')] 
+    hdls=[ax.plot([1],'-b'),ax.plot([1],'-g'),ax.plot([1],'-r')]
+    plt.legend(list('pid'),loc='upper left')
+    plt.grid('on')
     return (ax,*hdls)
 
 def update_pid(ax_hdls,pid_label):
-    xs = np.arange(len(gdata.md_hist)) 
+    xs = np.arange(len(gdata.md_hist))
     ax,hdls = ax_hdls[0],ax_hdls[1:]
     pid_data=gdata.md_hist.get_data(pid_label)
     for i in [0,1,2]:
@@ -105,9 +106,9 @@ def update_pid(ax_hdls,pid_label):
         hdls[i][0].set_xdata(xs)
     ax.set_xlim(len(gdata.md_hist)-400,len(gdata.md_hist))
     ax.set_ylim(-1,1)
-        
 
-    
+
+
 
 from matplotlib.widgets import Button
 

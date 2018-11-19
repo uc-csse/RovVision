@@ -148,6 +148,9 @@ def plot_raw_images(imgs_raw,path,fnum):
 def get_arr(hist,label):
     return np.array([(d['fnum'],d[label]) for d in hist if label in d])
 
+def get_arr_multi(hist,label):
+    return np.array([(d['fnum'],*d[label]) for d in hist if label in d])
+
 def plot_graphs(md_hist,vis_hist):
     fnums=[md['fnum'] for md in md_hist if 'fnum' in md]
     fb_cmd=[md['fb_cmd'] for md in md_hist if 'fnum' in md]
@@ -159,10 +162,13 @@ def plot_graphs(md_hist,vis_hist):
     ud_pid=np.array([md['ud_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
     yaw_cmd=[md['yaw_cmd'] for md in md_hist if 'fnum' in md]
     yaw_pid=np.array([md['yaw_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
+    
 
     ranges=np.array([(vs['fnum'],vs['range']) for vs in vis_hist])
     avg_ranges=np.array([(vs['fnum'],vs['range_f']) for vs in vis_hist if 'range_f' in vs])
     dxs=np.array([(vs['fnum'],vs['dx']) for vs in vis_hist if 'dx' in vs])
+
+    lock_yaw_depth = get_arr_multi(md_hist,'lock_yaw_depth')
 
 
     lock_state = get_arr(md_hist,'lock')
@@ -186,19 +192,30 @@ def plot_graphs(md_hist,vis_hist):
     plt.legend(list('cpid'))
     plt.ylim(-500,500)
 
-    plt.subplot(4,2,5,sharex=ax)
+    ud_ax=plt.subplot(4,2,5,sharex=ax)
     plt.title('ud')
-    plt.plot(fnums,ud_cmd,'-.+')
-    plt.plot(fnums,-ud_pid) #
-    plt.legend(list('cpid'))
+    ud_ax.plot(fnums,ud_cmd,'-.+')
+    ud_ax.plot(fnums,-ud_pid) #
+    ud_ax.legend(list('cpid'))
     plt.ylim(-500,500)
+    if len(lock_yaw_depth)>0:
+        ud_ax2=ud_ax.twinx()
+        d=lock_yaw_depth[:,2]
+        ud_ax2.plot(lock_yaw_depth[:,0],d,'-k')
+        plt.ylim(d.min()-2,d.max()+2)
 
-    plt.subplot(4,2,7,sharex=ax)
+    y_ax=plt.subplot(4,2,7,sharex=ax)
     plt.title('yaw')
-    plt.plot(fnums,yaw_cmd,'-.+')
-    plt.plot(fnums,-yaw_pid) #
-    plt.legend(list('cpid'))
+    y_ax.plot(fnums,yaw_cmd,'-.+')
+    y_ax.plot(fnums,-yaw_pid) #
+    y_ax.legend(list('cpid'))
     plt.ylim(-500,500)
+    if len(lock_yaw_depth)>0:
+        y_ax2=y_ax.twinx()
+        y=lock_yaw_depth[:,1]
+        y_ax2.plot(lock_yaw_depth[:,0],y,'-k')
+        plt.ylim(d.min()-2,d.max()+2)
+
 
 
     plt.subplot(4,2,8,sharex=ax)

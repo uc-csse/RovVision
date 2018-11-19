@@ -1,10 +1,11 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import config
+import traceback
 import controller
 import zmq
 import asyncio
 import pickle
-import time,os
+import time,os,sys
 import argparse
 import numpy as np
 from algs import pid
@@ -16,20 +17,12 @@ args = parser.parse_args()
 
 topic_postition=config.topic_sitl_position_report
 
-context = zmq.Context()
-zmq_sub_joy = context.socket(zmq.SUB)
-zmq_sub_joy.connect("tcp://127.0.0.1:%d" % config.zmq_pub_joy)
-zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_button)
-zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_axes)
-zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_hat)
+subs_socks=[]
+subs_socks.append( utils.subscribe([ config.topic_button,config.topic_axes,config.topic_hat ],config.zmq_pub_joy))
+subs_socks.append( utils.subscribe([ config.topic_comp_vis ], config.zmq_pub_comp_vis))
+subs_socks.append( utils.subscribe([ config.topic_command ], config.zmq_pub_command)) 
 
-zmq_sub_v3d = context.socket(zmq.SUB)
-zmq_sub_v3d.connect("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis)
-zmq_sub_v3d.setsockopt(zmq.SUBSCRIBE,config.topic_comp_vis)
-
-
-socket_pub = context.socket(zmq.PUB)
-socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_main )
+socket_pub = utils.publisher(config.zmq_pub_main)
 
 fb_dir=-1.0
 lr_dir=-1.0
@@ -58,12 +51,12 @@ lock_yaw_depth_state=False
 lock_range=None
 lock_yaw_depth=None
 track_info = None
-joy_axes = None
+joy_axes = [0]*11
 
 async def get_zmq_events():
     global lock_state,track_info, lock_range, joy_axes, lock_yaw_depth,lock_yaw_depth_state
     while True:
-        socks=zmq.select([zmq_sub_joy,zmq_sub_v3d],[],[],0)[0]
+        socks=zmq.select(subs_socks,[],[],0)[0]
         for sock in socks:
             ret  = sock.recv_multipart()
             if ret[0]==config.topic_button:
@@ -94,12 +87,20 @@ async def get_zmq_events():
 
             if ret[0]==config.topic_comp_vis:
                 track_info=pickle.loads(ret[1])
+
+            if ret[0]==config.topic_command:
+                try:
+                    exec(ret[1])
+                except:
+                    print('run command_fail')
+                    traceback.print_exc(file=sys.stdout)
                 #print('-------------topic',track_info)
         await asyncio.sleep(0.001)
 
 start = time.time()
 async def control():
     global lock_state,track_info,joy_axes,lock_yaw_depth
+    global ud_pid,lr_pid,fb_pid,yaw_pid
 
     ud_pid=pid.PID(*config.ud_params)
     lr_pid=pid.PID(*config.lr_params)
@@ -124,7 +125,6 @@ async def control():
                 lock_yaw_depth=((np.degrees(telem['yaw'])+360)%360,telem['depth'])
                 ud_pid.reset()
                 print('lock yaw is {:.2f}'.format(lock_yaw_depth[0]))
-                print('-'*50,telem)
 
             joy_deltas = joy_axes[J.yaw]*config.yaw_update_scale, joy_axes[J.ud]/1000.0*config.ud_update_scale
             lock_yaw_depth=((lock_yaw_depth[0]+joy_deltas[0]+360)%360,lock_yaw_depth[1]+joy_deltas[1])

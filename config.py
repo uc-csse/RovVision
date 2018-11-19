@@ -32,6 +32,10 @@ zmq_pub_main=9921
 topic_main_telem=b'topic_main_telem'
 topic_mav_telem=b'topic_mav_telem'
 
+zmq_pub_command=9931
+topic_command=b'topic_command'
+
+
 zmq_local_route=10921
 
 #currently need to be changed also in ssh_route.sh

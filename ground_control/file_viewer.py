@@ -5,7 +5,7 @@
 # cd into data dir and then
 # > scp -P 2222 oga13@localhost:projects/bluerov/data/$(basename $( pwd ))/data.pkl .
 
-import sys,os,time
+import sys,os,time,traceback
 from datetime import datetime
 sys.path.append('../')
 sys.path.append('../algs')
@@ -178,10 +178,14 @@ if __name__=='__main__':
                     for ext in ['.ppm','.png','.webp']:
                         fname=file_path_fmt.format('lr'[i],fcnt)+ext
                         if os.path.isfile(fname):
-                            frame=cv2.imread(fname)
-                            frame=enhance(frame)
-                            imgs_raw[i]=frame
-                            images[i]=imgs_raw[i][::2,::2,:].copy()
+                            try:
+                                frame=cv2.imread(fname)
+                                frame=enhance(frame)
+                                imgs_raw[i]=frame
+                                images[i]=imgs_raw[i][::2,::2,:].copy()
+                            except Exception:
+                                print('Failed read frame',fname)
+                                traceback.print_exc(file=sys.stdout)
                             break
 
                     #images[i]=cv2.imread(fname)[:,:,::-1].copy()

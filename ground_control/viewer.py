@@ -2,6 +2,7 @@
 import sys,os,time
 from datetime import datetime
 sys.path.append('../')
+sys.path.append('../algs')
 import zmq
 import pickle
 import select
@@ -15,6 +16,7 @@ from gst import init_gst_reader,get_imgs,set_files_fds,get_files_fds,save_main_c
 from annotations import draw_txt
 import utils
 import image_enc_dec
+import tracker2 as tracker
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gst",help="stream with gst", action='store_true')
@@ -30,6 +32,8 @@ if 1:
 else:
     subs_socks.append( utils.subscribe([ config.topic_main_telem, config.topic_mav_telem ],config.zmq_pub_main) )
 
+
+socket_pub = utils.publisher(config.zmq_local_route)
 
 
 if __name__=='__main__':
@@ -51,6 +55,7 @@ if __name__=='__main__':
             topic , data = ret
             data=pickle.loads(ret[1])
             if ret[0]==config.topic_comp_vis:
+                socket_pub.send_multipart([config.topic_comp_vis,ret[1]])
                 vis_data=data
             if ret[0]==config.topic_mav_telem:
                 #print('-----==config.topic_mav_telem')
@@ -58,6 +63,8 @@ if __name__=='__main__':
             if ret[0]==config.topic_main_telem:
                 #print('-----==config.topic_main_telem')
                 main_data.update(data)
+                  
+                socket_pub.send_multipart([config.topic_main_telem,ret[1]])
 
             if vis_data.get('record_state',False):
                 if get_files_fds()[0] is None:
@@ -91,11 +98,13 @@ if __name__=='__main__':
         if images[0] is not None and images[1] is not None:
             fmt_cnt_l=image_enc_dec.decode(images[0])
             fmt_cnt_r=image_enc_dec.decode(images[1])
-            if 'draw_rectsl' in vis_data:
-                for rectp in vis_data['draw_rectsr']:
-                    cv2.rectangle(images[1],*rectp)
-                for rectp in vis_data['draw_rectsl']:
-                    cv2.rectangle(images[0],*rectp)
+
+            tracker.draw_track_rects(vis_data,images[0],images[1])
+            #if 'draw_rectsl' in vis_data:
+            #    for rectp in vis_data['draw_rectsr']:
+            #        cv2.rectangle(images[1],*rectp)
+            #    for rectp in vis_data['draw_rectsl']:
+            #        cv2.rectangle(images[0],*rectp)
             #print(images[0].shape,join.shape)
             join[:,0:sx,:]=images[0]
             join[:,sx:,:]=images[1]

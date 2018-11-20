@@ -1,6 +1,9 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import numpy as np
 import os
+
+camera_pitch = np.radians(0) # camera installation pitch in rad
+
 #pubsub
 #zmq_pub_drone_fdm=('127.0.0.1',5566)
 #zmq_pub_drone_fdm=('127.0.0.1',12466)
@@ -29,6 +32,11 @@ zmq_pub_main=9921
 topic_main_telem=b'topic_main_telem'
 topic_mav_telem=b'topic_mav_telem'
 
+zmq_pub_command=9931
+topic_command=b'topic_command'
+
+
+zmq_local_route=10921
 
 #currently need to be changed also in ssh_route.sh
 gst_ports=[6760,6761]
@@ -60,11 +68,13 @@ pixelwidthx = 640 #after shrink
 pixelwidthy = 512 #after shrink
 baseline = 0.14 # (240-100)*.1scale in cm from unreal engine
 focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
+#camera_pitch = np.radians(45) # camera installation pitch in rad
+
 #disparity=x-x'=baseline*focal_length/Z
-#=>> Z = baseline*focal_length/disparity 
+#=>> Z = baseline*focal_length/disparity
 if 'SIMROV' in os.environ:
     track_offx=80
-    track_params = (30,30,60,60,track_offx,0) 
+    track_params = (60,60,60,60,track_offx,0)
     stereo_corr_params = {'ws':(80,80),'sxl':250+50,'sxr':0,'ofx':80}
 
     scl=20
@@ -72,7 +82,7 @@ if 'SIMROV' in os.environ:
 else:
     #track_offx=0#100
     track_offx=80
-    track_params = (30,30,40,40,track_offx,0) 
+    track_params = (60,60,60,60,track_offx,0)
     #stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':150}
     #stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':70}
     stereo_corr_params = {'ws':(80,80),'sxl':250+50,'sxr':0,'ofx':80}
@@ -83,19 +93,26 @@ default_js_gain=0.6
 ## pids
 _gs=1.0/1000/default_js_gain #convert back to pwm factor
 
-### args: P,I,D,limit,step_limit,i_limit,d_iir=0
+### args: P,I,D,limit,step_limit,i_limit,FF,is angle=0
 if 'SIMROV' in os.environ:
+    scl=1
+    ud_update_scale=5.0
+    ud_params=(0.4*scl,0.005*scl,7.0*scl, _gs*300 , _gs * 100, _gs*200, 0.2, False)
     scl=2
-    ud_params=(0.8*scl,0.009*scl,3.0*scl, _gs*500 , _gs * 150, _gs*200)
+    lr_params=(0.62*scl,0.002*scl,3.0*scl, _gs*400 , _gs * 150, _gs*200, 0, False)
     scl=2
-    lr_params=(0.62*scl,0.002*scl,3.0*scl, _gs*400 , _gs * 150, _gs*200) 
-    scl=2
-    fb_params=(0.42*scl,0.002*scl,2.0*scl, _gs*400 , _gs * 100, _gs*200)
+    fb_params=(0.42*scl,0.002*scl,2.0*scl, _gs*400 , _gs * 100, _gs*200, 0, False)
+    scl=0.03
+    yaw_update_scale=1.0
+    yaw_params=(0.2*scl,0.000*scl,4.8*scl, _gs*400 , _gs * 250, _gs*100, 0.5, True) 
 else:
     scl=6
-    ud_params=(0.5*scl,0.005*scl,0.5*scl, _gs*500 , _gs * 150, _gs*200)
+    ud_update_scale=5.0
+    ud_params=(0.5*scl,0.008*scl,0.5*scl, _gs*500 , _gs * 150, _gs*200, 0.1, False)
     scl=6
-    lr_params=(0.2*scl,0.002*scl,0.2*scl, _gs*500 , _gs * 150, _gs*200) 
+    lr_params=(0.2*scl,0.002*scl,0.2*scl, _gs*500 , _gs * 150, _gs*200, 0, False)
     scl=6
-    fb_params=(0.2*scl,0.002*scl,0.2*scl, _gs*500 , _gs * 150, _gs*200)
-
+    fb_params=(0.2*scl,0.002*scl,0.2*scl, _gs*500 , _gs * 150, _gs*200, 0, False)
+    scl=0.03
+    yaw_update_scale=1.0
+    yaw_params=(0.2*scl,0.000*scl,4.8*scl, _gs*400 , _gs * 250, _gs*100, 0.5, True) 

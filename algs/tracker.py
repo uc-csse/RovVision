@@ -274,60 +274,24 @@ def run_Trackers():
             tc.__next__()
 
 
-
-def __run_Trackers():
-    print('-------------------- init trackers -------------')
-    tc = None
-    imgl,imgr,cmd = yield
-    imgl1r=imgl[:,:,0].copy()
-    imgr1r=imgr[:,:,0].copy()
-    imgl1b=imgl[:,:,2].copy()
-    imgr1b=imgr[:,:,2].copy()
-    tc=track_correlator(imgl1b,*track_params)
-    tc.__next__()
-    sp = stereo_corr_params
-    range_win=[]
-   
-    while True:
-        res={}
-        res['img_shp']=imgl.shape
-        res['line_corr_parr']=stereo_corr_params
-        cret = line_correlator(imgl1r,imgr1r,sp['ws'][0],sp['ws'][1],sp['sxl'],sp['sxr'],sp['ofx'])
-        ox,oy,new_ref_flag = tc.send(imgl1b)
-        res['offx']=ox
-        res['offy']=oy
-        res['snr_corr']=cret[1]
-        res['disp']=cret[0]
-        res['range']=disp2range(cret[0])
-        range_win.append(res['range'])
-        if len(range_win) > 10:
-            range_win=range_win[1:]
-
-        range_relaible_cond1 = np.std(range_win)/np.mean(range_win)<0.10 #10cm means reliable range
-        range_reliable_cond2 = abs(res['range']-np.mean(range_win))<0.20 #range jumps more then 2m per sec (0.2/0.1)
-        if range_relaible_cond1 and range_reliable_cond2:
-            res['range_avg']=np.mean(range_win)
-            dx = res['range_avg'] * ox/config.focal_length
-            dy = res['range_avg'] * oy/config.focal_length
-            if not new_ref_flag:
-                res['dx']=dx
-                res['dy']=dy
-            else:
-                print('new ref flag')
-
-        else:
-            tc=track_correlator(imgl1b,*track_params)
-            tc.__next__()
-            
-
-        imgl,imgr,cmd = yield res 
-        imgl1r=imgl[:,:,0].copy()
-        imgr1r=imgr[:,:,0].copy()
-        imgl1b=imgl[:,:,2].copy()
-        imgr1b=imgr[:,:,2].copy()
-        if cmd=='lock':
-            tc=track_correlator(imgl1b,*track_params)
-            tc.__next__()
+def draw_track_rects(ret,imgl,imgr):
+    wx,wy=config.stereo_corr_params['ws']
+    stereo_offx=config.stereo_corr_params['ofx'] #correct search position onright image
+    cx = imgl.shape[1]//2
+    cx_off_t = cx+config.track_offx
+    cy = imgl.shape[0]//2
+    draw_rectsr=[] 
+    draw_rectsl=[((cx+stereo_offx-wx//2,cy-wy//2) , (cx+stereo_offx+wx//2,cy+wy//2) , (0,0,255))]
+    ox=int(ret['disp'])                    
+    draw_rectsr.append(((cx+stereo_offx-wx//2+ox,cy-wy//2) , (cx+stereo_offx+wx//2+ox,cy+wy//2) , (0,0,255)))
+    ox,oy=int(ret['offx']),int(ret['offy'])
+    twx,twy = config.track_params[:2]
+    draw_rectsl.append(((cx_off_t-twx//2+1,cy-twy//2+1) , (cx_off_t+twx//2-1,cy+twy//2-1) , (255,255,0)))
+    draw_rectsl.append(((cx_off_t-twx//2+ox,cy-twy//2+oy) , (cx_off_t+twx//2+ox,cy+twy//2+oy) , (255,0,255)))
+    for rectp in draw_rectsl:
+        cv2.rectangle(imgl,*rectp)
+    for rectp in draw_rectsr:
+        cv2.rectangle(imgr,*rectp)
 
 
 if __name__=="__main__":

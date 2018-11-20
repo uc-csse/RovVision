@@ -27,12 +27,12 @@ class Polygon:
         plt.imshow(imgs_raw[1])
         self.verts_list=[None]*len(imgs_raw)
         self.lasssos = [ LassoSelector(ax, self.on_select, button=3 ) for ax in self.sfigs ]
-        
-        
+
+
         axsave = plt.axes([0.8, 0.05, 0.1, 0.075])
         bsave = Button(axsave, 'Save')
         bsave.on_clicked(self.save)
-        
+
         axadd = plt.axes([0.7, 0.05, 0.1, 0.075])
         badd = Button(axadd, 'Add')
         badd.on_clicked(self.add)
@@ -70,7 +70,7 @@ class Polygon:
             for h in self.objects_hdls:
                 #print('----',h)
                 h[0].remove()
-        
+
         self.objects_hdls=[]
 
         h=self.objects_hdls
@@ -102,7 +102,7 @@ class Polygon:
             self.verts_list=[None]*len(self.verts_list)
             self.draw_objs()
             plt.draw()
-    
+
     def save(self,event):
         with open(self.data_fname,'wb') as fd:
             pickle.dump(self.object_list,fd)
@@ -117,7 +117,7 @@ class Polygon:
             obj['desc'] = self.text_box.text
             self.object_list.append(obj)
             print('len of object_list',len(self.object_list))
-            self.draw_objs() 
+            self.draw_objs()
             plt.draw()
             self.verts_list=[None]*len(self.verts_list)
 
@@ -138,9 +138,9 @@ class Polygon:
                 self.draw_objs(cind)
                 self.text_box.set_val(self.object_list[cind]['desc'])
                 plt.draw()
-            
+
         #plt.draw()
-        
+
 
 def plot_raw_images(imgs_raw,path,fnum):
     Polygon(imgs_raw,path,fnum)
@@ -148,6 +148,8 @@ def plot_raw_images(imgs_raw,path,fnum):
 def get_arr(hist,label):
     return np.array([(d['fnum'],d[label]) for d in hist if label in d])
 
+def get_arr_multi(hist,label):
+    return np.array([(d['fnum'],*d[label]) for d in hist if label in d])
 
 def plot_graphs(md_hist,vis_hist):
     fnums=[md['fnum'] for md in md_hist if 'fnum' in md]
@@ -156,28 +158,68 @@ def plot_graphs(md_hist,vis_hist):
     fb_pid=np.array([md['fb_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
     lr_cmd=[md['lr_cmd'] for md in md_hist if 'fnum' in md]
     lr_pid=np.array([md['lr_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
+    ud_cmd=[md['ud_cmd'] for md in md_hist if 'fnum' in md]
+    ud_pid=np.array([md['ud_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
+    yaw_cmd=[md['yaw_cmd'] for md in md_hist if 'fnum' in md]
+    yaw_pid=np.array([md['yaw_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
+    
 
     ranges=np.array([(vs['fnum'],vs['range']) for vs in vis_hist])
     avg_ranges=np.array([(vs['fnum'],vs['range_f']) for vs in vis_hist if 'range_f' in vs])
     dxs=np.array([(vs['fnum'],vs['dx']) for vs in vis_hist if 'dx' in vs])
-    
+
+    lock_yaw_depth = get_arr_multi(md_hist,'lock_yaw_depth')
+
 
     lock_state = get_arr(md_hist,'lock')
     lock_range = get_arr(md_hist,'lock_range')
+    depth = get_arr(md_hist,'depth')
+    climb = get_arr(md_hist,'climb')
 
     plt.figure('commands')
-    ax=plt.subplot(3,2,1)
+
+    ax=plt.subplot(4,2,1)
     plt.title('fb')
     plt.plot(fnums,fb_cmd,'-.+')
-    plt.plot(fnums,-fb_pid) # the direction is - 
+    plt.plot(fnums,-fb_pid) # the direction is -
     plt.legend(list('cpid'))
-    plt.subplot(3,2,3,sharex=ax)
+    plt.ylim(-500,500)
+
+    plt.subplot(4,2,3,sharex=ax)
     plt.title('lr')
     plt.plot(fnums,lr_cmd,'-.+')
     plt.plot(fnums,-lr_pid) #
     plt.legend(list('cpid'))
-    plt.subplot(3,2,5,sharex=ax)
-    
+    plt.ylim(-500,500)
+
+    ud_ax=plt.subplot(4,2,5,sharex=ax)
+    plt.title('ud')
+    ud_ax.plot(fnums,ud_cmd,'-.+')
+    ud_ax.plot(fnums,-ud_pid) #
+    ud_ax.legend(list('cpid'))
+    plt.ylim(-500,500)
+    if len(lock_yaw_depth)>0:
+        ud_ax2=ud_ax.twinx()
+        d=lock_yaw_depth[:,2]
+        ud_ax2.plot(lock_yaw_depth[:,0],d,'-k')
+        plt.ylim(d.min()-2,d.max()+2)
+
+    y_ax=plt.subplot(4,2,7,sharex=ax)
+    plt.title('yaw')
+    y_ax.plot(fnums,yaw_cmd,'-.+')
+    y_ax.plot(fnums,-yaw_pid) #
+    y_ax.legend(list('cpid'))
+    plt.ylim(-500,500)
+    if len(lock_yaw_depth)>0:
+        y_ax2=y_ax.twinx()
+        y=lock_yaw_depth[:,1]
+        y_ax2.plot(lock_yaw_depth[:,0],y,'-k')
+        plt.ylim(d.min()-2,d.max()+2)
+
+
+
+    plt.subplot(4,2,8,sharex=ax)
+
     for jax in [J.ud,J.lr,J.fb]:
         joy_ax=np.array([(md['fnum'],md['joy_axes'][jax]) for md in md_hist \
                 if 'joy_axes' in md and md['joy_axes'] is not None])
@@ -185,21 +227,30 @@ def plot_graphs(md_hist,vis_hist):
             plt.plot(joy_ax[:,0],joy_ax[:,1])
     plt.plot(lock_state[:,0],lock_state[:,1],'-.')
     plt.legend(['ud','lr','fb','lock'])
-    
+
     plt.title('joy axis')
     #plt.plot(fnums,js_gain)
-    
-    plt.subplot(3,2,2,sharex=ax)
+
+    plt.subplot(4,2,2,sharex=ax)
     plt.title('ranges')
     plt.plot(ranges[:,0],ranges[:,1])
     plt.plot(avg_ranges[:,0],avg_ranges[:,1])
-    plt.plot(lock_range[:,0],lock_range[:,1])
+    if len(lock_range):
+        plt.plot(lock_range[:,0],lock_range[:,1])
+    plt.ylim(-2,2)
     plt.legend(['r','rf','lr'])
 
     if len(dxs)>0:
-        plt.subplot(3,2,4,sharex=ax)
+        plt.subplot(4,2,4,sharex=ax)
         plt.title('dx')
         plt.plot(dxs[:,0],dxs[:,1])
+        plt.ylim(-0.3,3)
+
+
+    plt.subplot(4,2,6,sharex=ax)
+    plt.title('depth')
+    plt.plot(depth[:,0][1:],np.diff(depth[:,1]))
+    plt.plot(climb[:,0],-climb[:,1]/10.0)
 
 
     plt.show()

@@ -1,11 +1,13 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import config
+import traceback
 import controller
 import zmq
 import asyncio
 import pickle
-import time,os
+import time,os,sys
 import argparse
+import numpy as np
 from algs import pid
 import utils
 
@@ -15,23 +17,17 @@ args = parser.parse_args()
 
 topic_postition=config.topic_sitl_position_report
 
-context = zmq.Context()
-zmq_sub_joy = context.socket(zmq.SUB)
-zmq_sub_joy.connect("tcp://127.0.0.1:%d" % config.zmq_pub_joy)
-zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_button)
-zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_axes)
-zmq_sub_joy.setsockopt(zmq.SUBSCRIBE,config.topic_hat)
+subs_socks=[]
+subs_socks.append( utils.subscribe([ config.topic_button,config.topic_axes,config.topic_hat ],config.zmq_pub_joy))
+subs_socks.append( utils.subscribe([ config.topic_comp_vis ], config.zmq_pub_comp_vis))
+subs_socks.append( utils.subscribe([ config.topic_command ], config.zmq_pub_command))
 
-zmq_sub_v3d = context.socket(zmq.SUB)
-zmq_sub_v3d.connect("tcp://127.0.0.1:%d" % config.zmq_pub_comp_vis)
-zmq_sub_v3d.setsockopt(zmq.SUBSCRIBE,config.topic_comp_vis)
-
-
-socket_pub = context.socket(zmq.PUB)
-socket_pub.bind("tcp://127.0.0.1:%d" % config.zmq_pub_main )
+socket_pub = utils.publisher(config.zmq_pub_main)
 
 fb_dir=-1.0
 lr_dir=-1.0
+ud_dir=-1.0
+yaw_dir=-1.0
 
 from config import Joy_map as J
 
@@ -49,16 +45,18 @@ def get_temp():
     except:
         return -100
 
-## system states 
+## system states
 lock_state=False
+lock_yaw_depth_state=False
 lock_range=None
+lock_yaw_depth=None
 track_info = None
-joy_axes = None
+joy_axes = [0]*11
 
 async def get_zmq_events():
-    global lock_state,track_info, lock_range, joy_axes
+    global lock_state,track_info, lock_range, joy_axes, lock_yaw_depth,lock_yaw_depth_state
     while True:
-        socks=zmq.select([zmq_sub_joy,zmq_sub_v3d],[],[],0)[0]
+        socks=zmq.select(subs_socks,[],[],0)[0]
         for sock in socks:
             ret  = sock.recv_multipart()
             if ret[0]==config.topic_button:
@@ -73,6 +71,8 @@ async def get_zmq_events():
                         lock_state = True
                         lock_range = track_info['range_f']
                         print('lock range is',lock_range)
+                if data[4]==1:
+                    lock_yaw_depth_state = not lock_yaw_depth_state
                     #else:
                     #    lock_range = track_info['range']
                 controller.update_joy_buttons(data)
@@ -84,21 +84,30 @@ async def get_zmq_events():
             if ret[0]==config.topic_axes:
                 joy_axes=pickle.loads(ret[1])
                 #print('joy',joy_axes)
-               
+
             if ret[0]==config.topic_comp_vis:
                 track_info=pickle.loads(ret[1])
+
+            if ret[0]==config.topic_command:
+                try:
+                    exec(ret[1])
+                except:
+                    print('run command_fail')
+                    traceback.print_exc(file=sys.stdout)
                 #print('-------------topic',track_info)
-        await asyncio.sleep(0.001) 
+        await asyncio.sleep(0.001)
 
 start = time.time()
 async def control():
-    global lock_state,track_info,joy_axes
+    global lock_state,track_info,joy_axes,lock_yaw_depth
+    global ud_pid,lr_pid,fb_pid,yaw_pid
 
     ud_pid=pid.PID(*config.ud_params)
     lr_pid=pid.PID(*config.lr_params)
     fb_pid=pid.PID(*config.fb_params)
+    yaw_pid=pid.PID(*config.yaw_params)
 
-    ud_cmd,lr_cmd,fb_cmd = 0,0,0 
+    ud_cmd,lr_cmd,fb_cmd = 0,0,0
     yaw_cmd=0
 
     #lr_filt = utils.avg_win_filt(config.lr_filt_size)
@@ -106,34 +115,55 @@ async def control():
     telem['lr_pid']=(0,0,0)
     telem['fb_pid']=(0,0,0)
     telem['ud_pid']=(0,0,0)
+    telem['yaw_pid']=(0,0,0)
     cnt=0
     fnum=-1
+
     while 1:
+        if lock_yaw_depth_state and 'yaw' in telem and 'depth' in telem:
+            if lock_yaw_depth is None:
+                lock_yaw_depth=((np.degrees(telem['yaw'])+360)%360,telem['depth'])
+                ud_pid.reset()
+                print('lock yaw is {:.2f}'.format(lock_yaw_depth[0]))
+
+            joy_yaw = 0 if abs(joy_axes[J.yaw])<0.008 else joy_axes[J.yaw]
+            joy_deltas = joy_yaw*config.yaw_update_scale, joy_axes[J.ud]/1000.0*config.ud_update_scale
+            lock_yaw_depth=((lock_yaw_depth[0]+joy_deltas[0]+360)%360,lock_yaw_depth[1]+joy_deltas[1])
+
+            yaw_cmd = yaw_dir*yaw_pid(np.degrees(telem['yaw']),lock_yaw_depth[0], -np.degrees(telem['yawspeed'])/config.fps,-joy_yaw)
+            telem['yaw_pid']=(yaw_pid.p,yaw_pid.i,yaw_pid.d)
+
+            ud_cmd = ud_dir*ud_pid(telem['depth'],lock_yaw_depth[1],-telem['climb']/config.fps, joy_axes[J.ud])
+            telem['ud_pid']=(ud_pid.p,ud_pid.i,ud_pid.d)
+
+            telem['lock_yaw_depth']=lock_yaw_depth
+        else:
+            telem['lock_yaw_depth']=None
+            lock_yaw_depth = None
+            yaw_cmd=0
+            ud_cmd=0
+
         if track_info is not None and track_info['fnum']>fnum: #new frame to proccess
             fnum=track_info['fnum']
             #print('---',fnum,track_info['range_f'],lock_state)
             if lock_state:
-                if 'dy' in track_info: 
-                    dy_f=track_info['dy_f']
-                    ud_cmd = ud_pid(dy_f[0],0,dy_f[1])
+                #if 'dz' in track_info:
+                #    d_f=track_info['dz_f']
+                #    ud_cmd = ud_dir*ud_pid(d_f[0],0,d_f[1])
+                #    telem['ud_pid']=(ud_pid.p,ud_pid.i,ud_pid.d)
                     #ud_cmd=int(ud_cmd*2000+1500)
-                else:
-                    ud_pid.reset()
-                    #ud_cmd=1500
-                
-                if 'dx' in track_info: 
-                    dx_f=track_info['dx_f']
-                    #val=track_info['dx']
-                        #val=lr_filt(val)
-                    lr_cmd = lr_dir*lr_pid(dx_f[0],0,dx_f[1])
-                    #print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(lr_cmd,lr_pid.p,lr_pid.i,lr_pid.d))
+                #else:
+                #    ud_pid.reset()
+
+                if 'dy' in track_info:
+                    d_f=track_info['dy_f']
+                    lr_cmd = lr_dir*lr_pid(d_f[0],0,d_f[1])
                     telem['lr_pid']=(lr_pid.p,lr_pid.i,lr_pid.d)
                 else:
                     lr_pid.reset()
-                    #lr_filt.reset()
                     print('reset lr')
 
-                if 'range_f' in track_info: #range is relaible 
+                if 'range_f' in track_info: #range is relaible
                     fb_cmd = fb_dir*fb_pid(track_info['range_f'],lock_range, track_info['d_range_f'])
                     #print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(fb_cmd,fb_pid.p,fb_pid.i,fb_pid.d))
                     telem['fb_pid']=(fb_pid.p,fb_pid.i,fb_pid.d)
@@ -142,29 +172,42 @@ async def control():
                     lock_state=False
                     print('lost lock')
 
-                if not args.sim:
-                    ud_cmd=0
+                #if not args.sim:
+                #    ud_cmd=0
             else:
                 fb_pid.reset()
                 lr_pid.reset()
-                ud_pid.reset()
+                #ud_pid.reset()
                 #lr_filt.reset()
 
-                
-        if not lock_state or is_joy_override(joy_axes):
-            if joy_axes is None:
-                #print('Error joy_axes None',time.time())
-                ud_cmd,fb_cmd,lr_cmd=0,0,0
-            else:
-                #print('joy override',time.time())
-                ud_cmd,fb_cmd,lr_cmd,yaw_cmd=\
-                        -joy_axes[J.ud],-joy_axes[J.fb],joy_axes[J.lr],joy_axes[J.yaw]
+
+
+        if 0: #now only for testing purposes
+            if is_joy_override(joy_axes):
+                if joy_axes is None:
+                    #print('Error joy_axes None',time.time())
+                    ud_cmd,fb_cmd,lr_cmd=0,0,0
+                else:
+                    #print('joy override',time.time())
+                    ud_cmd,fb_cmd,lr_cmd,yaw_cmd=\
+                            -joy_axes[J.ud],-joy_axes[J.fb],joy_axes[J.lr],joy_axes[J.yaw]
+
+
+        if not lock_state and joy_axes is not None:
+            fb_cmd,lr_cmd = -joy_axes[J.fb],joy_axes[J.lr]
+
+        if not lock_yaw_depth and joy_axes is not None:
+            ud_cmd,yaw_cmd = -joy_axes[J.ud], joy_axes[J.yaw]
+
         controller.set_rcs(ud_cmd,yaw_cmd,fb_cmd,lr_cmd)
-        
+
         to_pwm=controller.to_pwm
+
+        telem.update(controller.nav_data)
 
         telem.update({
             'ud_cmd':to_pwm(ud_cmd),
+            'yaw_cmd':to_pwm(yaw_cmd),
             'lr_cmd':to_pwm(lr_cmd*controller.js_gain),
             'fb_cmd':to_pwm(fb_cmd*controller.js_gain),
             'fnum':fnum,
@@ -172,11 +215,11 @@ async def control():
 
         if cnt%100==0: #every 10 sec
             telem['temp']=get_temp()
-        telem.update({'ts':time.time()-start, 'lock':lock_state, 'joy_axes':joy_axes}) 
+        telem.update({'ts':time.time()-start, 'lock':lock_state, 'joy_axes':joy_axes})
         if fnum>-1:
-            socket_pub.send_multipart([config.topic_main_telem,pickle.dumps(telem,-1)]) 
+            socket_pub.send_multipart([config.topic_main_telem,pickle.dumps(telem,-1)])
         cnt+=1
-        await asyncio.sleep(0.05)#~20hz control 
+        await asyncio.sleep(0.05)#~20hz control
 
 def is_joy_override(joy_axes):
     if joy_axes is None:
@@ -197,4 +240,3 @@ if __name__=='__main__':
         control(),
         ))
     loop.close()
-

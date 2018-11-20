@@ -5,23 +5,32 @@ def draw_txt(img,vd,md):
     font = cv2.FONT_HERSHEY_SIMPLEX
     #print('-2-',md)
     if 'ts' in md and 'range' in vd and 'temp' in md:
-        rng = vd.get('range_f',vd['range']) 
+        rng = vd.get('range_f',vd['range'])
         if rng >20 or rng<0:
             rng=-1
         line1='{:4.1f}s R{:3.2f}m {:3.1f}C'.format(md['ts'],rng,md['temp'])
         cv2.putText(img,line1,(10,50), font, 0.5,(0,0,255),1,cv2.LINE_AA)
 
-    if 'lock' in md and md['lock'] and 'lock_range' in md: 
+    if 'lock' in md and md['lock'] and 'lock_range' in md:
         line2='{:>4}bf {:4.2f}LR'.format(md['fb_cmd'],md['lock_range'])
         if 'ud_cmd' in md:
             line2+=' {:>4}ud {:>4}lr'.format(md['ud_cmd'],md['lr_cmd'])
         cv2.putText(img,line2,(10,100), font, 0.5,(0,0,255),1,cv2.LINE_AA)
+
+    if  md.get('lock_yaw_depth',None) is not None:
+        if 'ud_cmd' in md and 'yaw_cmd' in md:
+            line2=' {:>4}ud {:>4}yaw '.format(md['ud_cmd'],md['yaw_cmd'])
+            line2+=' {:03.1f}YL {:03.2f}DL '.format(*md['lock_yaw_depth'])
+            cv2.putText(img,line2,(10,130), font, 0.5,(0,0,255),1,cv2.LINE_AA)
+
+
     if vd.get('record_state',False):
         cv2.putText(img,'REC '+vd['disk_usage'],(10,200),font, 0.5,(0,0,255),1,cv2.LINE_AA)
     if 'fnum' in vd:
         line=' {:>8}'.format(vd['fnum'])
         cv2.putText(img,line,(10,500), font, 0.5,(0,0,255),1,cv2.LINE_AA)
+    if 'heading' in md:
+        line='H {:05.1f} D {:06.2f}'.format(md['heading'],md['depth'])
+        cv2.putText(img,line,(10,480), font, 0.5,(0,0,255),1,cv2.LINE_AA)
 
     #cv2.putText(img,data_lines['last_cmd_str'][1],(10,250), font, 0.4,(0,0,255),1,cv2.LINE_AA)
-
-

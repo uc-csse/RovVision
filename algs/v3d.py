@@ -10,7 +10,7 @@ import numpy as np
 import pickle
 import select
 
-import tracker
+import tracker2 as tracker
 import gst
 import config
 import utils
@@ -72,8 +72,9 @@ def listener():
     fmt_cnt_l=-1
     fmt_cnt_r=-2
     keep_running=True
-    track=None
-    lock=False
+    #track=None
+    track=tracker.StereoTrack()
+    gotlock=False
     last_usage_test=time.time()
     disk_usage=get_disk_usage()
     fd=None
@@ -91,7 +92,7 @@ def listener():
                     #print('init tracker')
                     #track = tracker.run_Trackers()
                     #track.__next__()
-                    lock=True
+                    gotlock=True
                 if data[config.joy_save]==1 and args.save:
                     record_state = not record_state
                     print('recording ',record_state)
@@ -136,26 +137,19 @@ def listener():
                     img=imgl
                 
                 ###################################################################### 
-                wx,wy=config.stereo_corr_params['ws']
-                stereo_offx=config.stereo_corr_params['ofx'] #correct search position onright image
-                cx = img.shape[1]//2
-                cx_off_t = cx+config.track_offx
-                cy = img.shape[0]//2
-                #draw_rectsr=[((cx-wx//2,cy-wy//2) , (cx+wx//2,cy+wy//2) , (0,255,255))]
-                draw_rectsr=[] 
-                draw_rectsl=[((cx+stereo_offx-wx//2,cy-wy//2) , (cx+stereo_offx+wx//2,cy+wy//2) , (0,0,255))]
-                if track is None:
+                if track is None: #old tracker
                     track = tracker.run_Trackers()
                     track.__next__()
                 else:
                     tic=time.time()
-                    ret=track.send((imgl,imgr,'lock' if lock else None))
-                    if lock:
-                        lock=False
+                    if gotlock:
+                        track.reset()
+                        gotlock=False
+                    
+                    ret=track(imgl,imgr)
+                    #ret=track.send((imgl,imgr,'lock' if lock else None))
                     toc=time.time()
                     ret['ts']=toc 
-                    ret['draw_rectsl']=draw_rectsl
-                    ret['draw_rectsr']=draw_rectsr
                     ret['record_state']=record_state
                     if record_state:
                         ret['record_date_str']=date_str
@@ -163,19 +157,14 @@ def listener():
                     ret['fnum']=fmt_cnt_l
                     ret['send_cnt']=gst.send_cnt.copy()
 
-                    ox=int(ret['disp'])                    
-                    draw_rectsr.append(((cx+stereo_offx-wx//2+ox,cy-wy//2) , (cx+stereo_offx+wx//2+ox,cy+wy//2) , (0,0,255)))
-                    ox,oy=int(ret['offx']),int(ret['offy'])
-                    draw_rectsl.append(((cx_off_t-wx//2+1,cy-wy//2+1) , (cx_off_t+wx//2-1,cy+wy//2-1) , (255,255,0)))
-                    draw_rectsl.append(((cx_off_t-wx//2+ox,cy-wy//2+oy) , (cx_off_t+wx//2+ox,cy+wy//2+oy) , (255,0,255)))
                     socket_pub.send_multipart([config.topic_comp_vis,pickle.dumps(ret,-1)])
                     if record_state:
                         pickle.dump([config.topic_comp_vis,ret],data_fd,-1)
 
-                    pline = 'F{:06} SNR{:5.2f} RG{:5.2f} OF {:3.2f},{:3.2f},     ftime {:3.3f}ms'.\
-                            format(fmt_cnt_l,ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000)
-                    if 'dx' in ret:
-                        pline+=' DX{:5.3f} DY{:5.3f}'.format(ret['dx'],ret['dy'])
+                    #pline = 'F{:06} SNR{:5.2f} RG{:5.2f} OF {:3.2f},{:3.2f},     ftime {:3.3f}ms'.\
+                    #        format(fmt_cnt_l,ret['snr_corr'],ret['range'],ret['offx'],ret['offy'],(toc-tic)*1000)
+                    #if 'dx' in ret:
+                    #    pline+=' DX{:5.3f} DY{:5.3f}'.format(ret['dx'],ret['dy'])
 
                 ######################################################################
                 if  args.gst:

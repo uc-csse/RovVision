@@ -1,6 +1,6 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import glob
-import time
+import time,sys
 from subprocess import Popen
 cmdfmt="convert {0}.ppm  /tmp/tmp{1}.png && cwebp -quiet -mt -q 90  /tmp/tmp{1}.png -o {0}.webp && rm {0}.ppm"
 flist = glob.glob('*/*.ppm')
@@ -14,6 +14,7 @@ for ind,f in enumerate(flist):
         for i,pr in enumerate(pl):
             st=pr.poll()
             #print('---',st)
+            cmd=''
             if st==0:
                 print(f,ind,'/',len(flist))
                 cmd=cmdfmt.format(f[:-4],i)
@@ -26,7 +27,8 @@ for ind,f in enumerate(flist):
                 pass
             else:
                 print('got error code',st)
-                sys.exit(-1)
+                print(cmd)
+                sys.exit(0)
         if found_free:
             time.sleep(0.01)
             break

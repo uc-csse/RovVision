@@ -25,7 +25,7 @@ import explore
 import tracker2 as tracker
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--nowait",help="run all not wait for keyboard untill framenum or 0 till the end", default=-1, type=int)
+parser.add_argument("--nowait",help="run all not wait for keyboard untill framenum or 0 till the end", default=0, type=int)
 parser.add_argument("--nosingle",help="dont use the single files only the stream", action='store_true')
 parser.add_argument("--nosync", help="dont sync videos", action='store_true')
 parser.add_argument("--novid", help="ignore video", action='store_true')
@@ -69,7 +69,7 @@ def get_first_and_last(pkl_file):
                 start=vis_data['fnum']
             end=vis_data['fnum']
     return start,end
- 
+
 
 def enhance(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
@@ -101,7 +101,7 @@ if __name__=='__main__':
     from_buff=False
     save_avi = None
 
-    track = None 
+    track = None
     lock = False
 
     while 1:
@@ -191,12 +191,12 @@ if __name__=='__main__':
                     #images[i]=cv2.imread(fname)[:,:,::-1].copy()
                 if imgs_raw[i] is None:
                     imgs_raw[i]=images[i].copy()#[:,:,::-1].copy()
-                imgs_raw[i]=imgs_raw[i][:,:,::-1] 
-            if args.runtracker:     
+                imgs_raw[i]=imgs_raw[i][:,:,::-1]
+            if args.runtracker:
                 if track is None:
                     #track = tracker.run_Trackers()
                     #track.__next__()
-                    track = tracker.StereoTrack() 
+                    track = tracker.StereoTrack()
                 else:
                     tic=time.time()
                     #ret=track.send((images[0],images[1],'lock' if lock else None))
@@ -206,20 +206,15 @@ if __name__=='__main__':
                         lock=False
                     toc=time.time()
                     #print('run track took {} {:4.1f} msec'.format(fcnt,(toc-tic)*1000))
-                    tracker.draw_track_rects(ret,images[0],images[1])
+                    images_copy=(images[0].copy(),images[1].copy())
+                    tracker.draw_track_rects(ret,images_copy[0],images_copy[1])
+                    join[:,0:sx,:]=images_copy[0]
+                    join[:,sx:,:]=images_copy[1]
 
             else:
                 tracker.draw_track_rects(vis_data,images[0],images[1])
-            #if 'draw_rectsl' in vis_data:
-            #    for rectp in vis_data['draw_rectsr']:
-            #        cv2.rectangle(images[1],*rectp)
-            #    for rectp in vis_data['draw_rectsl']:
-            #        cv2.rectangle(images[0],*rectp)
-            
-
-            #print(images[0].shape,join.shape)
-            join[:,0:sx,:]=images[0]#[:,:,::-1]
-            join[:,sx:,:]=images[1]#[:,:,::-1]
+                join[:,0:sx,:]=images[0]
+                join[:,sx:,:]=images[1]
 
             draw_txt(join,vis_data,main_data)
             if explore.is_data_file(args.path,fcnt):
@@ -248,8 +243,8 @@ if __name__=='__main__':
         if k%256==ord('p'):
             explore.plot_graphs(main_data_hist,vis_data_hist)
         if k%256==8:
-            fcnt-=1 
-        if k%256==ord(' '):     
+            fcnt-=1
+        if k%256==ord(' '):
             fcnt+=1
         if k%258==ord('x'):
             cv2.imwrite('out{:08d}.png'.format(fcnt),join)
@@ -261,7 +256,7 @@ if __name__=='__main__':
             #fourcc = cv2.VideoWriter_fourcc(
             save_avi = cv2.VideoWriter('./output.avi', fourcc , 20.0, (save_sx,save_sy))
         if k%256==ord('t'):
-            track.debug=True
+            track.debug=fcnt
     if save_avi is not None:
         save_avi.release()
         print('to convert to webm run:')
@@ -271,4 +266,3 @@ if __name__=='__main__':
 ### fmt_cnt_l,imgl,imgr=imgget.__next__()
 ###                fmt_cnt_r=fmt_cnt_l
 ###                img=imgl
-

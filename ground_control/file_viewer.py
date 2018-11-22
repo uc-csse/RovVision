@@ -206,20 +206,15 @@ if __name__=='__main__':
                         lock=False
                     toc=time.time()
                     #print('run track took {} {:4.1f} msec'.format(fcnt,(toc-tic)*1000))
-                    tracker.draw_track_rects(ret,images[0],images[1])
+                    images_copy=(images[0].copy(),images[0].copy())
+                    tracker.draw_track_rects(ret,images_copy[0],images_copy[1])
+                    join[:,0:sx,:]=images_copy[0]
+                    join[:,sx:,:]=images_copy[1]
 
             else:
                 tracker.draw_track_rects(vis_data,images[0],images[1])
-            #if 'draw_rectsl' in vis_data:
-            #    for rectp in vis_data['draw_rectsr']:
-            #        cv2.rectangle(images[1],*rectp)
-            #    for rectp in vis_data['draw_rectsl']:
-            #        cv2.rectangle(images[0],*rectp)
-
-
-            #print(images[0].shape,join.shape)
-            join[:,0:sx,:]=images[0]#[:,:,::-1]
-            join[:,sx:,:]=images[1]#[:,:,::-1]
+                join[:,0:sx,:]=images[0]
+                join[:,sx:,:]=images[1]
 
             draw_txt(join,vis_data,main_data)
             if explore.is_data_file(args.path,fcnt):
@@ -261,7 +256,7 @@ if __name__=='__main__':
             #fourcc = cv2.VideoWriter_fourcc(
             save_avi = cv2.VideoWriter('./output.avi', fourcc , 20.0, (save_sx,save_sy))
         if k%256==ord('t'):
-            track.debug=True
+            track.debug=fcnt
     if save_avi is not None:
         save_avi.release()
         print('to convert to webm run:')

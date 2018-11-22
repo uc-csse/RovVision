@@ -2,9 +2,9 @@
 import glob
 import time,sys
 from subprocess import Popen
-cmdfmt="convert {0}.ppm  /tmp/tmp{1}.png && cwebp -quiet -mt -q 90  /tmp/tmp{1}.png -o {0}.webp && rm {0}.ppm"
+cmdfmt="convert {0}.ppm  /tmp/tmp{1}.png && cwebp -lossless -quiet -mt -q 90  /tmp/tmp{1}.png -o {0}.webp && rm {0}.ppm"
 flist = glob.glob('*/*.ppm')
-pl=[Popen('sleep 1'.split()) for _ in range(6)]
+pl=[Popen('sleep 1'.split()) for _ in range(4)]
 print('files to convert',len(flist))
 for ind,f in enumerate(flist):
     print(ind,f)
@@ -35,4 +35,3 @@ for ind,f in enumerate(flist):
         else:
             time.sleep(0.2)
             #print('sleep')
-

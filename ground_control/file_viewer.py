@@ -206,7 +206,7 @@ if __name__=='__main__':
                         lock=False
                     toc=time.time()
                     #print('run track took {} {:4.1f} msec'.format(fcnt,(toc-tic)*1000))
-                    images_copy=(images[0].copy(),images[0].copy())
+                    images_copy=(images[0].copy(),images[1].copy())
                     tracker.draw_track_rects(ret,images_copy[0],images_copy[1])
                     join[:,0:sx,:]=images_copy[0]
                     join[:,sx:,:]=images_copy[1]

@@ -1,6 +1,5 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import config
-import controller
 import zmq
 
 import utils

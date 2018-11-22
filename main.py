@@ -20,7 +20,7 @@ topic_postition=config.topic_sitl_position_report
 subs_socks=[]
 subs_socks.append( utils.subscribe([ config.topic_button,config.topic_axes,config.topic_hat ],config.zmq_pub_joy))
 subs_socks.append( utils.subscribe([ config.topic_comp_vis ], config.zmq_pub_comp_vis))
-subs_socks.append( utils.subscribe([ config.topic_command ], config.zmq_pub_command)) 
+subs_socks.append( utils.subscribe([ config.topic_command ], config.zmq_pub_command))
 
 socket_pub = utils.publisher(config.zmq_pub_main)
 
@@ -126,15 +126,16 @@ async def control():
                 ud_pid.reset()
                 print('lock yaw is {:.2f}'.format(lock_yaw_depth[0]))
 
-            joy_deltas = joy_axes[J.yaw]*config.yaw_update_scale, joy_axes[J.ud]/1000.0*config.ud_update_scale
+            joy_yaw = 0 if abs(joy_axes[J.yaw])<0.008 else joy_axes[J.yaw]
+            joy_deltas = joy_yaw*config.yaw_update_scale, joy_axes[J.ud]/1000.0*config.ud_update_scale
             lock_yaw_depth=((lock_yaw_depth[0]+joy_deltas[0]+360)%360,lock_yaw_depth[1]+joy_deltas[1])
 
-            yaw_cmd = yaw_dir*yaw_pid(np.degrees(telem['yaw']),lock_yaw_depth[0], -np.degrees(telem['yawspeed'])/config.fps,-joy_axes[J.yaw])
+            yaw_cmd = yaw_dir*yaw_pid(np.degrees(telem['yaw']),lock_yaw_depth[0], -np.degrees(telem['yawspeed'])/config.fps,-joy_yaw)
             telem['yaw_pid']=(yaw_pid.p,yaw_pid.i,yaw_pid.d)
-            
+
             ud_cmd = ud_dir*ud_pid(telem['depth'],lock_yaw_depth[1],-telem['climb']/config.fps, joy_axes[J.ud])
             telem['ud_pid']=(ud_pid.p,ud_pid.i,ud_pid.d)
-            
+
             telem['lock_yaw_depth']=lock_yaw_depth
         else:
             telem['lock_yaw_depth']=None

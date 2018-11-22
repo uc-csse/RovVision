@@ -174,7 +174,7 @@ if __name__=='__main__':
         if fcnt >0 and images[0] is not None and images[1] is not None:
             #if 1 or not  from_buff:
             for i in [0,1]:
-                if not args.nosingle:
+                if not args.nosingle and args.nowait > fcnt:
                     for ext in ['.ppm','.png','.webp']:
                         fname=file_path_fmt.format('lr'[i],fcnt)+ext
                         if os.path.isfile(fname):

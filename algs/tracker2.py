@@ -65,6 +65,7 @@ class StereoTrack():
         patern=imgl[u1:d1,l1:r1]
         self.corr_ref_pat=patern.copy()
         self.new_ref=True #sending new reference flag
+
         #print('init----leftcorr')
 
 
@@ -185,7 +186,8 @@ class StereoTrack():
         wx,wy = self.wx,self.wy
         sx,sy = 30,30
 
-        if abs(pt_l[1]-pt_r[1])>=2: #not supposed to be a diffrence in hight in stereo
+        if abs(pt_l[1]-pt_r[1])>=5: #not supposed to be a diffrence in hight in stereo
+            print('track stereo fail ',pt_l[1]-pt_r[1])
             return False
 
 
@@ -203,7 +205,7 @@ class StereoTrack():
         x=x - sx
         y=y - sy
 
-        if abs(x) <= 4 and abs(y)<=4:
+        if abs(x) <= 15 and abs(y)<=15:
             return True
         print('valid failed ',x,y)
         return False

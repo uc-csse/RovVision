@@ -102,7 +102,7 @@ async def control():
     global lock_state,track_info,joy_axes,lock_yaw_depth
     global ud_pid,lr_pid,fb_pid,yaw_pid
 
-    ud_pid=pid.PID(*config.ud_params)
+    ud_pid=pid.PID(*config.ud_params,**config.ud_params_k)
     lr_pid=pid.PID(*config.lr_params)
     fb_pid=pid.PID(*config.fb_params)
     yaw_pid=pid.PID(*config.yaw_params)

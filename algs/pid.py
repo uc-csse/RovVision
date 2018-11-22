@@ -9,20 +9,21 @@ def getDiffAng(a, b):
     return r
 
 class PID(object):
-    def __init__(self,P,I,D,limit,step_limit,i_limit,FF=0,angle_deg_type=False):
+    def __init__(self,P,I,D,limit,step_limit,i_limit,FF=0,angle_deg_type=False,initial_i=0):
         self.P=P
         self.I=I
         self.D=D
         self.step_limit=step_limit
         self.limit=limit
         self.i_limit=i_limit
+        self.initial_i=initial_i
         self.FF=FF
         self.angle_deg_type=angle_deg_type
         self.reset()
         self.d_iir=0.0 # to be removed
 
     def reset(self):
-        self.i=0
+        self.i=self.initial_i
         self.current_state=None
         self.prev_state=None
         self.target=None
@@ -55,7 +56,7 @@ class PID(object):
         return self.command
 
     def __str__(self):
-        line='PID:{:.2f},{:.2f},{:.2f} err={:.2f} target={:.2f} pid:{:.2f},{:.2f},{:.2f}'
+        line='PID:{:.3f},{:.5f},{:.3f} err={:.2f} target={:.2f} pid:{:.2f},{:.2f},{:.2f}'
         return line.format(self.P,self.I,self.D,self.err,self.target,self.p,self.i,self.d)
 
 if __name__=='__main__':

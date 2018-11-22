@@ -10,8 +10,14 @@ import config
 import utils
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--ud",help="ud pid plot", action='store_true')
+parser.add_argument("--yaw",help="yaw pid plot", action='store_true')
+parser.add_argument("--fb",help="fb pid plot", action='store_true')
+parser.add_argument("--lr",help="lr pid plot", action='store_true')
 args = parser.parse_args()
 
+grid_h = sum([(1 if a else 0)*2 for a in (args.ud,args.yaw,args.fb,args.lr)])
+print('grid_h',grid_h)
 subs_socks=[]
 subs_socks.append(utils.subscribe([config.topic_main_telem,config.topic_comp_vis],config.zmq_local_route))
 
@@ -72,7 +78,7 @@ def update_graph(axes):
                     pass
 
     if not pause_satus and new_data:
-        for i,l in enumerate(pid_labels):
+        for i,l in enumerate(labels):
             update_pid(ax_pid_hdls[i],l)
         axes.figure.canvas.draw()
 
@@ -90,25 +96,37 @@ def center(evt):
     gdata.map_center = gdata.curr_pos.copy()
 
 def plot_pid(pid_label,grid_size,grid_pos):
-    ax=plt.subplot2grid(grid_size, grid_pos)
+    ax=plt.subplot2grid(grid_size, (grid_pos,0))
     plt.title(pid_label)
     hdls=[ax.plot([1],'-b'),ax.plot([1],'-g'),ax.plot([1],'-r')]
     plt.legend(list('pid'),loc='upper left')
     plt.grid('on')
-    return (ax,*hdls)
 
-def update_pid(ax_hdls,pid_label):
+    ax2=plt.subplot2grid(grid_size, (grid_pos+1,0))
+    plt.title(pid_label + ' cmd')
+    hdls2=[ax2.plot([1],'-b')]#,ax.plot([1],'-g'),ax.plot([1],'-r')]
+    plt.legend(list('ced'),loc='upper left')
+    plt.grid('on')
+
+
+    return ((ax,*hdls),(ax2,*hdls2))
+
+def update_pid(ax_hdls,label):
     xs = np.arange(len(gdata.md_hist))
-    ax,hdls = ax_hdls[0],ax_hdls[1:]
-    pid_data=gdata.md_hist.get_data(pid_label)
+    ax,hdls = ax_hdls[0][0],ax_hdls[0][1:]
+    pid_data=gdata.md_hist.get_data(label+'_pid')
     for i in [0,1,2]:
         hdls[i][0].set_ydata(pid_data[:,i+1])
         hdls[i][0].set_xdata(xs)
     ax.set_xlim(len(gdata.md_hist)-400,len(gdata.md_hist))
     ax.set_ylim(-1,1)
 
-
-
+    ax2,hdls2 = ax_hdls[1][0],ax_hdls[1][1:]
+    cmd_data=gdata.md_hist.get_data(label+'_cmd')
+    hdls2[0][0].set_xdata(xs)
+    hdls2[0][0].set_ydata(cmd_data[:,1])
+    ax2.set_xlim(len(gdata.md_hist)-400,len(gdata.md_hist))
+    ax2.set_ylim(-300,300)
 
 from matplotlib.widgets import Button
 
@@ -129,8 +147,8 @@ bnclear.on_clicked(clear)
 bncenter = Button(axcenter, 'Center')
 bncenter.on_clicked(center)
 
-grid_size=(4,1)
-pid_labels=['ud_pid','yaw_pid','fb_pid','lr_pid']
-ax_pid_hdls=[plot_pid(l,grid_size,(i,0)) for i,l in enumerate(pid_labels)]
+grid_size=(grid_h,1)
+labels=[a for a in ['ud','yaw','fb','lr'] if eval('args.'+a)]
+ax_pid_hdls=[plot_pid(l,grid_size,i*2) for i,l in enumerate(labels)]
 
 plt.show()

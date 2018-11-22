@@ -8,4 +8,4 @@ cd ~/data
 rsync -avzu -e "ssh" 181121-11* username@linux.cosc.canterbury.ac.nz:/home/cosc/research/CVlab/bluerov_data/
 
 #only pickles
-rsync -avzu --excluse * --include *.pkl -e "ssh" 181121-11* username@linux.cosc.canterbury.ac.nz:/home/cosc/research/CVlab/bluerov_data/
+rsync -avzu --include="*/"  --include="*.pkl" --exclude="*"  -e "ssh" 181121-11* username@linux.cosc.canterbury.ac.nz:/home/cosc/research/CVlab/bluerov_data/

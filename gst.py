@@ -17,14 +17,14 @@ def init_gst(sx,sy,npipes):
     if 0: #h264 stream
         cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=300 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
         gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
-    
+
     if 1:
         #cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=15 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
-        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=50 ! tcpserversink port={}"
+        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=400 key-int-max=50 ! tcpserversink port={}"
         gstsrc = 'fdsrc ! videoparse width={} height={} format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
     if 0:
         gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
-       
+
         cmd="gst-launch-1.0 {} ! jpegenc quality=20 ! rtpjpegpay ! udpsink host=192.168.2.1 port={}"
 
     gst_pipes=[]
@@ -57,7 +57,7 @@ def init_gst_reader(npipes):
         ' h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! filesink location=fifo_raw_{}  sync=false'
     if 0:
         cmd='gst-launch-1.0 -q udpsrc port={} ! application/x-rtp,encoding-name=JPEG,payload=26 ! rtpjpegdepay ! jpegdec ! videoconvert ! video/x-raw,height={},width={},format=RGB ! fdsink'
-    
+
     gst_pipes=[]
     gst_pipes_264=[]
     os.system('rm fifo_*')
@@ -74,7 +74,7 @@ def init_gst_reader(npipes):
         cmds.append(gcmd)
         gst_pipes_264.append(r)
         gst_pipes.append(r1)
-    for cmd in cmds: #start together 
+    for cmd in cmds: #start together
         Popen(cmd, shell=True, bufsize=0)
 
 images=[None,None]
@@ -119,7 +119,7 @@ def read_image_from_pipe(p, prevcnt=-1):
             fmt_cnt = prevcnt+1
     else:
         #print('Error no data')
-        return None,-1 
+        return None,-1
     return img,fmt_cnt
 
 def gst_file_reader(path, nosync):
@@ -128,7 +128,7 @@ def gst_file_reader(path, nosync):
         ' h264parse ! decodebin ! videoconvert ! video/x-raw,height={},width={},format=RGB ! filesink location=fifo_raw_{}  sync=false'
     gst_pipes=[]
     os.system('rm fifo_raw_*')
-  
+
     for i in [0,1]:
         fname_raw='fifo_raw_'+'lr'[i]
         os.mkfifo(fname_raw)
@@ -138,8 +138,8 @@ def gst_file_reader(path, nosync):
         print(gcmd)
         gst_pipes.append(r1)
         Popen(gcmd, shell=True)
-    
-    prevcnt=-1 
+
+    prevcnt=-1
     while 1:
         if len(select.select(gst_pipes,[],[],0.1)[0])==len(gst_pipes):
             im1,cnt1=read_image_from_pipe(gst_pipes[0],prevcnt)
@@ -151,12 +151,9 @@ def gst_file_reader(path, nosync):
                         im1,cnt1=read_image_from_pipe(gst_pipes[0],prevcnt)
                     while cnt1>cnt2:
                         im2,cnt2=read_image_from_pipe(gst_pipes[1],prevcnt)
-            images=[im1,im2] 
+            images=[im1,im2]
             prevcnt = cnt1
             yield images,cnt1
         else:
             time.sleep(0.001)
             yield None,-1
-
-
-

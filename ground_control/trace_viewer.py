@@ -71,8 +71,8 @@ def update_graph(axes):
                 data=pickle.loads(ret[1])
                 if ret[0]==config.topic_main_telem:
                     if 'heading' in data:
-                        #print('---',data['heading'])
-                        h = -np.radians(data['heading']+90)
+                        #print('---',data['heading']+90,data['yaw']/np.pi*180+90)
+                        h = -(data['yaw']+np.pi/2)
                         ch = np.cos(h)
                         sh = np.sin(h)
                         gdata.heading_rot = np.array([
@@ -90,7 +90,7 @@ def update_graph(axes):
                         x,y,z=t_arr
                         t_arr = (xf(x)[0],yf(y)[0],zf(z)[0])
                         gdata.trace_hist.add(t_arr)
-                        t_arr_r=(gdata.heading_rot @ t_arr).flatten()  
+                        t_arr_r=(gdata.heading_rot @ t_arr).flatten()
                         #import pdb;pdb.set_trace()
                         if gdata.curr_pos is None:
                             gdata.curr_pos=t_arr_r
@@ -100,11 +100,11 @@ def update_graph(axes):
                         #print('===',data['fnum'],t_arr[1])
                         gdata.pos_hist.add(gdata.curr_pos.copy())
                         pos_arr=gdata.pos_hist()
-                        
+
                         trace_arr=gdata.trace_hist()
-         
+
     if not pause_satus and new_data:
-        xs = np.arange(len(gdata.trace_hist)) 
+        xs = np.arange(len(gdata.trace_hist))
         hdl_pos[0].set_ydata(pos_arr[:,1])
         hdl_pos[0].set_xdata(pos_arr[:,0])
         #hdl_last_pos
@@ -115,12 +115,12 @@ def update_graph(axes):
         ax2.set_ylim(-0.2*4,0.2*4)
         hdl_arrow.remove()
         hdl_arrow = ax1.arrow(gdata.curr_pos[0],gdata.curr_pos[1],-ch*0.1,-sh*0.1,width=0.1)
-        
+
         cx,cy = gdata.map_center[:2]
         ax1.set_xlim(-rad+cx,rad+cx)
         ax1.set_ylim(-rad+cy,rad+cy)
 
-        xs = np.arange(len(gdata.range_arr)) 
+        xs = np.arange(len(gdata.range_arr))
         hdl_range[0][0].set_xdata(xs)
         #print(pos_arr[:,2][-3:])
         hdl_range[0][0].set_ydata(gdata.range_arr.buf)
@@ -160,11 +160,11 @@ hdl_arrow = ax1.arrow(1,1,0.5,0.5,width=0.1)
 ax2=plt.subplot2grid((3,2), (0,0))
 plt.title('trace not oriented')
 plt.legend(list('xyz'))
-hdl_trace = [ax2.plot([1],'-r'),ax2.plot([1],'-g'),ax2.plot([1],'-b')] 
+hdl_trace = [ax2.plot([1],'-r'),ax2.plot([1],'-g'),ax2.plot([1],'-b')]
 
 ax3=plt.subplot2grid((3,2), (1,0))
 plt.title('ground range')
-hdl_range  = [ax3.plot([1],'-')] 
+hdl_range  = [ax3.plot([1],'-')]
 plt.grid('on')
 
 

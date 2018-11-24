@@ -2,7 +2,8 @@
 import numpy as np
 import os
 
-camera_pitch = np.radians(0) # camera installation pitch in rad
+camera_pitch = np.radians(45) # camera installation pitch in rad
+ground_range_lock = 1.0 # 1 meter -1 to ignore
 #pubsub
 #zmq_pub_drone_fdm=('127.0.0.1',5566)
 #zmq_pub_drone_fdm=('127.0.0.1',12466)

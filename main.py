@@ -98,9 +98,11 @@ async def get_zmq_events():
         await asyncio.sleep(0.001)
 
 start = time.time()
+ground_range_lock = config.ground_range_lock
 async def control():
     global lock_state,track_info,joy_axes,lock_yaw_depth
-    global ud_pid,lr_pid,fb_pid,yaw_pid
+
+    global ud_pid,lr_pid,fb_pid,yaw_pid,ground_range_lock
 
     ud_pid=pid.PID(*config.ud_params,**config.ud_params_k)
     lr_pid=pid.PID(*config.lr_params)
@@ -127,18 +129,41 @@ async def control():
                 print('lock yaw is {:.2f}'.format(lock_yaw_depth[0]))
 
             joy_yaw = 0 if abs(joy_axes[J.yaw])<0.008 else joy_axes[J.yaw]
-            joy_deltas = joy_yaw*config.yaw_update_scale, joy_axes[J.ud]/1000.0*config.ud_update_scale
+
+            ud_update = joy_axes[J.ud]/1000.0*config.ud_update_scale
+
+            ground_range=-1
+            if track_info is not None and 'range_z' in track_info and config.camera_pitch>np.radians(25):
+                ground_range=-track_info['range_z']
+
+            #print('---',abs(joy_axes[J.ud]),ground_range,ground_range_lock)
+            if abs(joy_axes[J.ud])<0.1 and ground_range>-1 and ground_range_lock > 0:
+                range_delta=ground_range_lock-ground_range
+                depth_delta=lock_yaw_depth[1]-telem['depth']
+
+                #print(range_delta,depth_delta)
+                #if range_delta>0 and depth_delta>
+
+                if range_delta>0 and depth_delta>-0.1:
+                    ud_update-=0.01 # 1cm update less depth
+
+                if range_delta<0 and depth_delta<0.1:
+                    ud_update+=0.01
+
+
+            joy_deltas = (joy_yaw*config.yaw_update_scale, ud_update)
             lock_yaw_depth=((lock_yaw_depth[0]+joy_deltas[0]+360)%360,lock_yaw_depth[1]+joy_deltas[1])
 
             yaw_cmd = yaw_dir*yaw_pid(np.degrees(telem['yaw']),lock_yaw_depth[0], -np.degrees(telem['yawspeed'])/config.fps,-joy_yaw)
             telem['yaw_pid']=(yaw_pid.p,yaw_pid.i,yaw_pid.d)
 
+
             ud_cmd = ud_dir*ud_pid(telem['depth'],lock_yaw_depth[1],-telem['climb']/config.fps, joy_axes[J.ud])
             telem['ud_pid']=(ud_pid.p,ud_pid.i,ud_pid.d)
 
-            telem['lock_yaw_depth']=lock_yaw_depth
+            telem['lock_yaw_depth']=(*lock_yaw_depth,ground_range,-ground_range_lock)
         else:
-            telem['lock_yaw_depth']=None
+            telem['lock_yaw_depth']=(0,0,0,0)
             lock_yaw_depth = None
             yaw_cmd=0
             ud_cmd=0
@@ -147,30 +172,25 @@ async def control():
             fnum=track_info['fnum']
             #print('---',fnum,track_info['range_f'],lock_state)
             if lock_state:
-                #if 'dz' in track_info:
-                #    d_f=track_info['dz_f']
-                #    ud_cmd = ud_dir*ud_pid(d_f[0],0,d_f[1])
-                #    telem['ud_pid']=(ud_pid.p,ud_pid.i,ud_pid.d)
-                    #ud_cmd=int(ud_cmd*2000+1500)
-                #else:
-                #    ud_pid.reset()
 
                 if 'dy' in track_info:
                     d_f=track_info['dy_f']
                     lr_cmd = lr_dir*lr_pid(d_f[0],0,d_f[1])
-                    telem['lr_pid']=(lr_pid.p,lr_pid.i,lr_pid.d)
                 else:
-                    lr_pid.reset()
-                    print('reset lr')
+                    lr_cmd = lr_dir*lr_pid(0,0,0)
+
+                telem['lr_pid']=(lr_pid.p,lr_pid.i,lr_pid.d)
 
                 if 'range_f' in track_info: #range is relaible
                     fb_cmd = fb_dir*fb_pid(track_info['range_f'],lock_range, track_info['d_range_f'])
                     #print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(fb_cmd,fb_pid.p,fb_pid.i,fb_pid.d))
-                    telem['fb_pid']=(fb_pid.p,fb_pid.i,fb_pid.d)
-                    telem['lock_range']=lock_range
                 else:
-                    lock_state=False
-                    print('lost lock')
+                    fb_cmd = fb_dir*fb_pid(0,0,0) #will send only I information (steady state info)
+                telem['fb_pid']=(fb_pid.p,fb_pid.i,fb_pid.d)
+                telem['lock_range']=lock_range
+#                else:
+#                    lock_state=False
+#                    print('lost lock')
 
                 #if not args.sim:
                 #    ud_cmd=0

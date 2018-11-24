@@ -14,9 +14,12 @@ parser.add_argument("--ud",help="ud pid plot", action='store_true')
 parser.add_argument("--yaw",help="yaw pid plot", action='store_true')
 parser.add_argument("--fb",help="fb pid plot", action='store_true')
 parser.add_argument("--lr",help="lr pid plot", action='store_true')
+parser.add_argument("--depth",help="depth info", action='store_true')
 args = parser.parse_args()
 
 grid_h = sum([(1 if a else 0)*2 for a in (args.ud,args.yaw,args.fb,args.lr)])
+if args.depth:
+    grid_h+=1
 print('grid_h',grid_h)
 subs_socks=[]
 subs_socks.append(utils.subscribe([config.topic_main_telem,config.topic_comp_vis],config.zmq_local_route))
@@ -47,6 +50,7 @@ class CycArr():
 class Data:
     def reset(self):
         self.md_hist = CycArr(500)
+        self.vd_hist = CycArr(500)
 
     def __init__(self):
         self.reset()
@@ -75,11 +79,14 @@ def update_graph(axes):
                     gdata.md_hist.add(data)
                     new_data=True
                 if ret[0]==config.topic_comp_vis:
-                    pass
+                    gdata.vd_hist.add(data)
+
 
     if not pause_satus and new_data:
         for i,l in enumerate(labels):
             update_pid(ax_pid_hdls[i],l)
+        if args.depth:
+            update_deapth_range(depth_hdls)
         axes.figure.canvas.draw()
 
 def clear(evt):
@@ -94,6 +101,34 @@ def pause(evt):
 
 def center(evt):
     gdata.map_center = gdata.curr_pos.copy()
+
+def plot_deapth_range(grid_size,grid_pos):
+    ax1=plt.subplot2grid(grid_size, (grid_pos,0))
+    plt.title('deapth range')
+    hdl_d=ax1.plot([1],'-g') #deapth
+    ax2 = ax1.twinx()
+    hdl_r=ax2.plot([1],'-r') #range
+    hdl_lr=ax2.plot([1],'-b') #lock_range
+    plt.legend(['lock_range','ground range'],loc='upper left')
+    return (ax1,ax2),(hdl_d,hdl_r,hdl_lr)
+
+def update_deapth_range(ax_hdls):
+    ax1,ax2 = ax_hdls[0]
+    hdl_d,hdl_r,hdl_lr = ax_hdls[1]
+    xs = np.arange(len(gdata.md_hist))
+    lock_range_data=gdata.md_hist.get_data('lock_yaw_depth')
+    depth_data=gdata.md_hist.get_data('depth')
+    #print('lock_range_data',lock_range_data[-1,:])
+    hdl_d[0].set_ydata(-depth_data[:,1])
+    hdl_d[0].set_xdata(xs)
+    hdl_lr[0].set_ydata(-lock_range_data[:,3])
+    hdl_lr[0].set_xdata(xs)
+    hdl_r[0].set_ydata(lock_range_data[:,4])
+    hdl_r[0].set_xdata(xs)
+    ax1.set_xlim(len(gdata.md_hist)-400,len(gdata.md_hist))
+    ax1.set_ylim(-20,0)
+    ax2.set_xlim(len(gdata.md_hist)-400,len(gdata.md_hist))
+    ax2.set_ylim(-10,0)
 
 def plot_pid(pid_label,grid_size,grid_pos):
     ax=plt.subplot2grid(grid_size, (grid_pos,0))
@@ -150,5 +185,10 @@ bncenter.on_clicked(center)
 grid_size=(grid_h,1)
 labels=[a for a in ['ud','yaw','fb','lr'] if eval('args.'+a)]
 ax_pid_hdls=[plot_pid(l,grid_size,i*2) for i,l in enumerate(labels)]
+curr_grids = len(labels)*2
+
+if args.depth:
+    depth_hdls = plot_deapth_range(grid_size,curr_grids)
+    curr_grids+=1
 
 plt.show()

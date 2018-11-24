@@ -92,6 +92,7 @@ class StereoTrack():
         sx,sy = self.sx,self.sy
         cx,cy = imgl.shape[1]//2,imgl.shape[0]//2
         if self.corr_ref_pat is None:
+            print('--- init corr patern')
             self.__init_left_corr(imgl)
             return cx+self.ofx,cy
 

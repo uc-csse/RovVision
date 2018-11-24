@@ -29,6 +29,7 @@ class PID(object):
         self.target=None
         self.d=0
         self.command=0
+        self.err=0
 
     def __call__(self,state,target,dstate=None,ff_cmd=0):
         if self.prev_state is None:

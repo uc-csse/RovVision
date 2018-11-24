@@ -126,7 +126,7 @@ async def control():
             if lock_yaw_depth is None:
                 lock_yaw_depth=((np.degrees(telem['yaw'])+360)%360,telem['depth'])
                 ud_pid.reset()
-                print('lock yaw is {:.2f}'.format(lock_yaw_depth[0]))
+                print('lock yaw is {:.2f} depth {:.2f}'.format(*lock_yaw_depth))
 
             joy_yaw = 0 if abs(joy_axes[J.yaw])<0.008 else joy_axes[J.yaw]
 
@@ -213,7 +213,7 @@ async def control():
                             -joy_axes[J.ud],-joy_axes[J.fb],joy_axes[J.lr],joy_axes[J.yaw]
 
 
-        if not lock_state and joy_axes is not None:
+        if (not lock_state and joy_axes is not None) or is_joy_override(joy_axes):
             fb_cmd,lr_cmd = -joy_axes[J.fb],joy_axes[J.lr]
 
         if not lock_yaw_depth and joy_axes is not None:

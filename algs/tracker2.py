@@ -38,6 +38,7 @@ class StereoTrack():
         self.corr_ref_pat = None
         self.corr_scale_map = None
         self.new_ref=True
+        self.t_pt=None
 
     def __corr_scale(self,corr): #prioritizing center
         if corr.shape[0] != corr.shape[1]: #skip incase of not semetric (to complicated :)
@@ -56,13 +57,27 @@ class StereoTrack():
         shape=imgl.shape
         wx,wy = self.wx,self.wy
         sx,sy = self.sx,self.sy
-        #search window on the left image
+
         self.ofx= self.disparity_offset
         self.ofy=0
         cx  = shape[1]//2+self.ofx
-        cy  = shape[0]//2
+        cy  = shape[0]//2+self.ofy
+        #search window on the left image
         l1,r1=cx-wx//2,cx+wx//2
         u1,d1=cy-wy//2,cy+wy//2
+
+        if 1:
+            #replace the center with better one
+            good_ftr = cv2.goodFeaturesToTrack(imgl[u1:d1,l1:r1].copy(),1,0.01,10)
+            if good_ftr is not None:
+                goot_pt = good_ftr[0][0]
+                self.ofx += int(goot_pt[0]) - wx//2
+                self.ofy += int(goot_pt[1]) - wy//2
+                cx  = shape[1]//2+self.ofx
+                cy  = shape[0]//2+self.ofy
+                l1,r1=cx-wx//2,cx+wx//2
+                u1,d1=cy-wy//2,cy+wy//2
+
         patern=imgl[u1:d1,l1:r1]
         self.corr_ref_pat=patern.copy()
         self.new_ref=True #sending new reference flag

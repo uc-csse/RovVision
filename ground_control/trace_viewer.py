@@ -2,12 +2,15 @@
 import matplotlib.pyplot as plt
 import sys,os,time
 sys.path.append('../')
+sys.path.append('../algs')
 import zmq
 import pickle
 import argparse
 import numpy as np
 import config
 import utils
+from camera_tools import get_stereo_cameras,triangulate
+
 
 parser = argparse.ArgumentParser()
 args = parser.parse_args()
@@ -15,6 +18,19 @@ args = parser.parse_args()
 subs_socks=[]
 subs_socks.append(utils.subscribe([config.topic_main_telem,config.topic_comp_vis],config.zmq_local_route))
 
+def generate_stereo_cameras():
+    return get_stereo_cameras(config.focal_length,(config.pixelwidthy,config.pixelwidthx),config.baseline,config.camera_pitch)
+
+def calc_trace(prev_pts,cur_pts,yaw_delta_mat):
+    caml,camr=generate_stereo_cameras()
+
+    pt_l_x,pt_l_y,pt_r_x,pt_r_y = prev_pts
+    t_pt1 = triangulate(caml,camr,pt_l_x,pt_l_y,pt_r_x,pt_r_y)
+    pt_l_x,pt_l_y,pt_r_x,pt_r_y = cur_pts
+    #t_pt2 = triangulate(yaw_delta_mat.T @ caml ,yaw_delta_mat.T @ camr,pt_l_x,pt_l_y,pt_r_x,pt_r_y)
+    t_pt2 = triangulate(caml @ yaw_delta_mat , camr @ yaw_delta_mat ,pt_l_x ,pt_l_y,pt_r_x,pt_r_y)
+    #t_pt2 = triangulate( caml , camr,pt_l_x,pt_l_y,pt_r_x,pt_r_y)
+    return np.array(t_pt2)-np.array(t_pt1)
 ##### map radious im meters
 rad=20
 
@@ -43,6 +59,8 @@ class Data:
         self.heading_rot = None
         self.map_center = (0,0)
         self.range_arr = CycArr(500)
+        self.prev_pts = None
+        self.last_ref = -1
 
     def __init__(self):
         self.reset()
@@ -70,8 +88,17 @@ def update_graph(axes):
                 topic , data = ret
                 data=pickle.loads(ret[1])
                 if ret[0]==config.topic_main_telem:
-                    if 'heading' in data:
+                    if 'yaw' in data:
                         #print('---',data['heading']+90,data['yaw']/np.pi*180+90)
+                        h = (data['yawspeed']/config.fps)
+                        ch = np.cos(h)
+                        sh = np.sin(h)
+                        gdata.heading_speed = np.array([
+                            [   ch,     -sh,    0,  0],
+                            [   sh,     ch,     0,  0],
+                            [   0,      0,      1,  0],
+                            [   0,      0,      0,  1]]
+                            ) #rotation arround z axis
                         h = -(data['yaw']+np.pi/2)
                         ch = np.cos(h)
                         sh = np.sin(h)
@@ -84,24 +111,37 @@ def update_graph(axes):
                     if 'range_z' in data:
                         gdata.range_arr.add(-data['range_z'])
 
-                    if 'trace' in data and gdata.heading_rot is not None:
-                        new_data=True
-                        t_arr=np.array(data['trace'])
-                        x,y,z=t_arr
-                        t_arr = (xf(x)[0],yf(y)[0],zf(z)[0])
-                        gdata.trace_hist.add(t_arr)
-                        t_arr_r=(gdata.heading_rot @ t_arr).flatten()
-                        #import pdb;pdb.set_trace()
-                        if gdata.curr_pos is None:
-                            gdata.curr_pos=t_arr_r
+                    if gdata.heading_rot is not None:
+                        pts=(*data['pt_l'],*data['pt_r'])
+                        if gdata.prev_pts is None:
+                            gdata.prev_pts = pts
+                            gdata.last_ref = data['ref_cnt']
                         else:
-                            gdata.curr_pos+=t_arr_r
-                        #print('===',data['fnum'],t_arr_r[0])
-                        #print('===',data['fnum'],t_arr[1])
-                        gdata.pos_hist.add(gdata.curr_pos.copy())
-                        pos_arr=gdata.pos_hist()
-
-                        trace_arr=gdata.trace_hist()
+                            if data['ref_cnt'] == gdata.last_ref:
+                                new_data=True
+                                t_arr = calc_trace(gdata.prev_pts,pts,gdata.heading_speed)
+                                #t_arr=np.array(data['trace'])
+                                x,y,z=t_arr
+                                #print('-- '+('{:.3f} '*3).format(x,y,z))
+                                tr=0.3
+                                if abs(x)>tr or  abs(y)>tr or abs(z)>tr:
+                                    print('error too big movement',x,y,z)
+                                    x,y,z = (0,0,0)
+                                t_arr = (xf(x)[0],yf(y)[0],zf(z)[0])
+                                gdata.trace_hist.add(t_arr)
+                                t_arr_r=(gdata.heading_rot @ t_arr).flatten()
+                                #import pdb;pdb.set_trace()
+                                if gdata.curr_pos is None:
+                                    gdata.curr_pos=t_arr_r
+                                else:
+                                    gdata.curr_pos+=t_arr_r
+                                #print('===',data['fnum'],t_arr_r[0])
+                                #print('===',data['fnum'],t_arr[1])
+                                gdata.pos_hist.add(gdata.curr_pos.copy())
+                                pos_arr=gdata.pos_hist()
+                                trace_arr=gdata.trace_hist()
+                            gdata.prev_pts=pts
+                            gdata.last_ref = data['ref_cnt']
 
     if not pause_satus and new_data:
         xs = np.arange(len(gdata.trace_hist))
@@ -114,7 +154,7 @@ def update_graph(axes):
         ax2.set_xlim(len(gdata.trace_hist)-100,len(gdata.trace_hist))
         ax2.set_ylim(-0.2*4,0.2*4)
         hdl_arrow.remove()
-        hdl_arrow = ax1.arrow(gdata.curr_pos[0],gdata.curr_pos[1],-ch*0.1,-sh*0.1,width=0.1)
+        hdl_arrow = ax1.arrow(gdata.curr_pos[0],gdata.curr_pos[1],-ch*0.1,-sh*0.1,width=0.3)
 
         cx,cy = gdata.map_center[:2]
         ax1.set_xlim(-rad+cx,rad+cx)

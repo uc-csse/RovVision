@@ -30,6 +30,7 @@ class StereoTrack():
         self.stereo_sxr = stereo_corr_params['sxr']
         self.debug=False
         self.proj_cams=generate_stereo_cameras()
+        self.ref_cnt=0
         self.reset()
 
     def reset(self):
@@ -65,6 +66,7 @@ class StereoTrack():
         patern=imgl[u1:d1,l1:r1]
         self.corr_ref_pat=patern.copy()
         self.new_ref=True #sending new reference flag
+        self.ref_cnt+=1
 
         #print('init----leftcorr')
 
@@ -212,16 +214,23 @@ class StereoTrack():
 
 
 
-    def __call__(self,imgl,imgr):
-        imgl1r=imgl[:,:,0].copy()
-        imgr1r=imgr[:,:,0].copy()
-        imgl1b=imgl[:,:,2].copy()
-        imgr1b=imgr[:,:,2].copy()
+    def __track_and_validate(self, imgl1r, imgr1r, imgl1b, imgr1b):
 
         pt_l_x,pt_l_y=self.__track_left_im(imgl1b) #tracked point on left image
         pt_r_x,pt_r_y=self.__track_stereo(imgl1r,imgr1r) #tracked point on right image
 
         valid = self.__validate((pt_l_x,pt_l_y),(pt_r_x,pt_r_y),imgr1r)
+        return valid,pt_l_x,pt_l_y,pt_r_x,pt_r_y
+
+    def __call__(self,imgl,imgr):
+        imgl1r=imgl[:,:,0].copy()
+        imgr1r=imgr[:,:,0].copy()
+        imgl1b=imgl[:,:,2].copy()
+        imgr1b=imgr[:,:,2].copy()
+        valid,pt_l_x,pt_l_y,pt_r_x,pt_r_y = self.__track_and_validate(imgl1r, imgr1r, imgl1b, imgr1b )
+        if not valid:
+            self.__init_left_corr(imgl1b)
+            valid,pt_l_x,pt_l_y,pt_r_x,pt_r_y = self.__track_and_validate(imgl1r, imgr1r, imgl1b, imgr1b )
         res={'valid':valid}
         res['pt_l']=(pt_l_x,pt_l_y)
         res['pt_r']=(pt_r_x,pt_r_y)
@@ -262,22 +271,17 @@ class StereoTrack():
                 res['dx_f']=(range_f , d_range_f)
                 res['dy_f']=self.dy_filt(dy)
                 res['dz_f']=self.dz_filt(dz)
-                #if self.last_d is none:
-                #    self.last_d = (
-                #if self.last_d is not None:
-                    #res['trace'] = (res['dx_f'][0]-self.last_d[0],res['dy_f'][0]-self.last_d[1],res['dz_f'][0]-self.last_d[2])
-                if self.last_t_pt is not None:
-                    x=np.array(t_pt)-np.array(self.last_t_pt)
-                    res['trace'] = x.tolist()
-                #res['trace'] = (res['dx_f'][1],res['dy_f'][1],res['dz_f'][1])
-                #    self.last_d = (res['dx_f'][0],res['dy_f'][0],res['dz_f'][0])
-                #print('dx,dy,r,r_F {:03.2f} {:03.2f} {:03.2f} {:03.2f}'.format(dx,dy,range_f , d_range_f))
+                #if self.last_t_pt is not None:
+                #    x=np.array(t_pt)-np.array(self.last_t_pt)
+                #    res['trace'] = x.tolist()
             else:
                 print('new ref flag 1')
         #else:
         #    print('new range filt')
         #    self.range_filt = ab_filt((res['range'],0))
             self.last_t_pt=t_pt
+
+        res['ref_cnt']=self.ref_cnt
         return res
 
 

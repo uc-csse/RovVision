@@ -52,9 +52,11 @@ lock_range=None
 lock_yaw_depth=None
 track_info = None
 joy_axes = [0]*11
+ground_range_lock = config.ground_range_lock
+
 
 async def get_zmq_events():
-    global lock_state,track_info, lock_range, joy_axes, lock_yaw_depth,lock_yaw_depth_state
+    global lock_state,track_info, lock_range, joy_axes, lock_yaw_depth,lock_yaw_depth_state,ground_range_lock
     while True:
         socks=zmq.select(subs_socks,[],[],0)[0]
         for sock in socks:
@@ -98,11 +100,8 @@ async def get_zmq_events():
         await asyncio.sleep(0.001)
 
 start = time.time()
-ground_range_lock = config.ground_range_lock
 async def control():
-    global lock_state,track_info,joy_axes,lock_yaw_depth
-
-    global ud_pid,lr_pid,fb_pid,yaw_pid,ground_range_lock
+    global lock_state,track_info,joy_axes,lock_yaw_depth,ud_pid,lr_pid,fb_pid,yaw_pid,ground_range_lock
 
     ud_pid=pid.PID(*config.ud_params,**config.ud_params_k)
     lr_pid=pid.PID(*config.lr_params)
@@ -181,12 +180,23 @@ async def control():
 
                 telem['lr_pid']=(lr_pid.p,lr_pid.i,lr_pid.d)
 
-                if 'range_f' in track_info: #range is relaible
-                    fb_cmd = fb_dir*fb_pid(track_info['range_f'],lock_range, track_info['d_range_f'])
-                    #print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(fb_cmd,fb_pid.p,fb_pid.i,fb_pid.d))
-                else:
-                    fb_cmd = fb_dir*fb_pid(0,0,0) #will send only I information (steady state info)
+                if config.lock_mode=='fb_to_x':
+                    if 'dx' in track_info:
+                        d_f=track_info['dx_f']
+                        fb_cmd = fb_dir*fb_pid(d_f[0],0,d_f[1])
+                    else:
+                        fb_cmd = fb_dir*fb_pid(0,0,0)
+
+
+                if config.lock_mode=='fb_to_range':
+                    if 'range_f' in track_info: #range is relaible
+                        fb_cmd = fb_dir*fb_pid(track_info['range_f'],lock_range, track_info['d_range_f'])
+                        #print('C {:>5.3f} P {:>5.3f} I {:>5.3f} D {:>5.3f}'.format(fb_cmd,fb_pid.p,fb_pid.i,fb_pid.d))
+                    else:
+                        fb_cmd = fb_dir*fb_pid(0,0,0) #will send only I information (steady state info)
+
                 telem['fb_pid']=(fb_pid.p,fb_pid.i,fb_pid.d)
+
                 telem['lock_range']=lock_range
 #                else:
 #                    lock_state=False

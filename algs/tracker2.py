@@ -269,7 +269,8 @@ class StereoTrack():
                 self.t_pt = t_pt #save reference point
                 self.last_t_pt = None
                 #self.dx_filt = ab_filt((0,0))
-                self.dx_filt = self.range_filt = ab_filt((res['range'],0))
+                self.range_filt = ab_filt((res['range'],0))
+                self.dx_filt = ab_filt((0,0))
                 self.dy_filt = ab_filt((0,0))
                 self.dz_filt = ab_filt((0,0))
 
@@ -284,12 +285,9 @@ class StereoTrack():
                 res['dx']=dx
                 res['dy']=dy
                 res['dz']=dz
-                res['dx_f']=(range_f , d_range_f)
+                res['dx_f']=self.dx_filt(dx)
                 res['dy_f']=self.dy_filt(dy)
                 res['dz_f']=self.dz_filt(dz)
-                #if self.last_t_pt is not None:
-                #    x=np.array(t_pt)-np.array(self.last_t_pt)
-                #    res['trace'] = x.tolist()
             else:
                 print('new ref flag 1')
         #else:

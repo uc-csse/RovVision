@@ -123,7 +123,7 @@ async def control():
     while 1:
         if lock_yaw_depth_state and 'yaw' in telem and 'depth' in telem:
             if lock_yaw_depth is None:
-                lock_yaw_depth=((np.degrees(telem['yaw'])+360)%360,telem['depth'])
+                lock_yaw_depth=((np.degrees(telem['yaw'])+360)%360,max((config.minimal_depth_lock,telem['depth'])))
                 ud_pid.reset()
                 print('lock yaw is {:.2f} depth {:.2f}'.format(*lock_yaw_depth))
 

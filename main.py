@@ -106,7 +106,7 @@ async def control():
     ud_pid=pid.PID(*config.ud_params,**config.ud_params_k)
     lr_pid=pid.PID(*config.lr_params)
     fb_pid=pid.PID(*config.fb_params)
-    yaw_pid=pid.PID(*config.yaw_params)
+    yaw_pid=pid.PID(*config.yaw_params,**config.yaw_params_k)
 
     ud_cmd,lr_cmd,fb_cmd = 0,0,0
     yaw_cmd=0
@@ -209,9 +209,6 @@ async def control():
                 lr_pid.reset()
                 #ud_pid.reset()
                 #lr_filt.reset()
-
-
-
         if 0: #now only for testing purposes
             if is_joy_override(joy_axes):
                 if joy_axes is None:

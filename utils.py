@@ -10,11 +10,10 @@ def subscribe(topics,port,ip='127.0.0.1'):
         zmq_sub.setsockopt(zmq.SUBSCRIBE,topic)
     return zmq_sub
 
-def publisher(port,ip='127.0.0.1'): 
+def publisher(port,ip='127.0.0.1'):
     socket_pub = context.socket(zmq.PUB)
     socket_pub.bind("tcp://%s:%d" % (ip,port) )
     return socket_pub
-
 
 
 class  avg_win_filt():
@@ -44,7 +43,7 @@ class kal_filt():
         f.F = np.array([[1.0,1.0] , [0.0, 1.0]])
         f.H = np.array([[1.,0.]])
         f.P=np.eye(2)*0.001 #eye * cov matrix #process noise
-        f.R=np.array([[0.05]]) #mesurment noise 
+        f.R=np.array([[0.05]]) #mesurment noise
         f.Q = Q_discrete_white_noise(dim=2, dt=0.1, var=0.03)
         self.f=f
 
@@ -58,10 +57,10 @@ class ab_filt():
         self.alpha = alpha
         self.beta = beta
         self.reset(xv)
-        
+
     def reset(self,xv):
         self.x,self.v=xv
-    
+
     def __call__(self,xm,dt=1.0):
         self.x += self.v*dt
 
@@ -76,6 +75,3 @@ if __name__=='__main__':
     for i in range(100):
         rval=float(i)+np.random.random(1)[0]*i-0.5
         print(i,rval,kf(rval),kf.f.Q[0,0])
-
-
-

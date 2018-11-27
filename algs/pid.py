@@ -9,7 +9,7 @@ def getDiffAng(a, b):
     return r
 
 class PID(object):
-    def __init__(self,P,I,D,limit,step_limit,i_limit,FF=0,angle_deg_type=False,initial_i=0):
+    def __init__(self,P,I,D,limit,step_limit,i_limit,FF=0,angle_deg_type=False,initial_i=0, func_in_err=None):
         self.P=P
         self.I=I
         self.D=D
@@ -20,6 +20,7 @@ class PID(object):
         self.FF=FF
         self.angle_deg_type=angle_deg_type
         self.reset()
+        self.func_in_err=func_in_err
         self.d_iir=0.0 # to be removed
 
     def reset(self):
@@ -38,7 +39,10 @@ class PID(object):
         self.current_state=state
         self.target=target
         self.err=getDiffAng(state,target) if self.angle_deg_type else target-state
-        self.p=self.err*self.P
+        if self.func_in_err is not None:
+            self.p=self.func_in_err(self.err)*self.P
+        else:
+            self.p=self.err*self.P
         #self.d=-(self.current_state-self.prev_state)*self.D
         if dstate is None:
             dstate=getDiffAng(self.current_state,self.prev_state)\

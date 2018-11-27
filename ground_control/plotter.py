@@ -126,9 +126,9 @@ def update_deapth_range(ax_hdls):
     hdl_r[0].set_ydata(lock_range_data[:,4])
     hdl_r[0].set_xdata(xs)
     ax1.set_xlim(len(gdata.md_hist)-400,len(gdata.md_hist))
-    ax1.set_ylim(-20,0)
+    ax1.set_ylim(-2,0)
     ax2.set_xlim(len(gdata.md_hist)-400,len(gdata.md_hist))
-    ax2.set_ylim(-10,0)
+    ax2.set_ylim(-2,0)
 
 def plot_pid(pid_label,grid_size,grid_pos):
     ax=plt.subplot2grid(grid_size, (grid_pos,0))

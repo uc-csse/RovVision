@@ -10,7 +10,7 @@ else:
     camera_pitch = np.radians(0)
 
 
-ground_range_lock = 0.5 # 1 meter -1 to ignore
+ground_range_lock = -1 # 1 meter -1 to ignore
 minimal_depth_lock = 0.4
 #pubsub
 #zmq_pub_drone_fdm=('127.0.0.1',5566)
@@ -102,7 +102,7 @@ default_js_gain=0.6
 _gs=1.0/1000/default_js_gain #convert back to pwm factor
 
 ### args: P,I,D,limit,step_limit,i_limit,FF,is angle=0
-if 1 or 'SIMROV' in os.environ:
+if 0:# and 'SIMROV' in os.environ:
     scl=1
     ud_update_scale=5.0
     ud_params_k = {'initial_i':0.07}
@@ -111,6 +111,22 @@ if 1 or 'SIMROV' in os.environ:
     fb_params=(0.84,0.002,4.0, _gs*400 , _gs * 30, _gs*200, 0, False)
     yaw_update_scale=1.0
     yaw_params=(0.02,0,0.2, _gs*300 , _gs * 150, _gs*100, 0.5, True)
+
+if 1 or 'SIMROV' in os.environ:
+    scl=1
+    ud_update_scale=5.0
+    #ud_params_k = {'initial_i':0.07}
+    ud_params_k = {'initial_i':-0.22} #pool
+    ud_params=(2.5,0.001,15, _gs*300 , _gs * 100, _gs*200, 0.2, False)
+    lr_params=(3,0.002,12.0, _gs*400 , _gs * 30, _gs*200, 0, False)
+    fb_params=(3,0.002,12.0, _gs*400 , _gs * 30, _gs*200, 0, False)
+    yaw_update_scale=2.0
+    #yaw_params=(0.04,0,0.2, _gs*300 , _gs * 150, _gs*100, 0.5, True)
+    #yaw_params=(0.02,0,0.1, _gs*300 , _gs * 150, _gs*100, 0.5, True)
+    yaw_params=(0.01,0,0.05, _gs*300 , _gs * 150, _gs*100, 0.5, True)
+
+
+
 if 0: #old version params
     scl=6
     ud_update_scale=5.0

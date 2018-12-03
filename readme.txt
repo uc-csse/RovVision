@@ -9,3 +9,6 @@ rsync -avzu -e "ssh" 181121-11* username@linux.cosc.canterbury.ac.nz:/home/cosc/
 
 #only pickles
 rsync -avzu --include="*/"  --include="*.pkl" --exclude="*"  -e "ssh" 181121-11* username@linux.cosc.canterbury.ac.nz:/home/cosc/research/CVlab/bluerov_data/
+
+#mount data
+udisksctl mount -b /dev/sda

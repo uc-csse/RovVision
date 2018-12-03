@@ -32,9 +32,17 @@ parser.add_argument("--novid", help="ignore video", action='store_true')
 parser.add_argument("--runtracker", help="run tracker on recorded vid", action='store_true')
 parser.add_argument("--path",help="dir path")
 parser.add_argument("--bs",help="history buff size",type=int ,default=1000)
+parser.add_argument("--cc",help="color orrection matrix file",default=None)
+parser.add_argument("--ccr",help="the efect of the color correction 0 to 1.0 (max 1.0)",type=float,default=1.0)
 args = parser.parse_args()
 
 file_path_fmt=args.path+'/{}{:08d}'#.ppm'
+
+if args.cc is not None:
+    c_mat = pickle.load(open(args.cc,'rb'))*args.ccr+(1.0-args.ccr)*np.eye(3)
+    def apply_colorcc(img):
+        return  (img.reshape((-1,3)) @ c_mat.T).clip(0,255).reshape(img.shape).astype('uint8')
+
 
 base_name = os.path.basename(args.path)
 
@@ -180,7 +188,8 @@ if __name__=='__main__':
                         if os.path.isfile(fname):
                             try:
                                 frame=cv2.imread(fname)
-                                frame=enhance(frame)
+                                if args.cc is not None:
+                                    frame=apply_colorcc(frame)
                                 imgs_raw[i]=frame
                                 images[i]=imgs_raw[i][::2,::2,:].copy()
                             except Exception:

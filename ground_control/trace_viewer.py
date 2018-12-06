@@ -13,10 +13,11 @@ from camera_tools import get_stereo_cameras,triangulate
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--ip",help="main ground control ip addr", default='127.0.0.1')
 args = parser.parse_args()
 
 subs_socks=[]
-subs_socks.append(utils.subscribe([config.topic_main_telem,config.topic_comp_vis],config.zmq_local_route))
+subs_socks.append(utils.subscribe([config.topic_main_telem,config.topic_comp_vis],config.zmq_local_route,args.ip))
 
 def generate_stereo_cameras():
     return get_stereo_cameras(config.focal_length,(config.pixelwidthy,config.pixelwidthx),config.baseline,config.camera_pitch)

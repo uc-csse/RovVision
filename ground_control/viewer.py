@@ -33,7 +33,8 @@ else:
     subs_socks.append( utils.subscribe([ config.topic_main_telem, config.topic_mav_telem ],config.zmq_pub_main) )
 
 
-socket_pub = utils.publisher(config.zmq_local_route)
+#socket_pub = utils.publisher(config.zmq_local_route)
+socket_pub = utils.publisher(config.zmq_local_route,'0.0.0.0')
 
 
 if __name__=='__main__':
@@ -63,7 +64,7 @@ if __name__=='__main__':
             if ret[0]==config.topic_main_telem:
                 #print('-----==config.topic_main_telem')
                 main_data.update(data)
-                  
+
                 socket_pub.send_multipart([config.topic_main_telem,ret[1]])
 
             if vis_data.get('record_state',False):
@@ -119,4 +120,3 @@ if __name__=='__main__':
                 p.terminate()
                 p.poll()
             break
-

@@ -1,7 +1,8 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import socket
 
-UDP_IP = "192.168.2.1"
+UDP_IP = "0.0.0.0"
+#UDP_IP = "192.168.2.1"
 UDP_SRC_PORT = 6600
 UDP_DST_PORTS = [5600,6753]
 
@@ -26,4 +27,3 @@ while True:
         for p in UDP_DST_PORTS:
             #time.sleep(0)
             sock.sendto(data,('127.1',p))
-

@@ -14,12 +14,19 @@ parser.add_argument("--ud",help="ud pid plot", action='store_true')
 parser.add_argument("--yaw",help="yaw pid plot", action='store_true')
 parser.add_argument("--fb",help="fb pid plot", action='store_true')
 parser.add_argument("--lr",help="lr pid plot", action='store_true')
+parser.add_argument("--roll",help="roll data", action='store_true')
+parser.add_argument("--pitch",help="pitch data", action='store_true')
 parser.add_argument("--depth",help="depth info", action='store_true')
 args = parser.parse_args()
 
 grid_h = sum([(1 if a else 0)*2 for a in (args.ud,args.yaw,args.fb,args.lr)])
 if args.depth:
     grid_h+=1
+if args.roll:
+    grid_h+=1
+if args.pitch:
+    grid_h+=1
+
 print('grid_h',grid_h)
 subs_socks=[]
 subs_socks.append(utils.subscribe([config.topic_main_telem,config.topic_comp_vis],config.zmq_local_route))
@@ -87,6 +94,10 @@ def update_graph(axes):
             update_pid(ax_pid_hdls[i],l)
         if args.depth:
             update_deapth_range(depth_hdls)
+        if args.roll:
+            update_roll(roll_hdls)
+        if args.pitch:
+            update_pitch(pitch_hdls)
         axes.figure.canvas.draw()
 
 def clear(evt):
@@ -101,6 +112,44 @@ def pause(evt):
 
 def center(evt):
     gdata.map_center = gdata.curr_pos.copy()
+
+
+def update_pitch(ax_hdls):
+    return update_pitch_roll(ax_hdls,['pitch','fb_cmd'])
+def update_roll(ax_hdls):
+    return update_pitch_roll(ax_hdls,['roll','lr_cmd'])
+
+def update_pitch_roll(ax_hdls,labels):
+    ax1,ax2 = ax_hdls[0]
+    hdl_r,hdl_cr = ax_hdls[1]
+    xs = np.arange(len(gdata.md_hist))
+    roll=gdata.md_hist.get_data(labels[0])
+    command_roll=gdata.md_hist.get_data(labels[1])
+    #print('lock_range_data',lock_range_data[-1,:])
+    hdl_r[0].set_ydata(-roll[:,1]/np.pi*180.0)
+    hdl_r[0].set_xdata(xs)
+    hdl_cr[0].set_ydata(-command_roll[:,1])
+    hdl_cr[0].set_xdata(xs)
+    ax1.set_xlim(len(gdata.md_hist)-400,len(gdata.md_hist))
+    ax1.set_ylim(-40,40)
+    ax2.set_xlim(len(gdata.md_hist)-400,len(gdata.md_hist))
+    ax2.set_ylim(-500,500)
+
+def plot_roll_pitch(grid_size,grid_pos,labels):
+    ax1=plt.subplot2grid(grid_size, (grid_pos,0))
+    plt.title(labels[0])
+    hdl_r=ax1.plot([1],'-g') #deapth
+    plt.legend([labels[0]],loc='upper left')
+    ax2 = ax1.twinx()
+    hdl_cr=ax2.plot([1],'-r') #range
+    plt.legend([labels[1]],loc='lower left')
+    return (ax1,ax2),(hdl_r,hdl_cr)
+
+def plot_roll(grid_size,grid_pos):
+    return plot_roll_pitch(grid_size,grid_pos,['roll','lr_cmd'])
+def plot_pitch(grid_size,grid_pos):
+    return plot_roll_pitch(grid_size,grid_pos,['pitch','fb_cmd'])
+
 
 def plot_deapth_range(grid_size,grid_pos):
     ax1=plt.subplot2grid(grid_size, (grid_pos,0))
@@ -189,6 +238,13 @@ curr_grids = len(labels)*2
 
 if args.depth:
     depth_hdls = plot_deapth_range(grid_size,curr_grids)
+    curr_grids+=1
+
+if args.roll:
+    roll_hdls = plot_roll(grid_size,curr_grids)
+    curr_grids+=1
+if args.pitch:
+    pitch_hdls = plot_pitch(grid_size,curr_grids)
     curr_grids+=1
 
 plt.show()

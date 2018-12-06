@@ -17,6 +17,7 @@ parser.add_argument("--lr",help="lr pid plot", action='store_true')
 parser.add_argument("--roll",help="roll data", action='store_true')
 parser.add_argument("--pitch",help="pitch data", action='store_true')
 parser.add_argument("--depth",help="depth info", action='store_true')
+parser.add_argument("--ip",help="main ground control ip addr", default='127.0.0.1')
 args = parser.parse_args()
 
 grid_h = sum([(1 if a else 0)*2 for a in (args.ud,args.yaw,args.fb,args.lr)])
@@ -29,7 +30,7 @@ if args.pitch:
 
 print('grid_h',grid_h)
 subs_socks=[]
-subs_socks.append(utils.subscribe([config.topic_main_telem,config.topic_comp_vis],config.zmq_local_route))
+subs_socks.append(utils.subscribe([config.topic_main_telem,config.topic_comp_vis],config.zmq_local_route,args.ip))
 
 ##### map radious im meters
 rad=20

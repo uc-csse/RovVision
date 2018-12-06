@@ -12,3 +12,13 @@ rsync -avzu --include="*/"  --include="*.pkl" --exclude="*"  -e "ssh" 181121-11*
 
 #mount data
 udisksctl mount -b /dev/sda
+
+
+
+#run simulation remotely on cs18018hr
+#to login
+ssh labuser@cs18018hr
+sudo x11vnc -auth /var/lib/mdm/:0.Xauth
+
+vncviewer cs18018hr
+run ./sim_route_cs18018hr.sh

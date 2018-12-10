@@ -19,7 +19,7 @@ def draw_txt(img,vd,md):
             color=(0,0,255)
         else:
             last_valid_range = [md['ts'],rng]
-            color=(0,255,0)
+            color=(255,255,0)
 
         line1='R{:3.2f}m'.format(rng)
         cv2.putText(img,line1,(110,50), font, 0.5,color,1,cv2.LINE_AA)

@@ -93,9 +93,12 @@ def update_joy_hat(hat):
     lights1=hat[0]
     #lights1=max(1100,min(2000,lights1))
     #print('got hat',hat,lights1)
-    js_gain+=hat[1]*0.05
-    js_gain=min(max(js_gain,0.1),2.0)
+    #js_gain+=hat[1]*0.05
+    #js_gain=min(max(js_gain,0.1),2.0)
     print('*'*10+'GAIN {:.1f}'.format(js_gain))
+    config.ud_trim+=hat[1]/1000.0
+    print('*'*10+'UD TRIM {:.1f}'.format(config.ud_trim*1000))
+
 
 def update_joy_buttons(data):
     if data[config.joy_arm]==1:

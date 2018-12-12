@@ -18,7 +18,7 @@ if 0:
 ground_range_lock = -1 # 1 meter -1 to ignore
 minimal_depth_lock = 0.4
 
-ud_trim=-50/1000.0
+ud_trim=50/1000.0
 
 #pubsub
 #zmq_pub_drone_fdm=('127.0.0.1',5566)

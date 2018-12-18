@@ -5,13 +5,21 @@ import os
 if 0:
     lock_mode='fb_to_x'
     camera_pitch = np.radians(45) # camera installation pitch in rad
-else:
+
+if 1:
+    lock_mode='ud_to_range'
+    camera_pitch = np.radians(45) # camera installation pitch in rad
+
+if 0:
     lock_mode='fb_to_range'
     camera_pitch = np.radians(0)
 
 
 ground_range_lock = -1 # 1 meter -1 to ignore
 minimal_depth_lock = 0.4
+
+ud_trim=50/1000.0
+
 #pubsub
 #zmq_pub_drone_fdm=('127.0.0.1',5566)
 #zmq_pub_drone_fdm=('127.0.0.1',12466)
@@ -126,8 +134,13 @@ if 'SIMROV' in os.environ:
     scl=1
     ud_update_scale=5.0
     #ud_params_k = {'initial_i':0.07}
-    ud_params_k = {'initial_i':-0.22} #pool
-    ud_params=(2.5,0.001,15, _gs*300 , _gs * 100, _gs*200, 0.2, False)
+    if 0:
+        ud_params_k = {'initial_i':-0.22} #pool
+        ud_params=(2.5,0.001,15, _gs*300 , _gs * 100, _gs*200, 0.2, False)
+    else:
+        ud_params_k = {'initial_i':-0.0}
+        ud_params=(0.1,0.001,0.05, _gs*300 , _gs * 100, _gs*200, 0.2, False)
+
     lr_params=(3/2,0.02/2,16.0/2, _gs*400 , _gs * 30, _gs*200, 0, False)
     fb_params=(3/2,0.02/2,16.0/2, _gs*400 , _gs * 30, _gs*200, 0, False)
     yaw_update_scale=2.0
@@ -141,8 +154,13 @@ else:
     scl=1
     ud_update_scale=5.0
     #ud_params_k = {'initial_i':0.07}
-    ud_params_k = {'initial_i':-0.22} #pool
-    ud_params=(2.5,0.001,15, _gs*300 , _gs * 100, _gs*200, 0.2, False)
+    if 0:
+        ud_params_k = {'initial_i':-0.22} #pool
+        ud_params=(2.5,0.001,15, _gs*300 , _gs * 100, _gs*200, 0.2, False)
+    else:
+        ud_params_k = {'initial_i':-0.0}
+        ud_params=(0.2,0.001,0.15, _gs*300 , _gs * 100, _gs*200, 0.2, False)
+
     lr_params=(3,0.02,16.0, _gs*400 , _gs * 30, _gs*200, 0, False)
     fb_params=(3,0.02,16.0, _gs*400 , _gs * 30, _gs*200, 0, False)
     yaw_update_scale=2.0

@@ -270,13 +270,16 @@ class StereoTrack():
                 self.last_t_pt = None
                 #self.dx_filt = ab_filt((0,0))
                 self.range_filt = ab_filt((res['range'],0))
+                self.range_filt_z = ab_filt((res['range_z'],0))
                 self.dx_filt = ab_filt((0,0))
                 self.dy_filt = ab_filt((0,0))
                 self.dz_filt = ab_filt((0,0))
 
 
             range_f , d_range_f = self.range_filt(res['range'])
+            range_z_f , d_range_z_f = self.range_filt_z(res['range_z'])
             res['range_f'], res['d_range_f'] = range_f , d_range_f
+            res['range_z_f'], res['d_range_z_f'] = range_z_f , d_range_z_f
             dx = (t_pt[0]-self.t_pt[0])
             dy = (t_pt[1]-self.t_pt[1])
             #print('----',dy)

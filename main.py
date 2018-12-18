@@ -71,7 +71,10 @@ async def get_zmq_events():
                        lock_state = False
                    elif not lock_state and 'range_f' in track_info:
                         lock_state = True
-                        lock_range = track_info['range_f']
+                        if config.lock_mode=='ud_to_range':
+                            lock_range = track_info['range_z_f']
+                        else:
+                            lock_range = track_info['range_f']
                         print('lock range is',lock_range)
                 if data[config.joy_depth_hold]==1:
                     lock_yaw_depth_state = not lock_yaw_depth_state
@@ -156,9 +159,12 @@ async def control():
             yaw_cmd = yaw_dir*yaw_pid(np.degrees(telem['yaw']),lock_yaw_depth[0], -np.degrees(telem['yawspeed'])/config.fps,-joy_yaw)
             telem['yaw_pid']=(yaw_pid.p,yaw_pid.i,yaw_pid.d)
 
+            if not config.lock_mode=='ud_to_range': #ignoring depth
+                ud_cmd = ud_dir*ud_pid(telem['depth'],lock_yaw_depth[1],-telem['climb']/config.fps, joy_axes[J.ud])
+                telem['ud_pid']=(ud_pid.p,ud_pid.i,ud_pid.d)
 
-            ud_cmd = ud_dir*ud_pid(telem['depth'],lock_yaw_depth[1],-telem['climb']/config.fps, joy_axes[J.ud])
-            telem['ud_pid']=(ud_pid.p,ud_pid.i,ud_pid.d)
+            #else:
+            #    ud_cmd = -joy_axes[J.ud]
 
             telem['lock_yaw_depth']=(*lock_yaw_depth,ground_range,-ground_range_lock)
         else:
@@ -172,7 +178,7 @@ async def control():
             #print('---',fnum,track_info['range_f'],lock_state)
             if lock_state:
 
-                if 'dy' in track_info:
+                if 'dy' in track_info and not config.lock_mode=='ud_to_range':
                     d_f=track_info['dy_f']
                     lr_cmd = lr_dir*lr_pid(d_f[0],0,d_f[1])
                 else:
@@ -186,6 +192,13 @@ async def control():
                         fb_cmd = fb_dir*fb_pid(d_f[0],0,d_f[1])
                     else:
                         fb_cmd = fb_dir*fb_pid(0,0,0)
+
+                if config.lock_mode=='ud_to_range':
+                    if 'range_z_f' in track_info: #range is relaible
+                        ud_cmd = ud_dir*ud_pid(track_info['range_z_f'],lock_range, track_info['d_range_z_f'])
+                    else:
+                        ud_cmd = ud_dir*ud_pid(0,0,0) #will send only I information (steady state info)
+                telem['ud_pid']=(ud_pid.p,ud_pid.i,ud_pid.d)
 
 
                 if config.lock_mode=='fb_to_range':
@@ -207,6 +220,7 @@ async def control():
             else:
                 fb_pid.reset()
                 lr_pid.reset()
+                ud_cmd = -joy_axes[J.ud]
                 #ud_pid.reset()
                 #lr_filt.reset()
         if 0: #now only for testing purposes
@@ -226,14 +240,15 @@ async def control():
         if not lock_yaw_depth and joy_axes is not None:
             ud_cmd,yaw_cmd = -joy_axes[J.ud], joy_axes[J.yaw]
 
-        controller.set_rcs(ud_cmd,yaw_cmd,fb_cmd,lr_cmd)
+
+        controller.set_rcs(ud_cmd+config.ud_trim,yaw_cmd,fb_cmd,lr_cmd)
 
         to_pwm=controller.to_pwm
 
         telem.update(controller.nav_data)
 
         telem.update({
-            'ud_cmd':to_pwm(ud_cmd),
+            'ud_cmd':to_pwm(ud_cmd+config.ud_trim),
             'yaw_cmd':to_pwm(yaw_cmd),
             'lr_cmd':to_pwm(lr_cmd*controller.js_gain),
             'fb_cmd':to_pwm(fb_cmd*controller.js_gain),

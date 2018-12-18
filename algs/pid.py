@@ -29,6 +29,7 @@ class PID(object):
         self.prev_state=None
         self.target=None
         self.d=0
+        self.p=0
         self.command=0
         self.err=0
 

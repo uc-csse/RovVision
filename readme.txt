@@ -22,3 +22,7 @@ sudo x11vnc -auth /var/lib/mdm/:0.Xauth
 
 vncviewer cs18018hr
 run ./sim_route_cs18018hr.sh
+
+
+mount ssd:
+udisksctl mount -b /dev/sda

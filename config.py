@@ -60,7 +60,7 @@ joy_init_track = 5
 joy_arm = 7
 joy_disarm = 6
 joy_manual = 0
-joy_depth_hold = 3
+joy_depth_hold = 4
 
 class Joy_map:
     ud=4

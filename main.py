@@ -64,7 +64,7 @@ async def get_zmq_events():
             if ret[0]==config.topic_button:
                 data=pickle.loads(ret[1])
                 print('got button',data)
-                if data[5]==1:
+                if data[config.joy_init_track]==1:
                     #while track_info is None:
                     #    asyncio.sleep(0)
                    if lock_state:
@@ -73,7 +73,7 @@ async def get_zmq_events():
                         lock_state = True
                         lock_range = track_info['range_f']
                         print('lock range is',lock_range)
-                if data[4]==1:
+                if data[config.joy_depth_hold]==1:
                     lock_yaw_depth_state = not lock_yaw_depth_state
                     #else:
                     #    lock_range = track_info['range']

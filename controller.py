@@ -112,12 +112,13 @@ def update_joy_buttons(data):
             mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
             0, 0, 0, 0, 0, 0, 0, 0)
 
-    if data[config.joy_depth_hold]==1:
-        mode_id = mav1.mode_mapping()['ALT_HOLD']
-        mav1.mav.set_mode_send(
-            mav1.target_system,
-            mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
-            mode_id)
+    #no longer used using our Version
+    #if data[config.joy_depth_hold]==1:
+    #    mode_id = mav1.mode_mapping()['ALT_HOLD']
+    #    mav1.mav.set_mode_send(
+    #        mav1.target_system,
+    #        mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+    #        mode_id)
 
     if data[config.joy_manual]==1:
         mode_id = mav1.mode_mapping()['MANUAL'] #maybe STABILIZE

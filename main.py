@@ -46,7 +46,7 @@ def get_temp():
         return -100
 
 ## system states
-lock_state=False
+lock_range_state=False
 lock_yaw_depth_state=False
 lock_range=None
 lock_yaw_depth=None
@@ -56,7 +56,7 @@ ground_range_lock = config.ground_range_lock
 
 
 async def get_zmq_events():
-    global lock_state,track_info, lock_range, joy_axes, lock_yaw_depth,lock_yaw_depth_state,ground_range_lock
+    global lock_range_state,track_info, lock_range, joy_axes, lock_yaw_depth,lock_yaw_depth_state,ground_range_lock
     while True:
         socks=zmq.select(subs_socks,[],[],0)[0]
         for sock in socks:
@@ -67,10 +67,10 @@ async def get_zmq_events():
                 if data[config.joy_init_track]==1:
                     #while track_info is None:
                     #    asyncio.sleep(0)
-                   if lock_state:
-                       lock_state = False
-                   elif not lock_state and 'range_f' in track_info:
-                        lock_state = True
+                   if lock_range_state:
+                       lock_range_state = False
+                   elif not lock_range_state and 'range_f' in track_info:
+                        lock_range_state = True
                         if config.lock_mode=='ud_to_range':
                             lock_range = track_info['range_z_f']
                         else:
@@ -104,7 +104,7 @@ async def get_zmq_events():
 
 start = time.time()
 async def control():
-    global lock_state,track_info,joy_axes,lock_yaw_depth,ud_pid,lr_pid,fb_pid,yaw_pid,ground_range_lock
+    global lock_range_state,track_info,joy_axes,lock_yaw_depth,ud_pid,lr_pid,fb_pid,yaw_pid,ground_range_lock
 
     ud_pid=pid.PID(*config.ud_params,**config.ud_params_k)
     lr_pid=pid.PID(*config.lr_params)
@@ -175,8 +175,8 @@ async def control():
 
         if track_info is not None and track_info['fnum']>fnum: #new frame to proccess
             fnum=track_info['fnum']
-            #print('---',fnum,track_info['range_f'],lock_state)
-            if lock_state:
+            #print('---',fnum,track_info['range_f'],lock_range_state)
+            if lock_range_state:
 
                 if 'dy' in track_info and not config.lock_mode=='ud_to_range':
                     d_f=track_info['dy_f']
@@ -212,7 +212,7 @@ async def control():
 
                 telem['lock_range']=lock_range
 #                else:
-#                    lock_state=False
+#                    lock_range_state=False
 #                    print('lost lock')
 
                 #if not args.sim:
@@ -220,7 +220,7 @@ async def control():
             else:
                 fb_pid.reset()
                 lr_pid.reset()
-                ud_cmd = -joy_axes[J.ud]
+                #ud_cmd = -joy_axes[J.ud]
                 #ud_pid.reset()
                 #lr_filt.reset()
         if 0: #now only for testing purposes
@@ -234,7 +234,7 @@ async def control():
                             -joy_axes[J.ud],-joy_axes[J.fb],joy_axes[J.lr],joy_axes[J.yaw]
 
 
-        if (not lock_state and joy_axes is not None) or is_joy_override(joy_axes):
+        if (not lock_range_state and joy_axes is not None) or is_joy_override(joy_axes):
             fb_cmd,lr_cmd = -joy_axes[J.fb],joy_axes[J.lr]
 
         if not lock_yaw_depth and joy_axes is not None:
@@ -257,7 +257,7 @@ async def control():
 
         if cnt%100==0: #every 10 sec
             telem['temp']=get_temp()
-        telem.update({'ts':time.time()-start, 'lock':lock_state, 'joy_axes':joy_axes})
+        telem.update({'ts':time.time()-start, 'lock':lock_range_state, 'joy_axes':joy_axes})
         if fnum>-1:
             socket_pub.send_multipart([config.topic_main_telem,pickle.dumps(telem,-1)])
         cnt+=1

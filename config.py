@@ -6,11 +6,11 @@ if 0:
     lock_mode='fb_to_x'
     camera_pitch = np.radians(45) # camera installation pitch in rad
 
-if 1:
+if 0:
     lock_mode='ud_to_range'
     camera_pitch = np.radians(45) # camera installation pitch in rad
 
-if 0:
+if 1:
     lock_mode='fb_to_range'
     camera_pitch = np.radians(0)
 

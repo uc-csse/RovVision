@@ -29,6 +29,7 @@ parser.add_argument("--nowait",help="run all not wait for keyboard untill framen
 parser.add_argument("--nosingle",help="dont use the single files only the stream", action='store_true')
 parser.add_argument("--nosync", help="dont sync videos", action='store_true')
 parser.add_argument("--novid", help="ignore video", action='store_true')
+parser.add_argument("--pub_data", help="publish data", action='store_true')
 parser.add_argument("--runtracker", help="run tracker on recorded vid", action='store_true')
 parser.add_argument("--path",help="dir path")
 parser.add_argument("--bs",help="history buff size",type=int ,default=1000)
@@ -42,6 +43,9 @@ if args.cc is not None:
     c_mat = pickle.load(open(args.cc,'rb'))*args.ccr+(1.0-args.ccr)*np.eye(3)
     def apply_colorcc(img):
         return  (img.reshape((-1,3)) @ c_mat.T).clip(0,255).reshape(img.shape).astype('uint8')
+
+if args.pub_data:
+    socket_pub = utils.publisher(config.zmq_local_route,'0.0.0.0')
 
 
 base_name = os.path.basename(args.path)
@@ -134,6 +138,8 @@ if __name__=='__main__':
                         explore.plot_graphs(main_data_hist,vis_data_hist)
                         sys.exit(0)
                     break
+                if args.pub_data:
+                    socket_pub.send_multipart([ret[0],pickle.dumps(ret[1])])
                 #print('topic=',ret[0])
                 if ret[0]==config.topic_comp_vis:
                     vis_data=ret[1]

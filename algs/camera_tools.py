@@ -31,6 +31,14 @@ def rotx(a):
                         ])
         return R_x
 
+def rotz(a):
+    ch = np.cos(a)
+    sh = np.sin(a)
+    Rz = np.array([
+        [   ch,     -sh,    0],
+        [   sh,     ch,     0],
+        [   0,      0,      1]])
+    return Rz
 
 def get_stereo_cameras(f,sz,base_line,pitch_rad=0):
     M = np.array([\
@@ -44,6 +52,22 @@ def get_stereo_cameras(f,sz,base_line,pitch_rad=0):
     #print(proj_caml)
     #print(proj_camr)
     return proj_caml,proj_camr
+
+def get_stereo_cameras_yaw(f,sz,base_line,yaw_rad,pitch_rad=0):
+    M = np.array([\
+            [   f, 0,  sz[0]/2   ],
+            [   0,  f, sz[1]/2   ],
+            [   0,  0,  1,  ]])
+    #R= rotx(pitch_rad) @ rotz(yaw_rad)
+    R= rotz(yaw_rad) @ rotx(pitch_rad)
+    proj_caml= M @ R @ __TR
+    T = -R.T @ np.array([[base_line,0,0]]).T
+    #print(T)
+    proj_camr=M @ np.hstack((R,T))
+    #print(proj_caml)
+    #print(proj_camr)
+    return proj_caml,proj_camr
+
 
 def triangulate(prjl,prjr,xl,yl,xr,yr):
     #x=cv2.triangulatePoints(Pl,Pr,np.array([sz[0]/2,sz[1]/2]),np.array([sz[0]/2+50.0,sz[1]/2]))

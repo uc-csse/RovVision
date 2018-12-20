@@ -18,7 +18,7 @@ parser.add_argument("--scale",help="map size deafult 20", default=20.0, type=flo
 args = parser.parse_args()
 
 subs_socks=[]
-subs_socks.append(utils.subscribe([config.topic_main_telem,config.topic_comp_vis],config.zmq_local_route,args.ip))
+subs_socks.append(utils.subscribe([config.topic_main_telem,config.topic_comp_vis,config.topic_mav_telem],config.zmq_local_route,args.ip))
 
 def generate_stereo_cameras():
     return get_stereo_cameras(config.focal_length,(config.pixelwidthy,config.pixelwidthx),config.baseline,
@@ -89,10 +89,21 @@ def update_graph(axes):
             for sock in socks:
                 ret = sock.recv_multipart()
                 topic , data = ret
+                #print('--- topic ---',topic)
                 data=pickle.loads(ret[1])
+                if ret[0]==config.topic_mav_telem and data['mavpackettype']=='RAW_IMU':
+                    #print('-ahrs2-',np.degrees(data['yaw']+np.pi/2))
+                    #gdata.heading_rot = (np.arctan2(data['xmag'],data['ymag'])+np.pi/2)
+                    pass
+                if ret[0]==config.topic_mav_telem and data['mavpackettype']=='AHRS2':
+                    #print('-ahrs2-',np.degrees(data['yaw']+np.pi/2))
+                    #gdata.heading_rot = (data['yaw']+np.pi/2)
+                    pass
+                #if ret[0]==config.topic_mav_telem:
+                #    print('data',data)
                 if ret[0]==config.topic_main_telem:
                     if 'yaw' in data:
-                        #print('---',data['heading']+90,data['yaw']/np.pi*180+90)
+                        #print('---',data['heading'],data['yaw']/np.pi*180)
                         h = (data['yawspeed']/config.fps)
                         ch = 1.0#np.cos(h)
                         sh = 0.0#np.sin(h)
@@ -132,9 +143,9 @@ def update_graph(axes):
                                 if abs(x)>tr or  abs(y)>tr or abs(z)>tr:
                                     print('error too big movement',x,y,z)
                                     x,y,z = (0,0,0)
-                                t_arr = (xf(x)[0],yf(y)[0],zf(z)[0])
+                                t_arr = (-xf(x)[0],yf(y)[0],zf(z)[0])
                                 gdata.trace_hist.add(t_arr)
-                                t_arr_r=(rotz(gdata.heading_rot) @ t_arr).flatten()
+                                t_arr_r=(rotz(-gdata.heading_rot) @ t_arr).flatten()
                                 #t_arr_r=np.array(t_arr)
                                 #import pdb;pdb.set_trace()
                                 if gdata.curr_pos is None:

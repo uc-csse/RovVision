@@ -132,7 +132,7 @@ def update_graph(axes):
                                 if abs(x)>tr or  abs(y)>tr or abs(z)>tr:
                                     print('error too big movement',x,y,z)
                                     x,y,z = (0,0,0)
-                                t_arr = (-xf(x)[0],yf(y)[0],zf(z)[0])
+                                t_arr = (xf(x)[0],yf(y)[0],zf(z)[0])
                                 gdata.trace_hist.add(t_arr)
                                 t_arr_r=(rotz(gdata.heading_rot) @ t_arr).flatten()
                                 #t_arr_r=np.array(t_arr)

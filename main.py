@@ -22,6 +22,15 @@ subs_socks.append( utils.subscribe([ config.topic_button,config.topic_axes,confi
 subs_socks.append( utils.subscribe([ config.topic_comp_vis ], config.zmq_pub_comp_vis))
 subs_socks.append( utils.subscribe([ config.topic_command ], config.zmq_pub_command))
 
+if args.sim:
+    #due to bug in SITL take data directly from fdm_pub_underwater.py in dronesimlab
+    sitl_bypass_topic = b'position_rep'
+    if 1:
+        subs_socks.append( utils.subscribe([ sitl_bypass_topic ],5566) )
+        print('************  bypass sitl yaw!')
+    bypass_yaw = None
+
+
 socket_pub = utils.publisher(config.zmq_pub_main)
 
 fb_dir=-1.0
@@ -56,7 +65,7 @@ ground_range_lock = config.ground_range_lock
 
 
 async def get_zmq_events():
-    global lock_range_state,track_info, lock_range, joy_axes, lock_yaw_depth,lock_yaw_depth_state,ground_range_lock
+    global lock_range_state,track_info, lock_range, joy_axes, lock_yaw_depth,lock_yaw_depth_state,ground_range_lock,bypass_yaw
     while True:
         socks=zmq.select(subs_socks,[],[],0)[0]
         for sock in socks:
@@ -99,6 +108,9 @@ async def get_zmq_events():
                 except:
                     print('run command_fail')
                     traceback.print_exc(file=sys.stdout)
+
+            if args.sim and ret[0]=sitl_bypass_topic:
+                bypass_yaw = data['yaw']
                 #print('-------------topic',track_info)
         await asyncio.sleep(0.001)
 
@@ -246,6 +258,10 @@ async def control():
         to_pwm=controller.to_pwm
 
         telem.update(controller.nav_data)
+        if args.sim and bypass_yaw is not None:
+            data['yaw']=np.radians(bypass_yaw%360)
+            data['heading']=bypass_yaw%360
+
 
         telem.update({
             'ud_cmd':to_pwm(ud_cmd+config.ud_trim),

@@ -140,7 +140,8 @@ if __name__=='__main__':
                         sys.exit(0)
                     break
                 if args.pub_data:
-                    socket_pub.send_multipart([ret[0],pickle.dumps(ret[1])])
+                    if type(ret[0])==bytes:
+                        socket_pub.send_multipart([ret[0],pickle.dumps(ret[1])])
                 #print('topic=',ret[0])
                 if ret[0]==config.topic_comp_vis:
                     vis_data=ret[1]

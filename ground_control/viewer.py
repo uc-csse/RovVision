@@ -32,7 +32,12 @@ if 1:
 else:
     subs_socks.append( utils.subscribe([ config.topic_main_telem, config.topic_mav_telem ],config.zmq_pub_main) )
 
+#due to bug in SITL take data directly from fdm_pub_underwater.py in dronesimlab
+sitl_bypass_topic = b'position_rep'
+subs_socks.append( utils.subscribe([ sitl_bypass_topic ],5566) )
 
+print('************  bypass sitl yaw!')
+bypass_yaw = None
 #socket_pub = utils.publisher(config.zmq_local_route)
 socket_pub = utils.publisher(config.zmq_local_route,'0.0.0.0')
 
@@ -55,6 +60,10 @@ if __name__=='__main__':
             ret = sock.recv_multipart()
             topic , data = ret
             data=pickle.loads(ret[1])
+            if ret[0]==sitl_bypass_topic:
+                bypass_yaw = data['yaw'] % 360
+                #print('bypass_yaw',bypass_yaw)
+
             if ret[0]==config.topic_comp_vis:
                 socket_pub.send_multipart([config.topic_comp_vis,ret[1]])
                 vis_data=data
@@ -63,6 +72,9 @@ if __name__=='__main__':
                 mav_data=data
             if ret[0]==config.topic_main_telem:
                 #print('-----==config.topic_main_telem')
+                if bypass_yaw is not None:
+                    data['yaw']=np.radians(bypass_yaw)
+                    data['heading']=bypass_yaw
                 main_data.update(data)
 
                 socket_pub.send_multipart([config.topic_main_telem,ret[1]])

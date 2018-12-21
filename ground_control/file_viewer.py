@@ -101,6 +101,7 @@ if __name__=='__main__':
 
     if os.path.isfile(args.path+'/data.pkl'):
         fd = open(args.path+'/data.pkl','rb')
+        print('reading data.pkl')
     else:
         fd = open(args.path+'/viewer_data.pkl','rb')
     sx,sy=config.pixelwidthx,config.pixelwidthy

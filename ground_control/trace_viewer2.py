@@ -79,11 +79,12 @@ from utils import ab_filt
 xf,yf,zf=ab_filt(),ab_filt(),ab_filt()
 
 ch,sh=0,0
+yaw=0
 def update_graph(axes):
-    global hdl_pos,hdl_arrow,ch,sh
+    global hdl_pos,hdl_arrow,ch,sh,yaw
     tic=time.time()
     new_data=False
-    yaw=0
+    #yaw=0
     while 1:
         socks=zmq.select(subs_socks,[],[],0.001)[0]
         if time.time()-tic>=0.09:
@@ -99,6 +100,7 @@ def update_graph(axes):
                 if ret[0]==config.topic_main_telem:
                     if 'yaw' in data:
                         yaw = (data['yaw']+np.pi)
+                        print('yaw',yaw/np.pi*180)
                 if ret[0]==config.topic_comp_vis:
                     if 'range_z' in data:
                         gdata.range_arr.add(-data['range_z'])

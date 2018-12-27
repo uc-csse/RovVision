@@ -109,7 +109,8 @@ async def get_zmq_events():
                     print('run command_fail')
                     traceback.print_exc(file=sys.stdout)
 
-            if args.sim and ret[0]=sitl_bypass_topic:
+            if args.sim and ret[0]==sitl_bypass_topic:
+                data=pickle.loads(ret[1])
                 bypass_yaw = data['yaw']
                 #print('-------------topic',track_info)
         await asyncio.sleep(0.001)
@@ -259,8 +260,8 @@ async def control():
 
         telem.update(controller.nav_data)
         if args.sim and bypass_yaw is not None:
-            data['yaw']=np.radians(bypass_yaw%360)
-            data['heading']=bypass_yaw%360
+            telem['yaw']=np.radians(bypass_yaw%360)
+            telem['heading']=bypass_yaw%360
 
 
         telem.update({

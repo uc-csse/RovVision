@@ -30,6 +30,7 @@ parser.add_argument("--nosingle",help="dont use the single files only the stream
 parser.add_argument("--nosync", help="dont sync videos", action='store_true')
 parser.add_argument("--novid", help="ignore video", action='store_true')
 parser.add_argument("--pub_data", help="publish data", action='store_true')
+parser.add_argument("--pub_images", help="publish images", action='store_true')
 parser.add_argument("--runtracker", help="run tracker on recorded vid", action='store_true')
 parser.add_argument("--path",help="dir path")
 parser.add_argument("--bs",help="history buff size",type=int ,default=1000)
@@ -44,7 +45,7 @@ if args.cc is not None:
     def apply_colorcc(img):
         return  (img.reshape((-1,3)) @ c_mat.T).clip(0,255).reshape(img.shape).astype('uint8')
 
-if args.pub_data:
+if args.pub_images:
     socket_pub = utils.publisher(config.zmq_local_route,'0.0.0.0')
 
 
@@ -209,6 +210,11 @@ if __name__=='__main__':
                 if imgs_raw[i] is None:
                     imgs_raw[i]=images[i].copy()#[:,:,::-1].copy()
                 imgs_raw[i]=imgs_raw[i][:,:,::-1]
+            if args.pub_images:
+                socket_pub.send_multipart([\
+                config.viewer_pub_image_topic,\
+                pickle.dumps((imgs_raw[0][:,:,1],imgs_raw[1][:,:,1]))])
+
             if args.runtracker:
                 if track is None:
                     #track = tracker.run_Trackers()

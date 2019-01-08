@@ -35,6 +35,8 @@ topic_comp_vis = b'comp_vis'
 topic_comp_vis_cmd = b'comp_vis_cmd'
 zmq_pub_comp_vis_imgs = 8878
 
+viewer_pub_image_topic=b'viewer_pub_image_topic'
+
 n_drones = 1
 
 

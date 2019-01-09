@@ -17,12 +17,14 @@
 ///constants
 
 #define TRIG_FPS 10
-#define IMU_FPS 50
-#define FULL_CYCLE_MICRO (1000000/IMU_FPS)
-#define TRIG_FULL_CYCLE_MICRO (1000000/TRIG_FPS)
-#define TRIG_FULL_CYCLE_ITERS (TRIG_FULL_CYCLE_MICRO/FULL_CYCLE_MICRO)
-#define TRIG_HALF_CYCLE_ITERS (TRIG_FULL_CYCLE_ITERS/2) 
+#define IMU_FPS 1
+#define TRIGGER_RATE_MICROS (1000000/IMU_FPS)
+#define SEND_IMU_RATE_MICROS (1000000/TRIG_FPS)
+#define SEND_IMU_RATE_MICROS_HALF (SEND_IMU_RATE_MICROS/2)
 
+#define DEBUG_IMU_MSG
+
+#define SERIAL_BAUD_RATE 460800
 
 #if ARDUINO_ARCH_ESP32
 #define LED_PIN 2
@@ -43,14 +45,9 @@
 //###########  states
 int dump_imu=0; // 01
 int start_trig=0; // 02
-//int laser1_trig=0; // 03
 //############ states end
 
 MS5611 ms5611;
-
-
-//uint32_t time;
-
 MPU6050 accelgyro;
 HMC5883L mag;
 
@@ -80,8 +77,6 @@ void chksum()
     ds.footer=tsum;
 }
 
-int iters=0;
-unsigned long tic;
 
 void setup() {
     delay(2000);  
@@ -90,7 +85,7 @@ void setup() {
     accelgyro.setI2CBypassEnabled(true) ;
     accelgyro.setSleepEnabled(false);
 
-    SERIAL.begin(460800);
+    SERIAL.begin(SERIAL_BAUD_RATE);
 
     // initialize device
     SERIAL.println("Initializing I2C devices...");
@@ -109,15 +104,16 @@ void setup() {
     pinMode(LED_PIN, OUTPUT);
     pinMode(TRIGER_PIN, OUTPUT);
     pinMode(LASER1_PIN, OUTPUT);
-
-    tic=micros();
 }
 
 
+
 void loop() {
-    unsigned long tdiff,toc;   
+    unsigned long time = micros();
+
     accelgyro.getMotion6(&ds.ax, &ds.ay, &ds.az, &ds.gx, &ds.gy, &ds.gz);
     mag.getHeading(&ds.mx, &ds.my, &ds.mz);
+    
     // Read raw values
     //uint32_t rawTemp = ms5611.readRawTemperature();
     //uint32_t rawPressure = ms5611.readRawPressure();
@@ -129,88 +125,82 @@ void loop() {
     // Calculate altitude
     ds.absoluteAltitude = ms5611.getAltitude(realPressure);
     //float relativeAltitude = ms5611.getAltitude(realPressure, referencePressure);
-
-
-    // display tab-separated accel/gyro x/y/z values
-#if 0
-    SERIAL.print("a/g:\t");
-    SERIAL.print(ds.ax); SERIAL.print("\t");
-    SERIAL.print(ds.ay); SERIAL.print("\t");
-    SERIAL.print(ds.az); SERIAL.print("\t");
-    SERIAL.print(ds.gx); SERIAL.print("\t");
-    SERIAL.print(ds.gy); SERIAL.print("\t");
-    SERIAL.print(ds.gz);SERIAL.print("\t");
-
-    SERIAL.print("mag:\t");
-    SERIAL.print(ds.mx); SERIAL.print("\t");
-    SERIAL.print(ds.my); SERIAL.print("\t");
-    SERIAL.print(ds.mz); SERIAL.print("\t");
-
-    // To calculate heading in degrees. 0 degree indicates North
-    float heading = atan2(ds.my, ds.mx);
-    if(heading < 0)
-        heading += 2 * M_PI;
-    SERIAL.print("heading:\t");
-    SERIAL.print(heading * 180/M_PI);SERIAL.print("\t");
-
-    SERIAL.print("alt:\t");
-    SERIAL.println( ds.absoluteAltitude );
-#else
-
-    chksum();
-    //SERIAL.print("got");
-    //SERIAL.print(bt);
-
-
-    if (dump_imu && SERIAL.availableForWrite()>=sizeof(ds)) SERIAL.write((const uint8_t*)&ds,sizeof(ds));
-#endif
-    // blink LED to indicate activity
-    // triggering every second cycle
-    if((iters%TRIG_FULL_CYCLE_ITERS)==0){
-        digitalWrite(LED_PIN, HIGH);
-        if(start_trig) digitalWrite(TRIGER_PIN, HIGH);
-    }
-    if((iters%TRIG_FULL_CYCLE_ITERS)==TRIG_HALF_CYCLE_ITERS){
-        digitalWrite(LED_PIN, LOW);
-        if(start_trig) digitalWrite(TRIGER_PIN, LOW);
-    }
-    //if((iters%8)==0 && laser1_trig) digitalWrite(LASER1_PIN,HIGH);
-    //if((iters%8)==4 && laser1_trig) digitalWrite(LASER1_PIN,LOW);
-    //if((iters%8)==4 && laser1_trig) digitalWrite(LASER1_PIN,LOW);
-
-    iters+=1;
-
-
-    while (1){
-        int bt=0;
-        toc=micros();
-        tdiff=(toc-tic);
-        if (tdiff>0 && tdiff>=FULL_CYCLE_MICRO) break;
-        while (SERIAL.available() > 0) {
-            bt = SERIAL.read();
-            switch(bt) {
-                case 1:
-                    dump_imu=1;
-                    start_trig=1;
-                    break;
-                case 2:
-                    dump_imu=0;
-                    start_trig=0;
-                    break;
-                case 3:
-		    digitalWrite(LASER1_PIN,HIGH); 
-                    break;
-		case 4:
-                    digitalWrite(LASER1_PIN,LOW);
-                    break;
-                default:
-                    break;
-            }
+    
+    
+    while (SERIAL.available() > 0) {
+        int bt = SERIAL.read();
+        switch(bt) {
+            case 1:
+                dump_imu=1;
+                start_trig=1;
+                break;
+            case 2:
+                dump_imu=0;
+                start_trig=0;
+                break;
+            case 3:
+                digitalWrite(LASER1_PIN,HIGH); 
+                break;
+            case 4:
+                digitalWrite(LASER1_PIN,LOW);
+                break;
+            default:
+                break;
         }
-        //delay(1); 
-	//delayMicroseconds(1)
-        //delay(1); 
     }
-    tic=micros();
+    
+    
+    // Task to trigger cameras
+    static unsigned long trigger_last_time = 0;
+    if ((time - trigger_last_time) > SEND_IMU_RATE_MICROS_HALF) {
+        static uint8_t trigger_state = false;
+        trigger_last_time = time;
+        
+        if (!trigger_state && start_trig) {
+            // trigger low and currently triggering
+            digitalWrite(LED_PIN, HIGH);
+            digitalWrite(TRIGER_PIN, HIGH);
+            trigger_state = true;
+        }
+        else {
+            // trigger high (always bring lines low even if trigger has been turned off)
+            digitalWrite(LED_PIN, LOW);
+            digitalWrite(TRIGER_PIN, LOW);
+            trigger_state = false;
+        }
+        
+    }
+    
+    // Task to send IMU data to companion computer 
+    static unsigned long send_imu_last_time = 0;
+    if ((time - send_imu_last_time) > TRIGGER_RATE_MICROS) {
+        send_imu_last_time = time;
+#ifdef DEBUG_IMU_MSG
+        SERIAL.print("a/g:\t");
+        SERIAL.print(ds.ax); SERIAL.print("\t");
+        SERIAL.print(ds.ay); SERIAL.print("\t");
+        SERIAL.print(ds.az); SERIAL.print("\t");
+        SERIAL.print(ds.gx); SERIAL.print("\t");
+        SERIAL.print(ds.gy); SERIAL.print("\t");
+        SERIAL.print(ds.gz);SERIAL.print("\t");
 
+        SERIAL.print("mag:\t");
+        SERIAL.print(ds.mx); SERIAL.print("\t");
+        SERIAL.print(ds.my); SERIAL.print("\t");
+        SERIAL.print(ds.mz); SERIAL.print("\t");
+
+        // To calculate heading in degrees. 0 degree indicates North
+        float heading = atan2(ds.my, ds.mx);
+        if(heading < 0)
+            heading += 2 * M_PI;
+        SERIAL.print("heading:\t");
+        SERIAL.print(heading * 180/M_PI);SERIAL.print("\t");
+
+        SERIAL.print("alt:\t");
+        SERIAL.println( ds.absoluteAltitude );
+#else
+        chksum();
+        if (dump_imu && SERIAL.availableForWrite()>=sizeof(ds)) SERIAL.write((const uint8_t*)&ds,sizeof
+#endif
+    }
 }

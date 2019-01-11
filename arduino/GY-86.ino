@@ -281,7 +281,7 @@ void loop() {
         SERIAL.println( ds.pressure );
 #else
         chksum();
-        if (dump_imu && SERIAL.availableForWrite()>=sizeof(ds)) SERIAL.write((const uint8_t*)&ds,sizeof
+        if (dump_imu && SERIAL.availableForWrite()>=sizeof(ds)) SERIAL.write((const uint8_t*)&ds,sizeof(ds));
 #endif
     }
 }

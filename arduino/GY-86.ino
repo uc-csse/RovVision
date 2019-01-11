@@ -1,6 +1,7 @@
 #include "Wire.h"
 //#include "I2Cdev.h"
-#include "MPU6050.h"
+#include "MPU6050_6Axis_MotionApps20.h"
+//#include "MPU6050.h" // not necessary if using MotionApps include file
 #include "HMC5883L.h"
 #include <MS5611.h>
 //// Importent in order for it to work
@@ -17,14 +18,15 @@
 ///constants
 
 #define TRIG_FPS 10
-#define IMU_FPS 1
+#define IMU_FPS 10
 #define TRIGGER_RATE_MICROS (1000000/IMU_FPS)
 #define SEND_IMU_RATE_MICROS (1000000/TRIG_FPS)
 #define SEND_IMU_RATE_MICROS_HALF (SEND_IMU_RATE_MICROS/2)
 
-#define DEBUG_IMU_MSG
+//#define DEBUG_IMU_MSG
 
 #define SERIAL_BAUD_RATE 460800
+//#define SERIAL_BAUD_RATE 115200
 
 #if ARDUINO_ARCH_ESP32
 #define LED_PIN 2
@@ -51,13 +53,36 @@ MS5611 ms5611;
 MPU6050 accelgyro;
 HMC5883L mag;
 
+// MPU control/status vars
+bool dmpReady = false;  // set true if DMP init was successful
+uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
+uint16_t dmpPacketSize; // expected DMP packet size (default is 42 bytes)
+uint16_t fifoCount;     // count of all bytes currently in FIFO
+uint8_t fifoBuffer[64]; // FIFO storage buffer
+
+// orientation/motion vars
+Quaternion q;           // [w, x, y, z]         quaternion container
+VectorInt16 aa;         // [x, y, z]            accel sensor measurements
+VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
+VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
+VectorFloat gravity;    // [x, y, z]            gravity vector
+float euler[3];         // [psi, theta, phi]    Euler angle container
+float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+
+
+
+volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
+void dmpDataReady() {
+    
+}
 
 typedef struct {
     uint16_t header;
     int16_t ax, ay, az;
     int16_t gx, gy, gz;
     int16_t mx, my, mz;
-    float absoluteAltitude;
+    float temperature;
+    int32_t pressure;
     uint32_t t_stemp;
     uint16_t footer; 
 } data_struct;
@@ -79,23 +104,45 @@ void chksum()
 
 
 void setup() {
-    delay(2000);  
+    delay(2000);
+    
+    SERIAL.begin(SERIAL_BAUD_RATE);  
     Wire.begin();
     accelgyro.setI2CMasterModeEnabled(false);
     accelgyro.setI2CBypassEnabled(true) ;
     accelgyro.setSleepEnabled(false);
-
-    SERIAL.begin(SERIAL_BAUD_RATE);
-
-    // initialize device
-    SERIAL.println("Initializing I2C devices...");
+    
+    // initialize imu with Digital Motion Processor
     accelgyro.initialize();
-    mag.initialize();
-    SERIAL.println(mag.testConnection() ? "HMC5883L connection successful" : "HMC5883L connection failed");
 
-    // verify connection
-    SERIAL.println("Testing device connections...");
+    mag.initialize();
+    SERIAL.println("");
+    SERIAL.println(mag.testConnection() ? "HMC5883L connection successful" : "HMC5883L connection failed");
     SERIAL.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+
+    uint8_t dmpStatus = accelgyro.dmpInitialize();
+
+    
+    accelgyro.setXGyroOffset(220);
+    accelgyro.setYGyroOffset(76);
+    accelgyro.setZGyroOffset(-85);
+    accelgyro.setZAccelOffset(1788);
+    
+    if (dmpStatus == 0) {
+        Serial.println(F("Enabling DMP..."));
+        accelgyro.setDMPEnabled(true);
+        
+        // get expected DMP packet size for later comparison
+        dmpPacketSize = accelgyro.dmpGetFIFOPacketSize();
+    } else {
+        // ERROR!
+        // 1 = initial memory load failed
+        // 2 = DMP configuration updates failed
+        // (if it's going to break, usually the code will be 1)
+        Serial.print(F("DMP Initialization failed (code "));
+        Serial.print(dmpStatus);
+        Serial.println(F(")"));
+    }
 
     ms5611.setOversampling(MS5611_ULTRA_HIGH_RES);
     ms5611.begin();
@@ -111,7 +158,39 @@ void setup() {
 void loop() {
     unsigned long time = micros();
 
-    accelgyro.getMotion6(&ds.ax, &ds.ay, &ds.az, &ds.gx, &ds.gy, &ds.gz);
+    // get current FIFO count
+    fifoCount = accelgyro.getFIFOCount();
+    // check for overflow (this should never happen unless our code is too inefficient)
+    if (fifoCount >= 1024) {
+        // reset so we can continue cleanly
+        accelgyro.resetFIFO();
+#ifdef DEBUG_IMU_MSG
+        Serial.println(F("FIFO overflow!"));
+#endif
+
+    // otherwise, check for DMP data ready interrupt (this should happen frequently)
+    } else if (fifoCount >= dmpPacketSize) {
+        
+        // Read all complete packets from buffer
+        // Keep overwritting until most recent packet is in fifobuffer
+        while (fifoCount >= dmpPacketSize) {
+          accelgyro.getFIFOBytes(fifoBuffer, dmpPacketSize);
+          fifoCount = accelgyro.getFIFOCount();
+        }
+
+        accelgyro.dmpGetAccel(&aa, fifoBuffer);
+        accelgyro.dmpGetQuaternion(&q, fifoBuffer);
+        accelgyro.dmpGetGravity(&gravity, &q);
+        accelgyro.dmpGetYawPitchRoll(ypr, &q, &gravity);
+        ds.ax = aa.x;
+        ds.ay = aa.y;
+        ds.az = aa.z;
+        ds.gx = ypr[0]*180/M_PI;
+        ds.gy = ypr[1]*180/M_PI;
+        ds.gz = ypr[2]*180/M_PI;
+    }
+    
+    //accelgyro.getMotion6(&ds.ax, &ds.ay, &ds.az, &ds.gx, &ds.gy, &ds.gz);
     mag.getHeading(&ds.mx, &ds.my, &ds.mz);
     
     // Read raw values
@@ -119,11 +198,11 @@ void loop() {
     //uint32_t rawPressure = ms5611.readRawPressure();
 
     // Read true temperature & Pressure
-    //double realTemperature = ms5611.readTemperature();
-    int32_t realPressure = ms5611.readPressure();
+    ds.temperature = ms5611.readTemperature();
+    ds.pressure = ms5611.readPressure();
 
     // Calculate altitude
-    ds.absoluteAltitude = ms5611.getAltitude(realPressure);
+    //ds.absoluteAltitude = ms5611.getAltitude(realPressure);
     //float relativeAltitude = ms5611.getAltitude(realPressure, referencePressure);
     
     
@@ -196,8 +275,10 @@ void loop() {
         SERIAL.print("heading:\t");
         SERIAL.print(heading * 180/M_PI);SERIAL.print("\t");
 
-        SERIAL.print("alt:\t");
-        SERIAL.println( ds.absoluteAltitude );
+        SERIAL.print("temp:\t");
+        SERIAL.print( ds.temperature );
+        SERIAL.print("pressure:\t");
+        SERIAL.println( ds.pressure );
 #else
         chksum();
         if (dump_imu && SERIAL.availableForWrite()>=sizeof(ds)) SERIAL.write((const uint8_t*)&ds,sizeof

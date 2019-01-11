@@ -84,11 +84,12 @@ def reader():
         #    print('Error, bad checksum',chksum,calc_chksum)
         #    continue
 
-        data=struct.unpack('='+'h'*9+'fi',raw_data)
+        data=struct.unpack('='+'h'*9+'fiI',raw_data)
         ret['a/g']=np.array(lmap(float,data[:6]))
         ret['mag']=np.array(lmap(float,data[6:9]))
-        ret['alt']=data[9]
-        ret['t_stemp_ms']=data[10]/1000.0
+        ret['therm']=data[9]
+        ret['baro']=data[10]
+        ret['t_stemp_ms']=data[11]/1000.0
         #print('==== {:.3f}'.format(data[10]/1e6))
         yield ret
         
@@ -161,7 +162,6 @@ def ploter():
         fig.canvas.draw()
         plt.waitforbuttonpress(timeout=0.001)
                 
-
 
 if  __name__=="__main__":
     rd=reader()

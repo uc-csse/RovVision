@@ -2,13 +2,13 @@
 LOCALS=""
 REMOTES=""
 
-LP="6760 6761 8877 9921 5900 5901"
+LP="6760 6761 8877 9921 5900 5901 9217"
 RP="9117"
 
-for i in $LP;do 
+for i in $LP;do
   LOCALS="$LOCALS -L $i:127.0.0.1:$i"
 done
-for i in $RP;do 
+for i in $RP;do
   REMOTES="$REMOTES -R $i:127.0.0.1:$i"
 done
 

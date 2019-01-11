@@ -66,6 +66,9 @@ if __name__=='__main__':
                 main_data.update(data)
 
                 socket_pub.send_multipart([config.topic_main_telem,ret[1]])
+            if ret[0]==config.topic_imu:
+                socket_pub.send_multipart([config.topic_imu,ret[1]])
+
 
             if vis_data.get('record_state',False):
                 if get_files_fds()[0] is None:

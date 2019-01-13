@@ -19,9 +19,13 @@
 
 #define TRIG_FPS 10
 #define IMU_FPS 10
+#define BARO_FPS IMU_FPS
+
 #define TRIGGER_RATE_MICROS (1000000/IMU_FPS)
 #define SEND_IMU_RATE_MICROS (1000000/TRIG_FPS)
-#define SEND_IMU_RATE_MICROS_HALF (SEND_IMU_RATE_MICROS/2)
+#define BARO_SAMPLE_RATE_MICROS (1000000/BARO_FPS)
+
+#define TRIGGER_RATE_MICROS_HALF (TRIGGER_RATE_MICROS/2)
 
 //#define DEBUG_IMU_MSG
 
@@ -191,21 +195,18 @@ void loop() {
     }
     
     //accelgyro.getMotion6(&ds.ax, &ds.ay, &ds.az, &ds.gx, &ds.gy, &ds.gz);
-    mag.getHeading(&ds.mx, &ds.my, &ds.mz);
+    //mag.getHeading(&ds.mx, &ds.my, &ds.mz);
     
-    // Read raw values
-    //uint32_t rawTemp = ms5611.readRawTemperature();
-    //uint32_t rawPressure = ms5611.readRawPressure();
 
     // Read true temperature & Pressure
-    ds.temperature = ms5611.readTemperature();
-    ds.pressure = ms5611.readPressure();
+    static unsigned long baro_sample_last_time = 0;
+    if ((time - baro_sample_last_time) > BARO_SAMPLE_RATE_MICROS) {
+        baro_sample_last_time += BARO_SAMPLE_RATE_MICROS;
+        ds.temperature = ms5611.readTemperature();
+        ds.pressure = ms5611.readPressure();
+    }
 
-    // Calculate altitude
-    //ds.absoluteAltitude = ms5611.getAltitude(realPressure);
-    //float relativeAltitude = ms5611.getAltitude(realPressure, referencePressure);
-    
-    
+
     while (SERIAL.available() > 0) {
         int bt = SERIAL.read();
         switch(bt) {
@@ -231,9 +232,9 @@ void loop() {
     
     // Task to trigger cameras
     static unsigned long trigger_last_time = 0;
-    if ((time - trigger_last_time) > SEND_IMU_RATE_MICROS_HALF) {
+    if ((time - trigger_last_time) > TRIGGER_RATE_MICROS_HALF) {
         static uint8_t trigger_state = false;
-        trigger_last_time = time;
+        trigger_last_time += TRIGGER_RATE_MICROS_HALF;
         
         if (!trigger_state && start_trig) {
             // trigger low and currently triggering

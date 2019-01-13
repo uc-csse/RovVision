@@ -9,7 +9,7 @@ import zmq
 import PySpin
 from time import sleep
 import numpy as np
-import cv2,struct
+import cv2,struct,pickle
 import queue
 import config
 import utils
@@ -18,6 +18,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--cvshow",help="show opencv mode", action='store_true')
 args = parser.parse_args()
 #
+subs_socks=[]
+subs_socks.append( utils.subscribe([ config.topic_comp_vis ],config.zmq_pub_comp_vis))
 
 socket_pub = utils.publisher(config.zmq_pub_unreal_proxy)
 
@@ -29,6 +31,9 @@ class TriggerType:
 CHOSEN_TRIGGER = TriggerType.HARDWARE
 
 SLEEP_DURATION = 200  # amount of time for main thread to sleep for (in milliseconds) until _NUM_IMAGES have been saved
+
+record_state = False
+record_date_str = None
 
 
 class ImageEventHandler(PySpin.ImageEvent):
@@ -65,11 +70,15 @@ class ImageEventHandler(PySpin.ImageEvent):
         self._image_count = 0
         self.theimage = (-1,None)
         self.q = queue.Queue()
+        self.name='U' #unassigned yet
         # Release reference to camera
         # NOTE: Unlike the C++ examples, we cannot rely on pointer objects being automatically
         # cleaned up when going out of scope.
         # The usage of del is preferred to assigning the variable to None.
         del cam
+
+    def set_name(self,name):
+        self.name=name
 
     def OnImageEvent(self, image):
         """
@@ -102,10 +111,21 @@ class ImageEventHandler(PySpin.ImageEvent):
                 # Convert to mono8
                 #image_converted = image.Convert(PySpin.PixelFormat_Mono8, PySpin.HQ_LINEAR)
                 image_converted = image.Convert(PySpin.PixelFormat_RGB8, PySpin.HQ_LINEAR)
-                    #import ipdb;ipdb.set_trace() 
+                    #import ipdb;ipdb.set_trace()
                 self.theimage=(self._image_count,image_converted.GetData().reshape((height,width,3)))
+                if record_state and (self._image_count%5==0): #save every 0.5 sec
+                    raw_data=image.GetData().reshape((height,width))
+                    imgname='../data/'+record_date_str+'/{}{:08d}.{}'\
+                    .format(self.name[0],self._image_count,'pgm')
+                    #to convert to RGB:
+                    #im=cv2.imread('file.pgm')[:,:,0]
+                    #im=cv2.cvtColor(im[:,:,0].copy(),cv2.COLOR_BayerBG2BGR)
+                    tic=time.time()
+                    cv2.imwrite(imgname,raw_data)
+                    print('saving took',time.time()-tic)
+
                 if not args.cvshow:
-                    self.q.put(self.theimage) 
+                    self.q.put(self.theimage)
                 self._image_count += 1
 
 
@@ -312,7 +332,7 @@ def acquire_images(cam, nodemap, image_event_handler):
 
 def run_single_camera(cams):
     """
-    This function acts as the body of the example; please see NodeMapInfo example 
+    This function acts as the body of the example; please see NodeMapInfo example
     for more in-depth comments on setting up cameras.
 
     :param cam: Camera to acquire images from.
@@ -320,6 +340,8 @@ def run_single_camera(cams):
     :return: True if successful, False otherwise.
     :rtype: bool
     """
+    global record_state,record_date_str
+
     cams=list(cams)#[:1]
     try:
         result = True
@@ -370,13 +392,16 @@ def run_single_camera(cams):
         cnt=0
 
         hdl_l,hdl_r=hdls
-        
+
         #arrange order by serial num
         if hdl_l._device_serial_number > hdl_r._device_serial_number:
-            hdl_l,hdl_r=hdl_r,hdl_l 
-        
+            hdl_l,hdl_r=hdl_r,hdl_l
+
         ql,qr = hdl_l.q,hdl_r.q
-        
+        hdl_l.set_name('left')
+        hdl_r.set_name('right')
+
+
         while 1:
         #for i in range(1000*100): #10 sec
                 if args.cvshow:
@@ -385,11 +410,11 @@ def run_single_camera(cams):
                         if hdl._image_count>0:
                             cv2.imshow(hdl._device_serial_number+suf,hdl.theimage[1][::2,::2,:])
                     while cnt>hdl._image_count:
-                        sleep(0.01)   
+                        sleep(0.01)
                     cnt+=1
-                    k=cv2.waitKey(5) 
+                    k=cv2.waitKey(5)
                     if k==ord('q'):
-                        break  
+                        break
                     if k!=-1:
                         print('k',k)
                 else:
@@ -401,10 +426,21 @@ def run_single_camera(cams):
                             topic = config.topic_unreal_drone_rgb_camera%0+(b'l' if q is ql else b'r')
                             if frame_cnt%10==0:
                                 print('sending --- ',frame_cnt)
-                            socket_pub.send_multipart([topic,struct.pack('llll',*img.shape,frame_cnt),img.tostring()]) 
+                            socket_pub.send_multipart([topic,struct.pack('llll',*img.shape,frame_cnt),img.tostring()])
                         cnt=frame_cnt
                     else:
                         #print('---',tim_l[0],tim_r[0],cnt)
+                        while 1:
+                            socks=zmq.select(subs_socks,[],[],0)[0]
+                            if len(socks)==0: #flush the message buffer if needed
+                                break
+                            for sock in socks:
+                                ret  = sock.recv_multipart()
+                                if ret[0]==config.topic_comp_vis:
+                                    vis_data=pickle.loads(ret[1])
+                                    record_state=vis_data['record_state']
+                                    if record_state:
+                                        record_date_str=vis_data['record_date_str']
                         sleep(0.001)
         for cam in cams:
             cam.EndAcquisition()
@@ -423,7 +459,7 @@ def run_single_camera(cams):
 
 def main():
     """
-    Example entry point; please see Enumeration example for additional 
+    Example entry point; please see Enumeration example for additional
     comments on the steps in this function.
 
     :return: True if successful, False otherwise.
@@ -436,7 +472,7 @@ def main():
 
     # Retrieve list of cameras from the system
     cam_list = system.GetCameras()
-    
+
     num_cams = cam_list.GetSize()
 
     print('Number of cameras detected: %i' % num_cams)

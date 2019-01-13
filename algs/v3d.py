@@ -49,7 +49,7 @@ socket_pub = utils.publisher(config.zmq_pub_comp_vis)
 
 
 
-image_fmt='ppm'
+#image_fmt='ppm'
 
 print('start...')
 start=time.time()
@@ -85,7 +85,7 @@ def listener():
     while keep_running:
         socks=zmq.select(subs_socks,[],[],0.001)[0]
         for sock in socks:
-            ret=sock.recv_multipart() 
+            ret=sock.recv_multipart()
             if ret[0]==config.topic_button:
                 data=pickle.loads(ret[1])
                 if data[config.joy_init_track]==1:
@@ -97,13 +97,13 @@ def listener():
                     record_state = not record_state
                     print('recording ',record_state)
                     if record_state:
-                        date_str=datetime.now().strftime('%y%m%d-%H%M%S') 
+                        date_str=datetime.now().strftime('%y%m%d-%H%M%S')
                         save = '../data/'+date_str
                         os.mkdir(save)
                         data_fd=open(save+'/data.pkl','wb')
                         shutil.copy('../config.py',save+'/')
                         os.popen('git log -n 10 > '+save+'/git.log')
-            
+
             if record_state and ret[0] not in [topicl,topicr]:
                 #save only data not images
                 pickle.dump((ret[0],pickle.loads(ret[1])),data_fd,-1)
@@ -116,27 +116,27 @@ def listener():
                     fmt_cnt_l=info[3]
                     imgl=data
                 if topic==topicr:
-                    fmt_cnt_r=info[3] 
+                    fmt_cnt_r=info[3]
                     imgr=data
 
             if ret[0] in [topicl,topicr] and fmt_cnt_r == fmt_cnt_l:
                 imgl=np.fromstring(imgl,'uint8').reshape(shape)[:,:,::-1]
                 imgr=np.fromstring(imgr,'uint8').reshape(shape)[:,:,::-1]
-                if save and record_state and (info[3]%10==0): #save every 1 sec
-                    cv2.imwrite(save+'/l{:08d}.{}'.format(info[3],image_fmt),imgl)
-                    cv2.imwrite(save+'/r{:08d}.{}'.format(info[3],image_fmt),imgr)
+                #if save and record_state and (info[3]%10==0): #save every 1 sec
+                #    cv2.imwrite(save+'/l{:08d}.{}'.format(info[3],image_fmt),imgl)
+                #    cv2.imwrite(save+'/r{:08d}.{}'.format(info[3],image_fmt),imgr)
                 if time.time()-last_usage_test>10.0:
                     last_usage_test=time.time()
                     disk_usage=get_disk_usage()
-                
-                #### shrink images if needed  
+
+                #### shrink images if needed
                 if shape[1] > 640:
                     img=imgl=shrink(imgl)
                     imgr=shrink(imgr)
                 else:
                     img=imgl
-                
-                ###################################################################### 
+
+                ######################################################################
                 if track is None: #old tracker
                     track = tracker.run_Trackers()
                     track.__next__()
@@ -145,11 +145,11 @@ def listener():
                     if gotlock:
                         track.reset()
                         gotlock=False
-                    
+
                     ret=track(imgl,imgr)
                     #ret=track.send((imgl,imgr,'lock' if lock else None))
                     toc=time.time()
-                    ret['ts']=toc 
+                    ret['ts']=toc
                     ret['record_state']=record_state
                     if record_state:
                         ret['record_date_str']=date_str
@@ -194,6 +194,6 @@ def listener():
                     if k==ord('l'): #lock
                         track=None
 
-       
+
 if __name__ == '__main__':
     listener()

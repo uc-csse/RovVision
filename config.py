@@ -2,7 +2,7 @@
 import numpy as np
 import os
 
-if 0:
+if 1:
     lock_mode='fb_to_x'
     camera_pitch = np.radians(45) # camera installation pitch in rad
 
@@ -10,7 +10,7 @@ if 0:
     lock_mode='ud_to_range'
     camera_pitch = np.radians(45) # camera installation pitch in rad
 
-if 1:
+if 0:
     lock_mode='fb_to_range'
     camera_pitch = np.radians(0)
 
@@ -34,6 +34,8 @@ zmq_pub_comp_vis = 8877 #only port
 topic_comp_vis = b'comp_vis'
 topic_comp_vis_cmd = b'comp_vis_cmd'
 zmq_pub_comp_vis_imgs = 8878
+
+viewer_pub_image_topic=b'viewer_pub_image_topic'
 
 n_drones = 1
 
@@ -82,7 +84,7 @@ fps = 10
 fov=60.97
 pixelwidthx = 640 #after shrink
 pixelwidthy = 512 #after shrink
-baseline = 0.14 # (240-100)*.1scale in cm from unreal engine
+baseline = 0.122 # (240-100)*.1scale in cm from unreal engine
 focal_length=pixelwidthx/( np.tan(np.deg2rad(fov/2)) *2 )
 #camera_pitch = np.radians(45) # camera installation pitch in rad
 

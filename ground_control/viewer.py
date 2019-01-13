@@ -32,7 +32,6 @@ if 1:
 else:
     subs_socks.append( utils.subscribe([ config.topic_main_telem, config.topic_mav_telem ],config.zmq_pub_main) )
 
-
 #socket_pub = utils.publisher(config.zmq_local_route)
 socket_pub = utils.publisher(config.zmq_local_route,'0.0.0.0')
 
@@ -55,6 +54,7 @@ if __name__=='__main__':
             ret = sock.recv_multipart()
             topic , data = ret
             data=pickle.loads(ret[1])
+
             if ret[0]==config.topic_comp_vis:
                 socket_pub.send_multipart([config.topic_comp_vis,ret[1]])
                 vis_data=data
@@ -66,6 +66,9 @@ if __name__=='__main__':
                 main_data.update(data)
 
                 socket_pub.send_multipart([config.topic_main_telem,ret[1]])
+            if ret[0]==config.topic_imu:
+                socket_pub.send_multipart([config.topic_imu,ret[1]])
+
 
             if vis_data.get('record_state',False):
                 if get_files_fds()[0] is None:
@@ -92,7 +95,7 @@ if __name__=='__main__':
 
             if data_file_fd is not None:
                 pickle.dump([topic,data],data_file_fd,-1)
-                pickle.dump(['viewer_data',{'rcv_cnt':rcv_cnt}],data_file_fd,-1)
+                pickle.dump([b'viewer_data',{'rcv_cnt':rcv_cnt}],data_file_fd,-1)
 
         #print('-1-',main_data)
 

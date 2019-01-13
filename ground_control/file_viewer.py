@@ -29,6 +29,8 @@ parser.add_argument("--nowait",help="run all not wait for keyboard untill framen
 parser.add_argument("--nosingle",help="dont use the single files only the stream", action='store_true')
 parser.add_argument("--nosync", help="dont sync videos", action='store_true')
 parser.add_argument("--novid", help="ignore video", action='store_true')
+parser.add_argument("--pub_data", help="publish data", action='store_true')
+parser.add_argument("--pub_images", help="publish images", action='store_true')
 parser.add_argument("--runtracker", help="run tracker on recorded vid", action='store_true')
 parser.add_argument("--path",help="dir path")
 parser.add_argument("--bs",help="history buff size",type=int ,default=1000)
@@ -42,6 +44,9 @@ if args.cc is not None:
     c_mat = pickle.load(open(args.cc,'rb'))*args.ccr+(1.0-args.ccr)*np.eye(3)
     def apply_colorcc(img):
         return  (img.reshape((-1,3)) @ c_mat.T).clip(0,255).reshape(img.shape).astype('uint8')
+
+if args.pub_images:
+    socket_pub = utils.publisher(config.zmq_local_route,'0.0.0.0')
 
 
 base_name = os.path.basename(args.path)
@@ -97,6 +102,7 @@ if __name__=='__main__':
 
     if os.path.isfile(args.path+'/data.pkl'):
         fd = open(args.path+'/data.pkl','rb')
+        print('reading data.pkl')
     else:
         fd = open(args.path+'/viewer_data.pkl','rb')
     sx,sy=config.pixelwidthx,config.pixelwidthy
@@ -134,6 +140,9 @@ if __name__=='__main__':
                         explore.plot_graphs(main_data_hist,vis_data_hist)
                         sys.exit(0)
                     break
+                if args.pub_data:
+                    if type(ret[0])==bytes:
+                        socket_pub.send_multipart([ret[0],pickle.dumps(ret[1])])
                 #print('topic=',ret[0])
                 if ret[0]==config.topic_comp_vis:
                     vis_data=ret[1]
@@ -201,6 +210,11 @@ if __name__=='__main__':
                 if imgs_raw[i] is None:
                     imgs_raw[i]=images[i].copy()#[:,:,::-1].copy()
                 imgs_raw[i]=imgs_raw[i][:,:,::-1]
+            if args.pub_images:
+                socket_pub.send_multipart([\
+                config.viewer_pub_image_topic,\
+                pickle.dumps((imgs_raw[0][:,:,1],imgs_raw[1][:,:,1]))])
+
             if args.runtracker:
                 if track is None:
                     #track = tracker.run_Trackers()

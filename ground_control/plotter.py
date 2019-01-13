@@ -18,6 +18,7 @@ parser.add_argument("--roll",help="roll data", action='store_true')
 parser.add_argument("--pitch",help="pitch data", action='store_true')
 parser.add_argument("--depth",help="depth info", action='store_true')
 parser.add_argument("--ip",help="main ground control ip addr", default='127.0.0.1')
+parser.add_argument("--imu",help="plot imu data", action='store_true')
 args = parser.parse_args()
 
 grid_h = sum([(1 if a else 0)*2 for a in (args.ud,args.yaw,args.fb,args.lr)])
@@ -27,10 +28,16 @@ if args.roll:
     grid_h+=1
 if args.pitch:
     grid_h+=1
+if args.imu:
+    grid_h+=1
 
 print('grid_h',grid_h)
 subs_socks=[]
-subs_socks.append(utils.subscribe([config.topic_main_telem,config.topic_comp_vis],config.zmq_local_route,args.ip))
+subs_socks.append(utils.subscribe([\
+    config.topic_main_telem,
+    config.topic_comp_vis,
+    config.topic_imu,
+    ],config.zmq_local_route,args.ip))
 
 ##### map radious im meters
 rad=20
@@ -49,7 +56,10 @@ class CycArr():
         try:
             return np.array([(d['fnum'],*d[label]) for d in self.buf if label in d])
         except:
-            return np.array([(d['fnum'],d[label]) for d in self.buf if label in d])
+            try:
+                return np.array([(d['fnum'],d[label]) for d in self.buf if label in d])
+            except:
+                return np.array([(d['t_stemp_ms'],*d[label]) for d in self.buf if label in d])
 
     def __len__(self):
         return len(self.buf)
@@ -59,6 +69,7 @@ class Data:
     def reset(self):
         self.md_hist = CycArr(500)
         self.vd_hist = CycArr(500)
+        self.imu_hist = CycArr(500)
 
     def __init__(self):
         self.reset()
@@ -88,7 +99,8 @@ def update_graph(axes):
                     new_data=True
                 if ret[0]==config.topic_comp_vis:
                     gdata.vd_hist.add(data)
-
+                if ret[0]==config.topic_imu:
+                    gdata.imu_hist.add(data)
 
     if not pause_satus and new_data:
         for i,l in enumerate(labels):
@@ -99,6 +111,8 @@ def update_graph(axes):
             update_roll(roll_hdls)
         if args.pitch:
             update_pitch(pitch_hdls)
+        if args.imu and len(gdata.imu_hist)>0:
+            update_imu(imu_hdls)
         axes.figure.canvas.draw()
 
 def clear(evt):
@@ -145,6 +159,38 @@ def plot_roll_pitch(grid_size,grid_pos,labels):
     hdl_cr=ax2.plot([1],'-r') #range
     plt.legend([labels[1]],loc='lower left')
     return (ax1,ax2),(hdl_r,hdl_cr)
+
+def update_imu(ax_hdls):
+    ax1,ax2 = ax_hdls[0]
+    hdl_r,hdl_cr = ax_hdls[1]
+    xs = np.arange(len(gdata.imu_hist))
+    imu_data=gdata.imu_hist.get_data('a/g')
+    #import ipdb;ipdb.set_trace()
+    #command_roll=gdata.md_hist.get_data(labels[1])
+    #print('lock_range_data',lock_range_data[-1,:])
+    hdl_r[0].set_ydata(imu_data[:,4])#/np.pi*180.0)
+    hdl_r[0].set_xdata(xs)
+    hdl_cr[0].set_ydata(imu_data[:,4])#/np.pi*180.0)
+    hdl_cr[0].set_xdata(xs)
+    #print(imu_data[-1,4])
+    #hdl_cr[0].set_ydata(-command_roll[:,1])
+    #hdl_cr[0].set_xdata(xs)
+    ax1.set_xlim(len(gdata.imu_hist)-400,len(gdata.imu_hist))
+    ax1.set_ylim(-180,180)
+    ax2.set_xlim(len(gdata.imu_hist)-400,len(gdata.imu_hist))
+    ax2.set_ylim(-180,180)
+
+
+def plot_imu(grid_size,grid_pos):
+    ax1=plt.subplot2grid(grid_size, (grid_pos,0))
+    plt.title('imu')
+    hdl_r=ax1.plot([1],'-g') #deapth
+    #plt.legend([labels[0]],loc='upper left')
+    ax2 = ax1.twinx()
+    hdl_cr=ax2.plot([1],'-r') #range
+    #plt.legend([labels[1]],loc='lower left')
+    return (ax1,ax2),(hdl_r,hdl_cr)
+
 
 def plot_roll(grid_size,grid_pos):
     return plot_roll_pitch(grid_size,grid_pos,['roll','lr_cmd'])
@@ -247,5 +293,9 @@ if args.roll:
 if args.pitch:
     pitch_hdls = plot_pitch(grid_size,curr_grids)
     curr_grids+=1
+if args.imu:
+    imu_hdls = plot_imu(grid_size,curr_grids)
+    curr_grids+=1
+
 
 plt.show()

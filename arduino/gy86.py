@@ -163,7 +163,6 @@ def ploter():
         fig.canvas.draw()
         plt.waitforbuttonpress(timeout=0.001)
 
-
 if  __name__=="__main__":
     rd=reader()
     #rd=file_reader(prefix+'.pkl')

@@ -87,6 +87,7 @@ def reader():
 
         data=struct.unpack(fmt,raw_data)
         ret['a/g']=np.array(lmap(float,data[:6]))
+        ret['ypr']=np.array(lmap(float,data[3:6]))
         ret['mag']=np.array(lmap(float,data[6:9]))
         ret['therm']=data[9]
         ret['baro']=data[10]

@@ -43,14 +43,15 @@ footer='''
 
 def render():
     ret = header
-    ret += param_tpl.format(
-            name='ud pid P',
-            eq="tosend=ud_pid.P",
-            pl="tosend=ud_pid.P;ud_pid.P+=0.01",
-            mn="tosend=ud_pid.P;ud_pid.P-=0.01",
-            val='ud_pid_P',
-            val_step='ud_pid_step_P',
-            )
+    for nm in ['ud_pid.P','ud_pid.I']:
+        ret += param_tpl.format(
+                name=nm,
+                eq="tosend="+nm,
+                pl=nm+"+=0.01;tosend="+nm,
+                mn=nm+"-=0.01;tosend="+nm,
+                val=nm,
+                val_step=nm+'_step',
+                )
     ret += footer
     return ret
 

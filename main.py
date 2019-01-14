@@ -104,7 +104,10 @@ async def get_zmq_events():
 
             if ret[0]==config.topic_command:
                 try:
-                    exec(ret[1])
+                    locals_d={} #command feedback
+                    exec(ret[1],globals(),locals_d)
+                    if locals_d.get('tosend',False):
+                        socket_pub.send_multipart([config.topic_main_command_fb,pickle.dumps(locals_d['tosend'])])
                 except:
                     print('run command_fail')
                     traceback.print_exc(file=sys.stdout)

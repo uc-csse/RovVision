@@ -48,6 +48,8 @@ topic_hat = b'topic_hat'
 
 zmq_pub_main=9921
 topic_main_telem=b'topic_main_telem'
+topic_main_command_fb=b'topic_main_command_fb'
+
 topic_mav_telem=b'topic_mav_telem'
 
 zmq_pub_command=9931

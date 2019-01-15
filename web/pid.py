@@ -18,39 +18,49 @@ header='''
         //socket.emit('my other event', { my: 'data' });
     });
 </script>
+
+<style>
+th, td {
+  padding: 5px;
+}
+th {
+  text-align: left;
+}
+</style>
+
 <body>
+<table>
 '''
 
 param_tpl='''
 <script type="text/javascript" charset="utf-8">
-socket.on('{val}', function (data) {{
-	document.getElementById("{val}").value=data
+socket.on('{nm}', function (data) {{
+	document.getElementById("{nm}").value=data
     }});
 </script>
-{name}
-<button type="button" onclick="socket.emit('pid', '{val}|{eq}')">=</button>
-<button type="button" onclick="socket.emit('pid', '{val}|{pl}')">+</button>
-<button type="button" onclick="socket.emit('pid', '{val}|{mn}')">-</button>
-<input type="text" id="{val}">
-step:
-<input type="text" id="{val_step}" value="0.01">
-<br/>
+<tr>
+<th>{nm}</th>
+<th>
+<button type="button" onclick="socket.emit('pid', '{nm}|tosend={nm}')">=</button>
+<button type="button" onclick="socket.emit('pid', '{nm}|{nm}+='+document.getElementById('{nm}_step').value+';tosend={nm}')">+</button>
+<button type="button" onclick="socket.emit('pid', '{nm}|{nm}-='+document.getElementById('{nm}_step').value+';tosend={nm}')">-</button>
+<input type="text" id="{nm}">
+Step:
+<input type="text" id="{nm}_step" value="0.01">
+</th>
+</tr>
 '''
 footer='''
+</table>
 </body>
 </html>
 '''
 
 def render():
     ret = header
-    for nm in ['ud_pid.P','ud_pid.I']:
+    for n in ['ud_pid.P','ud_pid.I']:
         ret += param_tpl.format(
-                name=nm,
-                eq="tosend="+nm,
-                pl=nm+"+=0.01;tosend="+nm,
-                mn=nm+"-=0.01;tosend="+nm,
-                val=nm,
-                val_step=nm+'_step',
+                nm=n,
                 )
     ret += footer
     return ret

@@ -87,7 +87,7 @@ def reader():
 
         data=struct.unpack(fmt,raw_data)
         ret['a/g']=np.array(lmap(float,data[:6]))
-        ret['ypr'] = np.array(lmap(lambda z : float(x) / 1000 ,data[6:9]))      # RADIANS * 1000 = (-3,140 -> 3,140)
+        ret['ypr'] = np.array(lmap(lambda x : float(x) / 1000 ,data[6:9]))      # RADIANS * 1000 = (-3,140 -> 3,140)
         ret['mag']=np.array(lmap(float,data[9:12]))
         ret['therm']=data[12]
         ret['baro']=data[13]

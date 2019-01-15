@@ -1,5 +1,5 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-#FLASK_APP=test_cam.py flask run
+#FLASK_APP=server.py flask run
 from flask_socketio import SocketIO
 from init import app,socketio
 import commands

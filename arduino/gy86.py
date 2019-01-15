@@ -76,7 +76,7 @@ def reader():
                     break
         #synced
         ret={}
-        fmt='='+'h'*9+'fiI'
+        fmt='='+'h'*12+'fiI'
         raw_data=ser.read(struct.calcsize(fmt))
         chksum=struct.unpack('=H',ser.read(2))[0]
 
@@ -87,10 +87,11 @@ def reader():
 
         data=struct.unpack(fmt,raw_data)
         ret['a/g']=np.array(lmap(float,data[:6]))
-        ret['mag']=np.array(lmap(float,data[6:9]))
-        ret['therm']=data[9]
-        ret['baro']=data[10]
-        ret['t_stemp_ms']=data[11]/1000.0
+        ret['ypr'] = np.array(lmap(lambda x : float(x) / 1000 ,data[6:9]))      # RADIANS * 1000 = (-3,140 -> 3,140)
+        ret['mag']=np.array(lmap(float,data[9:12]))
+        ret['therm']=data[12]
+        ret['baro']=data[13]
+        ret['t_stemp_ms']=data[14]/1000.0
         #print('==== {:.3f}'.format(data[10]/1e6))
         yield ret
 

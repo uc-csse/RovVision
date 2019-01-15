@@ -67,28 +67,21 @@ uint8_t fifoBuffer[64]; // FIFO storage buffer
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
 VectorInt16 aa;         // [x, y, z]            accel sensor measurements
-VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
-VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
 VectorFloat gravity;    // [x, y, z]            gravity vector
-float euler[3];         // [psi, theta, phi]    Euler angle container
-float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+int16_t gyro[3];        // [x, y, z]            gyro sensor measurements
+float ypr[0];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
-
-
-volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
-void dmpDataReady() {
-    
-}
 
 typedef struct {
     uint16_t header;
     int16_t ax, ay, az;
     int16_t gx, gy, gz;
+    int16_t yaw, pitch, roll;
     int16_t mx, my, mz;
     float temperature;
     int32_t pressure;
     uint32_t t_stemp;
-    uint16_t footer; 
+    uint16_t footer;
 } data_struct;
 
 data_struct ds;
@@ -109,13 +102,13 @@ void chksum()
 
 void setup() {
     delay(2000);
-    
-    SERIAL.begin(SERIAL_BAUD_RATE);  
+
+    SERIAL.begin(SERIAL_BAUD_RATE);
     Wire.begin();
     accelgyro.setI2CMasterModeEnabled(false);
     accelgyro.setI2CBypassEnabled(true) ;
     accelgyro.setSleepEnabled(false);
-    
+
     // initialize imu with Digital Motion Processor
     accelgyro.initialize();
 
@@ -126,16 +119,16 @@ void setup() {
 
     uint8_t dmpStatus = accelgyro.dmpInitialize();
 
-    
+
     accelgyro.setXGyroOffset(220);
     accelgyro.setYGyroOffset(76);
     accelgyro.setZGyroOffset(-85);
     accelgyro.setZAccelOffset(1788);
-    
+
     if (dmpStatus == 0) {
         Serial.println(F("Enabling DMP..."));
         accelgyro.setDMPEnabled(true);
-        
+
         // get expected DMP packet size for later comparison
         dmpPacketSize = accelgyro.dmpGetFIFOPacketSize();
     } else {
@@ -174,7 +167,7 @@ void loop() {
 
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
     } else if (fifoCount >= dmpPacketSize) {
-        
+
         // Read all complete packets from buffer
         // Keep overwritting until most recent packet is in fifobuffer
         while (fifoCount >= dmpPacketSize) {
@@ -185,18 +178,25 @@ void loop() {
         accelgyro.dmpGetAccel(&aa, fifoBuffer);
         accelgyro.dmpGetQuaternion(&q, fifoBuffer);
         accelgyro.dmpGetGravity(&gravity, &q);
+        accelgyro.dmpGetGyro(gyro, fifoBuffer);
         accelgyro.dmpGetYawPitchRoll(ypr, &q, &gravity);
+
         ds.ax = aa.x;
         ds.ay = aa.y;
         ds.az = aa.z;
-        ds.gx = ypr[0]*180/M_PI;
-        ds.gy = ypr[1]*180/M_PI;
-        ds.gz = ypr[2]*180/M_PI;
+
+        ds.gx = gyro[0];
+        ds.gy = gyro[1];
+        ds.gz = gyro[2];
+
+        ds.yaw = ypr[0]*1000;     // RADIANS * 1000 = (-3,140 -> 3,140)
+        ds.pitch = ypr[1]*1000;
+        ds.roll = ypr[2]*1000;
     }
-    
+
     //accelgyro.getMotion6(&ds.ax, &ds.ay, &ds.az, &ds.gx, &ds.gy, &ds.gz);
     //mag.getHeading(&ds.mx, &ds.my, &ds.mz);
-    
+
 
     // Read true temperature & Pressure
     static unsigned long baro_sample_last_time = 0;
@@ -219,7 +219,7 @@ void loop() {
                 start_trig=0;
                 break;
             case 3:
-                digitalWrite(LASER1_PIN,HIGH); 
+                digitalWrite(LASER1_PIN,HIGH);
                 break;
             case 4:
                 digitalWrite(LASER1_PIN,LOW);
@@ -228,14 +228,14 @@ void loop() {
                 break;
         }
     }
-    
-    
+
+
     // Task to trigger cameras
     static unsigned long trigger_last_time = 0;
     if ((time - trigger_last_time) > TRIGGER_RATE_MICROS_HALF) {
         static uint8_t trigger_state = false;
         trigger_last_time += TRIGGER_RATE_MICROS_HALF;
-        
+
         if (!trigger_state && start_trig) {
             // trigger low and currently triggering
             digitalWrite(LED_PIN, HIGH);
@@ -248,10 +248,10 @@ void loop() {
             digitalWrite(TRIGER_PIN, LOW);
             trigger_state = false;
         }
-        
+
     }
-    
-    // Task to send IMU data to companion computer 
+
+    // Task to send IMU data to companion computer
     static unsigned long send_imu_last_time = 0;
     if ((time - send_imu_last_time) > TRIGGER_RATE_MICROS) {
         send_imu_last_time = time;
@@ -263,6 +263,10 @@ void loop() {
         SERIAL.print(ds.gx); SERIAL.print("\t");
         SERIAL.print(ds.gy); SERIAL.print("\t");
         SERIAL.print(ds.gz);SERIAL.print("\t");
+
+        SERIAL.print(ds.yaw); SERIAL.print("\t");
+        SERIAL.print(ds.pitch); SERIAL.print("\t");
+        SERIAL.print(ds.roll);SERIAL.print("\t");
 
         SERIAL.print("mag:\t");
         SERIAL.print(ds.mx); SERIAL.print("\t");

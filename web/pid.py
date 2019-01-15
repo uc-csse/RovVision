@@ -41,7 +41,7 @@ socket.on('{nm}', function (data) {{
 <tr>
 <th>{nm}</th>
 <th>
-<button type="button" onclick="socket.emit('pid', '{nm}|tosend={nm}')">=</button>
+<button type="button" onclick="socket.emit('pid', '{nm}|tosend={nm}')">get</button>
 <button type="button" onclick="socket.emit('pid', '{nm}|{nm}+='+document.getElementById('{nm}_step').value+';tosend={nm}')">+</button>
 <button type="button" onclick="socket.emit('pid', '{nm}|{nm}-='+document.getElementById('{nm}_step').value+';tosend={nm}')">-</button>
 <input type="text" id="{nm}">
@@ -58,7 +58,23 @@ footer='''
 
 def render():
     ret = header
-    for n in ['ud_pid.P','ud_pid.I']:
+    for n in [\
+	'ud_pid.P',
+	'ud_pid.I',
+	'ud_pid.D',
+	'ud_pid.initial_i',
+	'ud_pid.FF',
+	'lr_pid.P',
+	'lr_pid.I',
+	'lr_pid.D',
+	'fb_pid.P',
+	'fb_pid.I',
+	'fb_pid.D',
+	'yaw_pid.P',
+	'yaw_pid.I',
+	'yaw_pid.D',
+	'yaw_pid.FF',
+	]:
         ret += param_tpl.format(
                 nm=n,
                 )

@@ -21,6 +21,7 @@ subs_socks=[]
 subs_socks.append( utils.subscribe([ config.topic_button,config.topic_axes,config.topic_hat ],config.zmq_pub_joy))
 subs_socks.append( utils.subscribe([ config.topic_comp_vis ], config.zmq_pub_comp_vis))
 subs_socks.append( utils.subscribe([ config.topic_command ], config.zmq_pub_command))
+subs_socks.append( utils.subscribe([ config.topic_imu ], config.zmq_pub_imu))
 
 if args.sim:
     #due to bug in SITL take data directly from fdm_pub_underwater.py in dronesimlab
@@ -40,6 +41,11 @@ yaw_dir=-1.0
 
 from config import Joy_map as J
 
+# yaw of -999 used for uninitialised angle
+# angles in degrees
+mpu_yaw = -999
+mpu_yaw_previous = -999
+mpu_yaw_velocity = -999
 
 #if args.sim:
 #    idle_cmd=1500
@@ -101,6 +107,14 @@ async def get_zmq_events():
 
             if ret[0]==config.topic_comp_vis:
                 track_info=pickle.loads(ret[1])
+
+            if ret[0]==config.topic_imu:
+                if mpu_yaw_previous == -999:
+                    mpu_yaw_previous = np.degrees(pickle.loads(ret[1])['ypr'][0])
+                else:
+                    mpu_yaw_previous = mpu_yaw
+                mpu_yaw = np.degrees(pickle.loads(ret[1])['ypr'][0])
+                mpu_yaw_velocity = PID.getDiffAng(mpu_yaw, mpu_yaw_previous) / config.fps
 
             if ret[0]==config.topic_command:
                 try:
@@ -169,7 +183,8 @@ async def control():
             joy_deltas = (joy_yaw*config.yaw_update_scale, ud_update)
             lock_yaw_depth=((lock_yaw_depth[0]+joy_deltas[0]+360)%360,lock_yaw_depth[1]+joy_deltas[1])
 
-            yaw_cmd = yaw_dir*yaw_pid(np.degrees(telem['yaw']),lock_yaw_depth[0], -np.degrees(telem['yawspeed'])/config.fps,-joy_yaw)
+            #yaw_cmd = yaw_dir*yaw_pid(np.degrees(telem['yaw']),lock_yaw_depth[0], -np.degrees(telem['yawspeed'])/config.fps,-joy_yaw)
+            yaw_cmd = yaw_dir*yaw_pid(mpu_yaw, lock_yaw_depth[0], mpu_yaw_velocity, -joy_yaw)
             telem['yaw_pid']=(yaw_pid.p,yaw_pid.i,yaw_pid.d)
 
             if not config.lock_mode=='ud_to_range': #ignoring depth

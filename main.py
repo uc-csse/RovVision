@@ -183,8 +183,7 @@ async def control():
             joy_deltas = (joy_yaw*config.yaw_update_scale, ud_update)
             lock_yaw_depth=((lock_yaw_depth[0]+joy_deltas[0]+360)%360,lock_yaw_depth[1]+joy_deltas[1])
 
-            #yaw_cmd = yaw_dir*yaw_pid(np.degrees(telem['yaw']),lock_yaw_depth[0], -np.degrees(telem['yawspeed'])/config.fps,-joy_yaw)
-            yaw_cmd = yaw_dir*yaw_pid(mpu_yaw, lock_yaw_depth[0], mpu_yaw_velocity, -joy_yaw)
+            yaw_cmd = yaw_dir*yaw_pid(np.degrees(telem['yaw']),lock_yaw_depth[0], -np.degrees(telem['yawspeed'])/config.fps,-joy_yaw)
             telem['yaw_pid']=(yaw_pid.p,yaw_pid.i,yaw_pid.d)
 
             if not config.lock_mode=='ud_to_range': #ignoring depth
@@ -277,6 +276,10 @@ async def control():
         if args.sim and bypass_yaw is not None:
             telem['yaw']=np.radians(bypass_yaw%360)
             telem['heading']=bypass_yaw%360
+        else:
+            telem['yaw'] = np.radians(mpu_yaw)
+            telem['heading'] = mpu_yaw
+            telem['yawspeed'] = np.radians(mpu_yaw_velocity)
 
 
         telem.update({

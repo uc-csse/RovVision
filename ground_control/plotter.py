@@ -1,4 +1,6 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+import matplotlib
+matplotlib.use('TKAgg')
 import matplotlib.pyplot as plt
 import sys,os,time
 sys.path.append('../')

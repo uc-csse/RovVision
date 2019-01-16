@@ -71,7 +71,7 @@ ground_range_lock = config.ground_range_lock
 
 
 async def get_zmq_events():
-    global lock_range_state,track_info, lock_range, joy_axes, lock_yaw_depth,lock_yaw_depth_state,ground_range_lock,bypass_yaw
+    global lock_range_state,track_info, lock_range, joy_axes, lock_yaw_depth,lock_yaw_depth_state,ground_range_lock,bypass_yaw,mpu_yaw, mpu_yaw_previous, mpu_yaw_velocity
     while True:
         socks=zmq.select(subs_socks,[],[],0)[0]
         for sock in socks:
@@ -114,7 +114,7 @@ async def get_zmq_events():
                 else:
                     mpu_yaw_previous = mpu_yaw
                 mpu_yaw = np.degrees(pickle.loads(ret[1])['ypr'][0])
-                mpu_yaw_velocity = PID.getDiffAng(mpu_yaw, mpu_yaw_previous) / config.fps
+                mpu_yaw_velocity = pid.getDiffAng(mpu_yaw, mpu_yaw_previous) / config.fps
 
             if ret[0]==config.topic_command:
                 try:

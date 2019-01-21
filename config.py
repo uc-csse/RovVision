@@ -2,7 +2,7 @@
 import numpy as np
 import os
 
-if 1:
+if 0:
     lock_mode='fb_to_x'
     camera_pitch = np.radians(45) # camera installation pitch in rad
 
@@ -10,7 +10,7 @@ if 0:
     lock_mode='ud_to_range'
     camera_pitch = np.radians(45) # camera installation pitch in rad
 
-if 0:
+if 1:
     lock_mode='fb_to_range'
     camera_pitch = np.radians(0)
 
@@ -19,6 +19,9 @@ ground_range_lock = -1 # 1 meter -1 to ignore
 minimal_depth_lock = 0.4
 
 ud_trim=50/1000.0
+
+
+gst_bitrate=400
 
 #pubsub
 #zmq_pub_drone_fdm=('127.0.0.1',5566)

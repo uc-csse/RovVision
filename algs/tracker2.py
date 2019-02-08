@@ -6,8 +6,6 @@ import scipy
 import scipy.signal
 import sys
 
-import matplotlib
-import matplotlib.pyplot as plt
 sys.path.append("..")
 
 import config
@@ -168,6 +166,8 @@ class StereoTrack():
 
         rx,ry =  nx+cx_off,ny+cy_off
         if self.debug:
+            import matplotlib
+            import matplotlib.pyplot as plt
             plt.figure('search {}'.format(self.debug))
             #plt.subplot(2,2,1)
             #plt.title('correlation template')

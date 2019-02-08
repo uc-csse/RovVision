@@ -36,7 +36,7 @@ lmap = lambda func, *iterable: list(map(func, *iterable))
 
 def reader():
     laser1_status=False
-    
+
     ser = serial.Serial(args.usbdevice,460800)
     ser.flush()
     while ser.inWaiting():
@@ -45,7 +45,7 @@ def reader():
     #start triggering
     if args.send_start:
         print('sending start')
-        ser.write(b'\x01')     
+        ser.write(b'\x01')
     #ser.flush()
     print('done flushing..')
     while 1:
@@ -69,29 +69,32 @@ def reader():
                 if ret[1] == b'start_trig':
                     print('start trig')
                     ser.write(b'\x01')
-        
+
         while 1:#ser.inWaiting():
             if ser.read()==b'\xa5':
                 if ser.read()==b'\xa5':
                     break
         #synced
         ret={}
-        raw_data=ser.read(26)
+        fmt='='+'h'*12+'fiI'
+        raw_data=ser.read(struct.calcsize(fmt))
         chksum=struct.unpack('=H',ser.read(2))[0]
-       
-        calc_chksum=sum(struct.unpack('H'*13,raw_data))%2**16 
+
+        calc_chksum=sum(struct.unpack('H'*(struct.calcsize(fmt)//2),raw_data))%2**16
         #if chksum!=calc_chksum:
         #    print('Error, bad checksum',chksum,calc_chksum)
         #    continue
 
-        data=struct.unpack('='+'h'*9+'fi',raw_data)
+        data=struct.unpack(fmt,raw_data)
         ret['a/g']=np.array(lmap(float,data[:6]))
-        ret['mag']=np.array(lmap(float,data[6:9]))
-        ret['alt']=data[9]
-        ret['t_stemp_ms']=data[10]/1000.0
+        ret['ypr'] = np.array(lmap(lambda x : float(x) / 1000 ,data[6:9]))      # RADIANS * 1000 = (-3,140 -> 3,140)
+        ret['mag']=np.array(lmap(float,data[9:12]))
+        ret['therm']=data[12]
+        ret['baro']=data[13]
+        ret['t_stemp_ms']=data[14]/1000.0
         #print('==== {:.3f}'.format(data[10]/1e6))
         yield ret
-        
+
 def ploter():
     fig = plt.figure(figsize=(8,6))
     ax1 = fig.add_subplot(4, 1, 1)
@@ -103,7 +106,7 @@ def ploter():
     ax4 = fig.add_subplot(4, 1, 4)
     ax4.set_title('alt')
     ax4.set_ylim(-1,1)
-    fig.canvas.draw()   # note that the first draw comes before setting data 
+    fig.canvas.draw()   # note that the first draw comes before setting data
     #fig.canvas.mpl_connect('close_event', handle_close)
     #h1 = ax1.plot([0,1],[0,1],[0,1], lw=3)[0]
     #text = ax1.text(0.8,1.5, '')
@@ -119,16 +122,16 @@ def ploter():
         cnt+=1
         gy_data=yield
         history=history[-mem_len:]
-        history.append(gy_data) 
+        history.append(gy_data)
 
         if time.time()-last_plot<0.2 and cnt%10!=0:
-            continue        
+            continue
         last_plot=time.time()
 
         for hdl in hdl_list:
             hdl[0].remove()
         hdl_list=[]
-        
+
         acc_gyro=np.array(lmap(lambda x:x['a/g'],history))
         mag=np.array(lmap(lambda x:x['mag'],history))
         alt=np.array(lmap(lambda x:x['alt'],history))
@@ -140,28 +143,26 @@ def ploter():
         if alt_ref is None:
             alt_ref=alt[0]
 
-        hdl_list.append(ax1.plot(ts,acc_gyro[:,0],'-b',alpha=0.5)) 
-        hdl_list.append(ax1.plot(ts,acc_gyro[:,1],'-g',alpha=0.5)) 
-        hdl_list.append(ax1.plot(ts,acc_gyro[:,2],'-r',alpha=0.5)) 
-        ax1.set_xlim(ts.min(),ts.max())        
-        
-        hdl_list.append(ax2.plot(ts,acc_gyro[:,3],'-b',alpha=0.5)) 
-        hdl_list.append(ax2.plot(ts,acc_gyro[:,4],'-g',alpha=0.5)) 
-        hdl_list.append(ax2.plot(ts,acc_gyro[:,5],'-r',alpha=0.5)) 
-        ax2.set_xlim(ts.min(),ts.max())        
+        hdl_list.append(ax1.plot(ts,acc_gyro[:,0],'-b',alpha=0.5))
+        hdl_list.append(ax1.plot(ts,acc_gyro[:,1],'-g',alpha=0.5))
+        hdl_list.append(ax1.plot(ts,acc_gyro[:,2],'-r',alpha=0.5))
+        ax1.set_xlim(ts.min(),ts.max())
 
-        hdl_list.append(ax3.plot(ts,mag[:,0],'-b',alpha=0.5)) 
-        hdl_list.append(ax3.plot(ts,mag[:,1],'-g',alpha=0.5)) 
-        hdl_list.append(ax3.plot(ts,mag[:,2],'-r',alpha=0.5)) 
-        ax3.set_xlim(ts.min(),ts.max())        
-        
-        hdl_list.append(ax4.plot(ts,alt-alt_ref,'-r',alpha=0.5)) 
+        hdl_list.append(ax2.plot(ts,acc_gyro[:,3],'-b',alpha=0.5))
+        hdl_list.append(ax2.plot(ts,acc_gyro[:,4],'-g',alpha=0.5))
+        hdl_list.append(ax2.plot(ts,acc_gyro[:,5],'-r',alpha=0.5))
+        ax2.set_xlim(ts.min(),ts.max())
+
+        hdl_list.append(ax3.plot(ts,mag[:,0],'-b',alpha=0.5))
+        hdl_list.append(ax3.plot(ts,mag[:,1],'-g',alpha=0.5))
+        hdl_list.append(ax3.plot(ts,mag[:,2],'-r',alpha=0.5))
+        ax3.set_xlim(ts.min(),ts.max())
+
+        hdl_list.append(ax4.plot(ts,alt-alt_ref,'-r',alpha=0.5))
         ax4.set_xlim(ts.min(),ts.max())
-        #if cnt<100:        
+        #if cnt<100:
         fig.canvas.draw()
         plt.waitforbuttonpress(timeout=0.001)
-                
-
 
 if  __name__=="__main__":
     rd=reader()
@@ -174,7 +175,7 @@ if  __name__=="__main__":
         data=rd.__next__()
         #print(data)
         if data is not None:
-            if 'a/g' in data: 
+            if 'a/g' in data:
                 socket_pub.send_multipart([config.topic_imu,pickle.dumps(data,-1)])
                 tdiff = data['t_stemp_ms']-last_t
                 last_t = data['t_stemp_ms']
@@ -188,6 +189,3 @@ if  __name__=="__main__":
             time.sleep(0.001)
             #if (k%256)==27:
             #    break
-
-   
-

@@ -1,4 +1,6 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+import matplotlib
+matplotlib.use('TKAgg')
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button,LassoSelector,TextBox
 from matplotlib.path import Path
@@ -162,7 +164,7 @@ def plot_graphs(md_hist,vis_hist):
     ud_pid=np.array([md['ud_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
     yaw_cmd=[md['yaw_cmd'] for md in md_hist if 'fnum' in md]
     yaw_pid=np.array([md['yaw_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
-    
+
 
     ranges=np.array([(vs['fnum'],vs['range']) for vs in vis_hist])
     avg_ranges=np.array([(vs['fnum'],vs['range_f']) for vs in vis_hist if 'range_f' in vs])

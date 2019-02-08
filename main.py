@@ -21,6 +21,7 @@ subs_socks=[]
 subs_socks.append( utils.subscribe([ config.topic_button,config.topic_axes,config.topic_hat ],config.zmq_pub_joy))
 subs_socks.append( utils.subscribe([ config.topic_comp_vis ], config.zmq_pub_comp_vis))
 subs_socks.append( utils.subscribe([ config.topic_command ], config.zmq_pub_command))
+subs_socks.append( utils.subscribe([ config.topic_imu ], config.zmq_pub_imu))
 
 if args.sim:
     #due to bug in SITL take data directly from fdm_pub_underwater.py in dronesimlab
@@ -40,6 +41,11 @@ yaw_dir=-1.0
 
 from config import Joy_map as J
 
+# yaw of -999 used for uninitialised angle
+# angles in degrees
+mpu_yaw = -999
+mpu_yaw_previous = -999
+mpu_yaw_velocity = -999
 
 #if args.sim:
 #    idle_cmd=1500
@@ -65,7 +71,7 @@ ground_range_lock = config.ground_range_lock
 
 
 async def get_zmq_events():
-    global lock_range_state,track_info, lock_range, joy_axes, lock_yaw_depth,lock_yaw_depth_state,ground_range_lock,bypass_yaw
+    global lock_range_state,track_info, lock_range, joy_axes, lock_yaw_depth,lock_yaw_depth_state,ground_range_lock,bypass_yaw,mpu_yaw, mpu_yaw_previous, mpu_yaw_velocity
     while True:
         socks=zmq.select(subs_socks,[],[],0)[0]
         for sock in socks:
@@ -102,9 +108,20 @@ async def get_zmq_events():
             if ret[0]==config.topic_comp_vis:
                 track_info=pickle.loads(ret[1])
 
+            if ret[0]==config.topic_imu:
+                if mpu_yaw_previous == -999:
+                    mpu_yaw_previous = np.degrees(pickle.loads(ret[1])['ypr'][0])
+                else:
+                    mpu_yaw_previous = mpu_yaw
+                mpu_yaw = np.degrees(pickle.loads(ret[1])['ypr'][0])
+                mpu_yaw_velocity = pid.getDiffAng(mpu_yaw, mpu_yaw_previous) / config.fps
+
             if ret[0]==config.topic_command:
                 try:
-                    exec(ret[1])
+                    locals_d={} #command feedback
+                    exec(ret[1],globals(),locals_d)
+                    if locals_d.get('tosend',False):
+                        socket_pub.send_multipart([config.topic_main_command_fb,pickle.dumps(locals_d['tosend'])])
                 except:
                     print('run command_fail')
                     traceback.print_exc(file=sys.stdout)
@@ -262,6 +279,10 @@ async def control():
         if args.sim and bypass_yaw is not None:
             telem['yaw']=np.radians(bypass_yaw%360)
             telem['heading']=bypass_yaw%360
+        else:
+            telem['yaw'] = np.radians(mpu_yaw)
+            telem['heading'] = mpu_yaw
+            telem['yawspeed'] = np.radians(mpu_yaw_velocity)
 
 
         telem.update({

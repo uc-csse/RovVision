@@ -8,6 +8,7 @@ pygame.joystick.init()
 joystick = pygame.joystick.Joystick(0)
 joystick.init()
 name = joystick.get_name()
+isxbox = 'Microsoft X-Box One pad' in name
 print("Joystick name: {}".format(name))
 axes = joystick.get_numaxes()
 print( "Number of axes: {}".format(axes))
@@ -56,6 +57,9 @@ while not done:
         axes_vals = []
         for i in range(axes):
             axis = joystick.get_axis(i)
+            if isxbox:
+                if abs(axis)<0.1:
+                    axis=0.0
             axes_vals.append(axis)
         if cnt%10==0:
             print('axes_vals=',','.join(['{:4.3f}'.format(i) for i in axes_vals]))

@@ -126,6 +126,8 @@ if __name__=='__main__':
         else:
             if not args.novid:
                 images,fcnt=reader.__next__()
+                #if images is not None:
+                #    images=(images[0][:,:,::-1].copy(),images[1][:,:,::-1].copy())
             else:
                 fcnt+=1
                 images=[None,None]
@@ -228,7 +230,7 @@ if __name__=='__main__':
                     if lock:
                         lock=False
                     toc=time.time()
-                    #print('run track took {} {:4.1f} msec'.format(fcnt,(toc-tic)*1000))
+                    print('run track took {} {:4.1f} msec'.format(fcnt,(toc-tic)*1000))
                     images_copy=(images[0].copy(),images[1].copy())
                     tracker.draw_track_rects(ret,images_copy[0],images_copy[1])
                     join[:,0:sx,:]=images_copy[0]

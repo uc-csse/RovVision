@@ -45,7 +45,7 @@ if args.cc is not None:
     def apply_colorcc(img):
         return  (img.reshape((-1,3)) @ c_mat.T).clip(0,255).reshape(img.shape).astype('uint8')
 
-if args.pub_images:
+if args.pub_images or args.pub_data:
     socket_pub = utils.publisher(config.zmq_local_route,'0.0.0.0')
 
 

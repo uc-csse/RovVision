@@ -13,6 +13,8 @@ tmux split-window -v
 tmux select-pane -t 3
 tmux split-window -v
 tmux split-window -v
+tmux select-pane -t 3
+tmux split-window -v
 tmux select-pane -t 1
 tmux send-keys "SIMROV= python main.py --sim" ENTER
 
@@ -32,5 +34,6 @@ tmux send-keys "cd ground_control && SIMROV= python viewer.py" ENTER
 tmux select-pane -t 0
 tmux send-keys "echo 'run vim here'" ENTER
 
-
+tmux select-pane -t 6
+tmux send-keys "cd web && FLASK_RUN_PORT=8090 FLASK_APP=server.py flask run" ENTER
 tmux att

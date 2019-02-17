@@ -235,7 +235,7 @@ def plot_pid(pid_label,grid_size,grid_pos):
     plt.legend(list('pid'),loc='upper left')
     plt.grid('on')
 
-    ax2=plt.subplot2grid(grid_size, (grid_pos+1,0))
+    ax2=plt.subplot2grid(grid_size, (grid_pos+1,0),sharex=ax)
     plt.title(pid_label + ' cmd')
     hdls2=[ax2.plot([1],'-b')]#,ax.plot([1],'-g'),ax.plot([1],'-r')]
     plt.legend(list('ced'),loc='upper left')

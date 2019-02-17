@@ -140,27 +140,18 @@ def flat_mid(x,r):
 if 'SIMROV' in os.environ:
     scl=1
     ud_update_scale=5.0
-    #ud_params_k = {'initial_i':0.07}
-    if 0:
-        ud_params_k = {'initial_i':-0.22} #pool
-        ud_params=(2.5,0.001,15, _gs*300 , _gs * 100, _gs*200, 0.2, False)
-    else:
-        ud_params_k = {'initial_i':-0.0}
-        ud_params=(0.1,0.001,0.05, _gs*300 , _gs * 100, _gs*200, 0.2, False)
+    ud_params_k = {'initial_i':-0.0}
+    ud_params=(0.1,0.001,0.05, _gs*300 , _gs * 100, _gs*200, 0.2, False)
 
     lr_params=(3/2,0.02/2,16.0/2, _gs*400 , _gs * 30, _gs*200, 0, False)
     fb_params=(3/2,0.02/2,16.0/2, _gs*400 , _gs * 30, _gs*200, 0, False)
     yaw_update_scale=2.0
-    #yaw_params=(0.04,0,0.2, _gs*300 , _gs * 150, _gs*100, 0.5, True)
-    #yaw_params=(0.02,0,0.1, _gs*300 , _gs * 150, _gs*100, 0.5, True)
     yaw_params_k={'func_in_err': lambda x:flat_mid(x,np.radians(0.5))}
-    #yaw_params_k={'func_in_err': None}
     yaw_params=(0.02,0,0.05, _gs*300 , _gs * 150, _gs*100, 0.5, True)
 
 else:
     scl=1
     ud_update_scale=5.0
-    #ud_params_k = {'initial_i':0.07}
     if 0:
         ud_params_k = {'initial_i':-0.22} #pool
         ud_params=(2.5,0.001,15, _gs*300 , _gs * 100, _gs*200, 0.2, False)
@@ -171,24 +162,6 @@ else:
     lr_params=(3,0.02,16.0, _gs*400 , _gs * 30, _gs*200, 0, False)
     fb_params=(3,0.02,16.0, _gs*400 , _gs * 30, _gs*200, 0, False)
     yaw_update_scale=2.0
-    #yaw_params=(0.04,0,0.2, _gs*300 , _gs * 150, _gs*100, 0.5, True)
-    #yaw_params=(0.02,0,0.1, _gs*300 , _gs * 150, _gs*100, 0.5, True)
     yaw_params_k={'func_in_err': lambda x:flat_mid(x,np.radians(0.5))}
     #yaw_params_k={'func_in_err': None}
     yaw_params=(0.02,0,0.05, _gs*300 , _gs * 150, _gs*100, 0.5, True)
-
-
-
-
-if 0: #old version params
-    scl=6
-    ud_update_scale=5.0
-    ud_params_k = {'initial_i':0.07}
-    ud_params=(0.15,0.002,1.5, _gs*500 , _gs * 150, _gs*200, 0.1, False)
-    scl=6
-    lr_params=(0.2*scl,0.002*scl,0.2*scl, _gs*500 , _gs * 30, _gs*200, 0, False)
-    scl=6
-    fb_params=(0.2*scl,0.002*scl,0.2*scl, _gs*500 , _gs * 30, _gs*200, 0, False)
-    scl=0.02
-    yaw_update_scale=1.0
-    yaw_params=(0.02,0.000*scl,0.2, _gs*300 , _gs * 150, _gs*100, 0.5, True)

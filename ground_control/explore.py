@@ -162,9 +162,10 @@ def plot_graphs(md_hist,vis_hist):
     lr_pid=np.array([md['lr_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
     ud_cmd=[md['ud_cmd'] for md in md_hist if 'fnum' in md]
     ud_pid=np.array([md['ud_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
-    yaw_cmd=[md['yaw_cmd'] for md in md_hist if 'fnum' in md]
-    yaw_pid=np.array([md['yaw_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
-
+    #yaw_cmd=[md['yaw_cmd'] for md in md_hist if 'fnum' in md ]
+    #yaw_pid=np.array([md['yaw_pid'] for md in md_hist if 'fnum' in md])*1000*js_gain
+    yaw_cmd = get_arr(md_hist,'yaw_cmd')
+    yaw_pid = get_arr_multi(md_hist,'yaw_pid')
 
     ranges=np.array([(vs['fnum'],vs['range']) for vs in vis_hist])
     avg_ranges=np.array([(vs['fnum'],vs['range_f']) for vs in vis_hist if 'range_f' in vs])
@@ -178,23 +179,27 @@ def plot_graphs(md_hist,vis_hist):
     depth = get_arr(md_hist,'depth')
     climb = get_arr(md_hist,'climb')
 
-    plt.figure('commands')
+    plt.figure('commands 1')
 
-    ax=plt.subplot(4,2,1)
+    ax=plt.subplot(2,2,1)
     plt.title('fb')
+    plt.xlabel('[frame]')
+    plt.ylabel('[pwm]')
     plt.plot(fnums,fb_cmd,'-.+')
     plt.plot(fnums,-fb_pid) # the direction is -
     plt.legend(list('cpid'))
     plt.ylim(-500,500)
 
-    plt.subplot(4,2,3,sharex=ax)
+    plt.subplot(2,2,2,sharex=ax)
     plt.title('lr')
+    plt.xlabel('[frame]')
+    plt.ylabel('[pwm]')
     plt.plot(fnums,lr_cmd,'-.+')
     plt.plot(fnums,-lr_pid) #
     plt.legend(list('cpid'))
     plt.ylim(-500,500)
 
-    ud_ax=plt.subplot(4,2,5,sharex=ax)
+    ud_ax=plt.subplot(2,2,3,sharex=ax)
     plt.title('ud')
     ud_ax.plot(fnums,ud_cmd,'-.+')
     ud_ax.plot(fnums,-ud_pid) #
@@ -206,21 +211,24 @@ def plot_graphs(md_hist,vis_hist):
         ud_ax2.plot(lock_yaw_depth[:,0],d,'-k')
         plt.ylim(d.min()-2,d.max()+2)
 
-    y_ax=plt.subplot(4,2,7,sharex=ax)
+    y_ax=plt.subplot(2,2,4,sharex=ax)
     plt.title('yaw')
-    y_ax.plot(fnums,yaw_cmd,'-.+')
-    y_ax.plot(fnums,-yaw_pid) #
-    y_ax.legend(list('cpid'))
-    plt.ylim(-500,500)
+    if len(yaw_cmd)>0:
+        y_ax.plot(yaw_cmd[:,0],yaw_cmd[:,1],'-.+')
+        y_ax.plot(yaw_pid[:,0],-yaw_pid[:,1:]) #
+        y_ax.legend(list('cpid'))
+        plt.ylim(-500,500)
     if len(lock_yaw_depth)>0:
         y_ax2=y_ax.twinx()
         y=lock_yaw_depth[:,1]
         y_ax2.plot(lock_yaw_depth[:,0],y,'-k')
         plt.ylim(d.min()-2,d.max()+2)
 
+    plt.figure('commands 2')
 
 
-    plt.subplot(4,2,8,sharex=ax)
+
+    plt.subplot(2,2,1,sharex=ax)
 
     for jax in [J.ud,J.lr,J.fb]:
         joy_ax=np.array([(md['fnum'],md['joy_axes'][jax]) for md in md_hist \
@@ -233,8 +241,10 @@ def plot_graphs(md_hist,vis_hist):
     plt.title('joy axis')
     #plt.plot(fnums,js_gain)
 
-    plt.subplot(4,2,2,sharex=ax)
+    plt.subplot(2,2,2,sharex=ax)
     plt.title('ranges')
+    plt.xlabel('[frame]')
+    plt.ylabel('[meters]')
     plt.plot(ranges[:,0],ranges[:,1])
     plt.plot(avg_ranges[:,0],avg_ranges[:,1])
     if len(lock_range):
@@ -243,13 +253,13 @@ def plot_graphs(md_hist,vis_hist):
     plt.legend(['r','rf','lr'])
 
     if len(dxs)>0:
-        plt.subplot(4,2,4,sharex=ax)
+        plt.subplot(2,2,3,sharex=ax)
         plt.title('dx')
         plt.plot(dxs[:,0],dxs[:,1])
         plt.ylim(-0.3,3)
 
 
-    plt.subplot(4,2,6,sharex=ax)
+    plt.subplot(2,2,4,sharex=ax)
     plt.title('depth')
     plt.plot(depth[:,0][1:],np.diff(depth[:,1]))
     plt.plot(climb[:,0],-climb[:,1]/10.0)

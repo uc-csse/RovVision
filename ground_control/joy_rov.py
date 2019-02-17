@@ -47,11 +47,11 @@ while not done:
             print("Joystick button released.")
 
 
-        
-        hat = joystick.get_hat(0)
-        if abs(hat[0])>0 or abs(hat[1])>0:
-            print('hat',hat)
-            socket.send_multipart([config.topic_hat,pickle.dumps(hat)])
+        if joystick.get_numhats()>0:
+            hat = joystick.get_hat(0)
+            if abs(hat[0])>0 or abs(hat[1])>0:
+                print('hat',hat)
+                socket.send_multipart([config.topic_hat,pickle.dumps(hat)])
 
 
         axes_vals = []

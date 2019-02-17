@@ -24,4 +24,7 @@ tmux send-keys "cd ground_control && python viewer.py" ENTER
 
 tmux select-pane -t 2
 tmux send-keys "cd ground_control && python udp_route.py" ENTER
+
+tmux select-pane -t 3
+tmux send-keys "cd web && FLASK_RUN_PORT=8090 FLASK_APP=server.py flask run" ENTER
 tmux att

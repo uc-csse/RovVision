@@ -213,15 +213,21 @@ axclear = plt.axes([0.81, 0.05, 0.1, 0.075])
 ax1=plt.subplot2grid((3,2), (0,1),rowspan=3)
 hdl_pos = ax1.plot([1,2],[1,2],'-')
 hdl_arrow = ax1.arrow(1,1,0.5,0.5,width=0.1)
+plt.xlabel('[m]')
+plt.ylabel('[m]')
 
 ax2=plt.subplot2grid((3,2), (0,0))
 plt.title('trace not oriented')
 plt.legend(list('xyz'))
+plt.xlabel('[frame]')
+plt.ylabel('[m/frame]')
 hdl_trace = [ax2.plot([1],'-r'),ax2.plot([1],'-g'),ax2.plot([1],'-b')]
 
-ax3=plt.subplot2grid((3,2), (1,0))
+ax3=plt.subplot2grid((3,2), (2,0))
 plt.title('ground range')
 hdl_range  = [ax3.plot([1],'-')]
+plt.xlabel('[frame]')
+plt.ylabel('[m]')
 plt.grid('on')
 
 

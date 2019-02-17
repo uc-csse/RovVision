@@ -93,6 +93,8 @@ async def get_zmq_events():
                         print('lock range is',lock_range)
                 if data[config.joy_depth_hold]==1:
                     lock_yaw_depth_state = not lock_yaw_depth_state
+                    if not lock_yaw_depth_state:
+                        yaw_pid=pid.PID(*config.yaw_params,**config.yaw_params_k)
                     #else:
                     #    lock_range = track_info['range']
                 controller.update_joy_buttons(data)

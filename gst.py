@@ -20,7 +20,7 @@ def init_gst(sx,sy,npipes):
 
     if 1:
         #cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=500 key-int-max=15 ! rtph264pay ! udpsink host=127.0.0.1 port={}"
-        cmd="gst-launch-1.0 {}! x264enc threads=1 tune=zerolatency  bitrate=400 key-int-max=50 ! tcpserversink port={}"
+        cmd="gst-launch-1.0 {{}}! x264enc threads=1 tune=zerolatency  bitrate={} key-int-max=50 ! tcpserversink port={{}}".format(config.gst_bitrate)
         gstsrc = 'fdsrc ! videoparse width={} height={} format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'
     if 0:
         gstsrc = 'fdsrc ! videoparse width={} height={} framerate=30/1 format=15 ! videoconvert ! video/x-raw, format=I420'.format(sx,sy) #! autovideosink'

@@ -13,4 +13,4 @@ def index():
 
 if __name__ == '__main__':
     #app.run(host='127.0.0.1', debug=True)
-    socketio = SocketIO(app,host='192.168.8.162', debug=True)
+    socketio = SocketIO(app,host='0.0.0.0', debug=True)

@@ -110,10 +110,10 @@ async def get_zmq_events():
 
             if ret[0]==config.topic_imu:
                 if mpu_yaw_previous == -999:
-                    mpu_yaw_previous = np.degrees(pickle.loads(ret[1])['ypr'][0])
+                    mpu_yaw_previous = -np.degrees(pickle.loads(ret[1])['ypr'][0])
                 else:
                     mpu_yaw_previous = mpu_yaw
-                mpu_yaw = np.degrees(pickle.loads(ret[1])['ypr'][0])
+                mpu_yaw = -np.degrees(pickle.loads(ret[1])['ypr'][0])
                 mpu_yaw_velocity = pid.getDiffAng(mpu_yaw, mpu_yaw_previous) / config.fps
 
             if ret[0]==config.topic_command:

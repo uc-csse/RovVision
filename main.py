@@ -10,6 +10,7 @@ import argparse
 import numpy as np
 from algs import pid
 import utils
+import vnav
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--sim",help="run in simulation", action='store_true')
@@ -282,9 +283,16 @@ async def control():
             telem['yaw']=np.radians(bypass_yaw%360)
             telem['heading']=bypass_yaw%360
         else:
-            telem['yaw'] = np.radians(mpu_yaw)
-            telem['heading'] = mpu_yaw
-            telem['yawspeed'] = np.radians(mpu_yaw_velocity)
+            if 0:
+                telem['yaw'] = np.radians(mpu_yaw)
+                telem['heading'] = mpu_yaw
+                telem['yawspeed'] = np.radians(mpu_yaw_velocity)
+            else:
+                vdata=vnzv.get_data()
+                telem['vnav']=vdata
+                telem['yaw']=np.radians(vdata['ypr'][0])
+                telem['heading']=vdata['ypr'][0]
+                telem['yawspeed']=vdata['rates'][0]
 
 
         telem.update({

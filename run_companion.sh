@@ -22,13 +22,15 @@ tmux send-keys "cd algs && MAVLINK20= python v3d.py --gst --save" ENTER
 #tmux send-keys "cd algs && python v3d.py --cvshow" ENTER
 
 tmux select-pane -t 2
-tmux send-keys "cd flir &&  python flircam_proxy.py" ENTER
+#sleep 1 sec to wait for the esp stop triggering
+tmux send-keys "cd flir && sleep 1 &&  python flircam_proxy.py" ENTER
 #printf '\033]2;My Pane Title 3\033\\'
 
 tmux select-pane -t 3
 tmux send-keys "source scripts/detect_usbs.sh" ENTER
 #tmux send-keys "htop" ENTER
-tmux send-keys "cd arduino && python send_byte.py -d 0 -u /dev/\$ESP_USB && sleep 5 && python gy86.py -s -u /dev/\$ESP_USB" ENTER
+#tmux send-keys "cd arduino && python send_byte.py -d 0 -u /dev/\$ESP_USB && sleep 5 && python gy86.py -s -u /dev/\$ESP_USB" ENTER
+tmux send-keys "cd arduino && python send_byte.py -s 02 -u /dev/\$ESP_USB && sleep 5 && python gy86.py -s -u /dev/\$ESP_USB" ENTER
 #printf '\033]2;My Pane Title 3\033\\'
 
 tmux att

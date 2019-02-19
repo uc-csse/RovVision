@@ -138,6 +138,8 @@ def flat_mid(x,r):
 
 
 if 'SIMROV' in os.environ:
+### args: P,I,D,limit,step_limit,i_limit,FF,is angle=0
+
     scl=1
     ud_update_scale=5.0
     ud_params_k = {'initial_i':-0.0}
@@ -150,6 +152,8 @@ if 'SIMROV' in os.environ:
     yaw_params=(0.02,0,0.05, _gs*300 , _gs * 150, _gs*100, 0.5, True)
 
 else:
+### args: P,I,D,limit,step_limit,i_limit,FF,is angle=0
+
     scl=1
     ud_update_scale=5.0
     if 0:
@@ -157,11 +161,11 @@ else:
         ud_params=(2.5,0.001,15, _gs*300 , _gs * 100, _gs*200, 0.2, False)
     else:
         ud_params_k = {'initial_i':-0.0}
-        ud_params=(0.2,0.001,0.15, _gs*300 , _gs * 100, _gs*200, 0.2, False)
+        ud_params=(1.1,0.001,6.1, _gs*300 , _gs * 100, _gs*200, 0.2, False)
 
     lr_params=(3,0.02,16.0, _gs*400 , _gs * 30, _gs*200, 0, False)
     fb_params=(3,0.02,16.0, _gs*400 , _gs * 30, _gs*200, 0, False)
     yaw_update_scale=2.0
     yaw_params_k={'func_in_err': lambda x:flat_mid(x,np.radians(0.5))}
     #yaw_params_k={'func_in_err': None}
-    yaw_params=(0.02,0,0.05, _gs*300 , _gs * 150, _gs*100, 0.5, True)
+    yaw_params=(0.008,0.0002,0.01, _gs*300 , _gs * 150, _gs*100, 0.1, True)

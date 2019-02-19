@@ -10,11 +10,13 @@ import argparse
 import numpy as np
 from algs import pid
 import utils
-import vnav
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--sim",help="run in simulation", action='store_true')
 args = parser.parse_args()
+
+if not args.sim:
+    import vnav
 
 topic_postition=config.topic_sitl_position_report
 
@@ -288,7 +290,7 @@ async def control():
                 telem['heading'] = mpu_yaw
                 telem['yawspeed'] = np.radians(mpu_yaw_velocity)
             else:
-                vdata=vnzv.get_data()
+                vdata=vnav.get_data()
                 telem['vnav']=vdata
                 telem['yaw']=np.radians(vdata['ypr'][0])
                 telem['heading']=vdata['ypr'][0]

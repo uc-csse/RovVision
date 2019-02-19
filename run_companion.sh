@@ -12,6 +12,8 @@ tmux split-window -v
 tmux select-pane -t 0
 tmux set -g pane-border-format "#{pane_index} #T"
 printf '\033]2;ROV MAIN\033\\'
+
+tmux send-keys "source scripts/detect_usbs.sh" ENTER
 tmux send-keys "python main.py" ENTER
 
 

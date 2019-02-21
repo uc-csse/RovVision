@@ -32,7 +32,7 @@ if args.sim:
     if 1:
         subs_socks.append( utils.subscribe([ sitl_bypass_topic ],5566) )
         print('************  bypass sitl yaw!')
-    bypass_yaw = None
+    bypass_yaw = 0
 
 
 socket_pub = utils.publisher(config.zmq_pub_main)

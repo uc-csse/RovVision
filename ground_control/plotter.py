@@ -219,7 +219,7 @@ def update_deapth_range(ax_hdls):
     #print('lock_range_data',lock_range_data[-1,:])
     hdl_d[0].set_ydata(-depth_data[:,1])
     hdl_d[0].set_xdata(xs)
-    hdl_lr[0].set_ydata(-lock_range_data[:,3])
+    hdl_lr[0].set_ydata(-lock_range_data[:,2])
     hdl_lr[0].set_xdata(xs)
     hdl_r[0].set_ydata(lock_range_data[:,4])
     hdl_r[0].set_xdata(xs)

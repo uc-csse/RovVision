@@ -194,11 +194,13 @@ if __name__=='__main__':
             #if 1 or not  from_buff:
             for i in [0,1]:
                 if not args.nosingle and args.nowait <= fcnt:
-                    for ext in ['.ppm','.png','.webp']:
+                    for ext in ['.ppm','.png','.webp','.pgm']:
                         fname=file_path_fmt.format('lr'[i],fcnt)+ext
                         if os.path.isfile(fname):
                             try:
                                 frame=cv2.imread(fname)
+                                if ext=='.pgm':
+                                    frame=cv2.cvtColor(frame[:,:,0].copy(), cv2.COLOR_BAYER_BG2RGB_EA)[:,:,::-1]
                                 if args.cc is not None:
                                     frame=apply_colorcc(frame)
                                 imgs_raw[i]=frame

@@ -176,4 +176,4 @@ else:
     yaw_update_scale=2.0
     yaw_params_k={'func_in_err': lambda x:flat_mid(x,np.radians(0.5))}
     #yaw_params_k={'func_in_err': None}
-    yaw_params=(0.008,0.0002,0.01, _gs*300 , _gs * 150, _gs*100, 0.1, True)
+    yaw_params=(0.008,0.0000,0.02, _gs*300 , _gs * 150, _gs*100, 0.1, True)

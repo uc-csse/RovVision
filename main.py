@@ -294,7 +294,7 @@ async def control():
                 telem['vnav']=vdata
                 telem['yaw']=np.radians(vdata['ypr'][0])
                 telem['heading']=vdata['ypr'][0]
-                telem['yawspeed']=vdata['rates'][0]
+                telem['yawspeed']=vdata['rates'][1]
 
 
         telem.update({

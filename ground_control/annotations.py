@@ -1,9 +1,16 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import cv2
+import time
+import config
 
 last_valid_range=[0,0]
+fps_time=time.time()
+frame_start_time=None
+frame_start_number=None
+fps_last_num=0
+fps=None
 def draw_txt(img,vd,md):
-    global last_valid_range
+    global last_valid_range,fps_time,fps,fps_last_num,frame_start_time,frame_start_number
     font = cv2.FONT_HERSHEY_SIMPLEX
     #print('-2-',md)
     if 'ts' in md and 'range' in vd and 'temp' in md:
@@ -45,7 +52,20 @@ def draw_txt(img,vd,md):
     if vd.get('record_state',False):
         cv2.putText(img,'REC '+vd['disk_usage'],(10,200),font, 0.5,(0,0,255),1,cv2.LINE_AA)
     if 'fnum' in vd:
+        if frame_start_time is None:
+            frame_start_time=time.time()
+            frame_start_number=vd['fnum']
         line=' {:>8}'.format(vd['fnum'])
+        if vd['fnum']%100==0 and vd['fnum']!=fps_last_num:
+            fps=100.0/(time.time()-fps_time)
+            #print('---',time.time()-fps_time)
+            fps_time=time.time()
+            fps_last_num=vd['fnum']
+        if fps is not None:
+            line+=' {:>.2f}fps'.format(fps)
+            line+=' {:>05.2f}delay'.format(\
+                (vd['fnum']-frame_start_number)-\
+                config.fps*(time.time()-frame_start_time))
         cv2.putText(img,line,(10,500), font, 0.5,(0,0,255),1,cv2.LINE_AA)
     if 'heading' in md:
         line='H {:05.1f} D {:06.2f}'.format(md['heading']%360,md['depth'])

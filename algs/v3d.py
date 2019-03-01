@@ -55,15 +55,18 @@ print('start...')
 start=time.time()
 
 #stereo = cv2.StereoBM_create(numDisparities=64, blockSize=5)
-stereo = cv2.StereoSGBM_create(numDisparities=64*2, blockSize=9)
+#stereo = cv2.StereoSGBM_create(numDisparities=64*2, blockSize=9)
 
 debug=False
 
+#def shrink(img):
+#    return ((img[::2,::2,:].astype('uint16')+
+#            img[1::2,::2,:]+
+#            img[1::2,1::2,:]+
+#            img[::2,1::2,:])//4).astype('uint8')
+
 def shrink(img):
-    return ((img[::2,::2,:].astype('uint16')+
-            img[1::2,::2,:]+
-            img[1::2,1::2,:]+
-            img[::2,1::2,:])//4).astype('uint8')
+    return img[::2,::2,::-1]
 
 
 def listener():
@@ -120,8 +123,9 @@ def listener():
                     imgr=data
 
             if ret[0] in [topicl,topicr] and fmt_cnt_r == fmt_cnt_l:
-                imgl=np.fromstring(imgl,'uint8').reshape(shape)[:,:,::-1]
-                imgr=np.fromstring(imgr,'uint8').reshape(shape)[:,:,::-1]
+                tic_l=time.time()
+                imgl=np.fromstring(imgl,'uint8').reshape(shape)#[:,:,::-1]
+                imgr=np.fromstring(imgr,'uint8').reshape(shape)#[:,:,::-1]
                 #if save and record_state and (info[3]%10==0): #save every 1 sec
                 #    cv2.imwrite(save+'/l{:08d}.{}'.format(info[3],image_fmt),imgl)
                 #    cv2.imwrite(save+'/r{:08d}.{}'.format(info[3],image_fmt),imgr)
@@ -135,6 +139,7 @@ def listener():
                     imgr=shrink(imgr)
                 else:
                     img=imgl
+                #print('---',time.time()-tic_l)
 
                 ######################################################################
                 if track is None: #old tracker
@@ -170,9 +175,11 @@ def listener():
                 if  args.gst:
                     if gst.gst_pipes is None:
                         gst.init_gst(img.shape[1],img.shape[0],2)
+                    t1=time.time()
                     image_enc_dec.encode(imgl,fmt_cnt_l)
                     image_enc_dec.encode(imgr,fmt_cnt_r)
                     gst.send_gst([imgl,imgr])
+                    #print('---',time.time()-t1)
 
                 ######################################################################
                 if args.cvshow:
@@ -193,7 +200,6 @@ def listener():
                         tracker.debug=True
                     if k==ord('l'): #lock
                         track=None
-
 
 if __name__ == '__main__':
     listener()

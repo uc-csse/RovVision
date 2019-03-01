@@ -21,7 +21,7 @@ minimal_depth_lock = 0.4
 ud_trim=50/1000.0
 
 
-gst_bitrate=400
+gst_bitrate=350
 
 #pubsub
 #zmq_pub_drone_fdm=('127.0.0.1',5566)
@@ -114,9 +114,11 @@ else:
     #track_offx=0#100
     track_offx=80
     track_params = (60,60,60,60,track_offx,0)
+    #track_params = (30,30,60,60,track_offx,0)
     #stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':150}
     #stereo_corr_params = {'ws':(80,80),'sxl':250,'sxr':0,'ofx':70}
     stereo_corr_params = {'ws':(80,80),'sxl':250+50,'sxr':0,'ofx':80}
+    #stereo_corr_params = {'ws':(40,40),'sxl':250+50,'sxr':0,'ofx':80}
 
 ############## control
 lr_filt_size = 1

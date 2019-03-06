@@ -70,5 +70,39 @@ def draw_txt(img,vd,md):
     if 'heading' in md:
         line='H {:05.1f} D {:06.2f}'.format(md['heading']%360,md['depth'])
         cv2.putText(img,line,(10,480), font, 0.5,(0,0,255),1,cv2.LINE_AA)
+        draw_compass(img,700,450,md['heading'])
+
+from math import cos,sin,pi
+def draw_compass(img,x,y,heading):
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(img,str(int(heading%360)),(x,y), font, 0.5,(0,200,255),1,cv2.LINE_AA)
+    
+    r=50.0
+    t=(heading-90)/180.0*pi
+    cs=cos(t)
+    si=sin(t)
+    mt=r-3
+    cv2.line(img,
+        (int(x+cs*(r-mt)),int(y+si*(r-mt))),
+        (int(x+cs*r),int(y+si*r)),(0,255,255),1)
+    
+
+    cv2.circle(img, (x,y), int(r), (0,0,255), 1) 
+    for i in range(36):
+        t=i*10/180.0*pi
+        if i%9==0: 
+            mt=10
+        elif i%3==0:
+            mt=5
+        else:
+            mt=2
+        cs=cos(t)
+        si=sin(t)
+        cv2.line(img,
+                (int(x+cs*(r-mt)),int(y+si*(r-mt))),
+                (int(x+cs*r),int(y+si*r)),(0,0,255),1)
+
+
+
 
     #cv2.putText(img,data_lines['last_cmd_str'][1],(10,250), font, 0.4,(0,0,255),1,cv2.LINE_AA)

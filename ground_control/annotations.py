@@ -70,7 +70,8 @@ def draw_txt(img,vd,md):
     if 'heading' in md:
         line='H {:05.1f} D {:06.2f}'.format(md['heading']%360,md['depth'])
         cv2.putText(img,line,(10,480), font, 0.5,(0,0,255),1,cv2.LINE_AA)
-        draw_compass(img,700,450,md['heading'])
+        draw_compass(img,750,450,md['heading'])
+        draw_depth(img,650,20,md['depth']) 
 
 from math import cos,sin,pi
 def draw_compass(img,x,y,heading):
@@ -103,6 +104,18 @@ def draw_compass(img,x,y,heading):
                 (int(x+cs*r),int(y+si*r)),(0,0,255),1)
 
 
+def draw_depth(img,x,y,depth):
+    l=450
+    s=15
+    cv2.line(img,(x,y),(x,y+l),(0,0,255))
+    for i in range(0,l+1,s):
+        if (i//s)%5==0:
+            mt=10
+        else:
+            mt=3
+        cv2.line(img,(x,y+i),(x+mt,y+i),(0,0,255))
 
+    d=int(depth*s)
+    cv2.line(img,(x,y+d),(x+10,y+d),(0,255,255))
+    cv2.line(img,(x,y+d+1),(x+10,y+d+1),(255,0,255))
 
-    #cv2.putText(img,data_lines['last_cmd_str'][1],(10,250), font, 0.4,(0,0,255),1,cv2.LINE_AA)

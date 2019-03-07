@@ -90,6 +90,9 @@ class Joy_map:
     yaw=0
     fb=4
     lr=3
+
+
+
 #camera params
 fps = 10
 
@@ -171,11 +174,11 @@ else:
         ud_params=(2.5,0.001,15, _gs*300 , _gs * 100, _gs*200, 0.2, False)
     else:
         ud_params_k = {'initial_i':-0.0}
-        ud_params=(1.1,0.001,6.1, _gs*300 , _gs * 100, _gs*200, 0.2, False)
+        ud_params=(2.42,0.011,6.1, _gs*300 , _gs * 100, _gs*200, 0.2, False)
 
     lr_params=(3,0.02,16.0, _gs*400 , _gs * 30, _gs*200, 0, False)
     fb_params=(3,0.02,16.0, _gs*400 , _gs * 30, _gs*200, 0, False)
     yaw_update_scale=2.0
     yaw_params_k={'func_in_err': lambda x:flat_mid(x,np.radians(0.5))}
     #yaw_params_k={'func_in_err': None}
-    yaw_params=(0.008,0.0000,0.02, _gs*300 , _gs * 150, _gs*100, 0.1, True)
+    yaw_params=(0.038,0.0000,0.05, _gs*300 , _gs * 150, _gs*100, 0.1, True)

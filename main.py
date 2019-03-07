@@ -275,7 +275,7 @@ async def control():
         if not lock_yaw_depth and joy_axes is not None:
             ud_cmd,yaw_cmd = -joy_axes[J.ud], joy_axes[J.yaw]
 
-
+        #print('---',ud_cmd+config.ud_trim)
         controller.set_rcs(ud_cmd+config.ud_trim,yaw_cmd,fb_cmd,lr_cmd)
 
         to_pwm=controller.to_pwm

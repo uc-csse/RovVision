@@ -1,4 +1,6 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+import matplotlib
+matplotlib.use('TKAgg')
 import matplotlib.pyplot as plt
 import sys,os,time
 sys.path.append('../')
@@ -11,7 +13,7 @@ import config
 import utils
 from camera_tools import get_stereo_cameras,triangulate,rotz
 
-
+print('fff')
 parser = argparse.ArgumentParser()
 parser.add_argument("--ip",help="main ground control ip addr", default='127.0.0.1')
 parser.add_argument("--scale",help="map size deafult 20", default=20.0, type=float)

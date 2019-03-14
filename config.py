@@ -2,7 +2,7 @@
 import numpy as np
 import os
 
-if 0:
+if 1:
     lock_mode='fb_to_x'
     camera_pitch = np.radians(45) # camera installation pitch in rad
 
@@ -10,7 +10,7 @@ if 0:
     lock_mode='ud_to_range'
     camera_pitch = np.radians(45) # camera installation pitch in rad
 
-if 1:
+if 0:
     lock_mode='fb_to_range'
     camera_pitch = np.radians(0)
 
@@ -174,7 +174,8 @@ else:
         ud_params=(2.5,0.001,15, _gs*300 , _gs * 100, _gs*200, 0.2, False)
     else:
         ud_params_k = {'initial_i':-0.0}
-        ud_params=(2.42,0.011,6.1, _gs*300 , _gs * 100, _gs*200, 0.2, False)
+#        ud_params=(2.42,0.011,6.1, _gs*300 , _gs * 100, _gs*200, 0.2, False)
+        ud_params=(0.42,0.008,6.1, _gs*300 , _gs * 100, _gs*200, 0.2, False)
 
     lr_params=(3,0.02,16.0, _gs*400 , _gs * 30, _gs*200, 0, False)
     fb_params=(3,0.02,16.0, _gs*400 , _gs * 30, _gs*200, 0, False)

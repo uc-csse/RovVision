@@ -18,7 +18,8 @@ done
 #RASPPI_IP=raspberrypi
 
 MIDDLE_ADDR=oga13@linux.cosc.canterbury.ac.nz
-STATION_ADDR=oga13@cs17062bq
+#STATION_ADDR=oga13@cs17062bq
+STATION_ADDR=labuser@cs19123bs
 
 STEREO_IP=10.0.0.1
 #echo $LOCALS

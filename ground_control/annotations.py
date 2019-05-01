@@ -68,9 +68,10 @@ def draw_txt(img,vd,md):
                 config.fps*(time.time()-frame_start_time))
         cv2.putText(img,line,(10,500), font, 0.5,(0,0,255),1,cv2.LINE_AA)
     if 'heading' in md:
-        line='H {:05.1f} D {:06.2f}'.format(md['heading']%360,md['depth'])
+        y=md['vnav']['ypr'][0] if 'vnav' in md else md['heading']%360
+        line='H {:05.1f} D {:06.2f}'.format(y,md['depth'])
         cv2.putText(img,line,(10,480), font, 0.5,(0,0,255),1,cv2.LINE_AA)
-        draw_compass(img,750,450,md['heading'])
+        draw_compass(img,750,450,y)
         draw_depth(img,650,20,md['depth'])
     if 'vnav' in md:
         print('vnav',md['vnav'])
